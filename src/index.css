@@ -125,7 +125,9 @@ h2 {
 }
 
 .page {
+  width: 100%;
   max-width: 1180px;
+  margin-inline: auto;
 }
 
 .board {
@@ -161,6 +163,27 @@ h2 {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+}
+
+.shift-corner {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.shift-corner span + span {
+  padding-left: 12px;
+  border-left: 1px solid rgba(38, 38, 38, 0.16);
 }
 
 .page-header h1 {
@@ -213,7 +236,7 @@ h2 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 32px;
+  margin-top: 22px;
 }
 
 .context-card,

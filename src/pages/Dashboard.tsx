@@ -25,6 +25,13 @@ function greeting(now: Date): string {
   return "Good evening";
 }
 
+function shiftName(now: Date): string {
+  const hour = now.getHours();
+  if (hour >= 6 && hour < 14) return "Morning shift";
+  if (hour >= 14 && hour < 22) return "Evening shift";
+  return "Night shift";
+}
+
 export function Dashboard() {
   useEffect(() => {
     document.title = "Guest Experience";
@@ -36,10 +43,15 @@ export function Dashboard() {
 
   return (
     <div className="page" data-testid="dashboard">
-      <header className="page-header">
-        <p className="eyebrow">Today&apos;s shift</p>
-        <h1>{greeting(new Date())}</h1>
-        <p className="lede">{shiftDateLabel}</p>
+      <header className="page-header is-split">
+        <div>
+          <p className="eyebrow">Today&apos;s shift</p>
+          <h1>{greeting(new Date())}</h1>
+        </div>
+        <p className="shift-corner">
+          <span>{shiftDateLabel}</span>
+          <span>{shiftName(new Date())}</span>
+        </p>
       </header>
 
       <section className="context" aria-label="Shift context">
