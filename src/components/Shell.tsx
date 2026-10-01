@@ -32,6 +32,22 @@ export function Shell() {
             </NavLink>
           ))}
         </nav>
+        <div className="sidebar-foot">
+          <p className="sidebar-user">Receptionist</p>
+          <button type="button" className="sidebar-logout">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+              <path
+                d="M3 7h8M8 3.5 11.5 7 8 10.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Log out
+          </button>
+        </div>
       </aside>
       <main className="main">
         <Outlet />

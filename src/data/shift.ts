@@ -28,6 +28,8 @@ export interface ShiftAction {
   /** Lower means sooner. Compared only after Recovery severity. */
   proximity: number;
   timingLabel: string;
+  /** Importe estimado en euros. Solo upselling. */
+  value?: number;
   status: ActionStatus;
 }
 
@@ -41,11 +43,17 @@ export interface Listing {
 
 export const shiftDay = new Date(2026, 8, 30);
 
+export const expectedOnDay = {
+  "check-ins": 23,
+  "check-outs": 18,
+  "in-house": 46,
+} as const;
+
 export const last7Days = {
-  upsellingRevenue: 840,
-  loyaltySignUps: 6,
-  guestsPampered: 11,
-};
+  upsellingRevenue: { value: 840, direction: "up" },
+  loyaltySignUps: { value: 6, direction: "down" },
+  guestsPampered: { value: 11, direction: "up" },
+} as const;
 
 export const listings: Record<ListingId, Listing> = {
   "check-ins": {
@@ -134,6 +142,26 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     timingLabel: "This morning",
   },
   {
+    id: "kenji-water",
+    guestId: "kenji",
+    category: "recovery",
+    label: "Follow up on the hot water",
+    listing: "recovery",
+    severity: "normal",
+    proximity: 1,
+    timingLabel: "Today",
+  },
+  {
+    id: "nina-safe",
+    guestId: "nina",
+    category: "recovery",
+    label: "Follow up on the room safe",
+    listing: "recovery",
+    severity: "low",
+    proximity: 2,
+    timingLabel: "Today",
+  },
+  {
     id: "james-transfer",
     guestId: "james",
     category: "upselling",
@@ -141,6 +169,7 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     listing: "check-ins",
     proximity: 0,
     timingLabel: "This morning",
+    value: 65,
   },
   {
     id: "laura-spa",
@@ -150,6 +179,7 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     listing: "check-ins",
     proximity: 1,
     timingLabel: "Today",
+    value: 80,
   },
   {
     id: "kenji-birthday",
@@ -168,6 +198,7 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     listing: "check-outs",
     proximity: 2,
     timingLabel: "Today",
+    value: 45,
   },
   {
     id: "laura-loyalty",
