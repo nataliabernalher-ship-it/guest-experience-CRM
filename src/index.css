@@ -1,7 +1,7 @@
 :root {
   color: #151515;
   background: #EBF0ED;
-  font-family: Inter, "Avenir Next", "Segoe UI", sans-serif;
+  font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   --surface: #ffffff;
@@ -33,7 +33,7 @@ a {
 
 h1,
 h2 {
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .app {
@@ -73,7 +73,7 @@ h2 {
   border-radius: 12px;
   background: var(--accent);
   color: #fff;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .brand-name,
@@ -83,7 +83,7 @@ h2 {
 
 .brand-name {
   color: #fff;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.02em;
 }
 
@@ -127,7 +127,7 @@ h2 {
 .nav-link.is-active {
   background: var(--accent);
   color: #fff;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .sidebar-foot {
@@ -140,7 +140,7 @@ h2 {
   margin: 0;
   color: #fff;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .sidebar-logout {
@@ -254,7 +254,7 @@ h2 {
 .board-side .results-head h2 {
   margin: 0;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.2;
   white-space: nowrap;
@@ -336,7 +336,7 @@ h2 {
 
 .vip-name {
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.3;
 }
 
@@ -351,7 +351,7 @@ h2 {
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.2;
 }
 
@@ -420,7 +420,7 @@ h2 {
   margin: 6px 0 0;
   font-size: 44px;
   letter-spacing: -0.045em;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .listing-back {
@@ -445,7 +445,7 @@ h2 {
 .attention-count {
   display: block;
   font-size: 44px;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1;
 }
@@ -453,7 +453,7 @@ h2 {
 .attention-label {
   display: block;
   margin-top: 8px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .attention-unit {
@@ -546,7 +546,7 @@ a.context-card.is-recovery:hover {
 
 .context-count,
 .result-value {
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: -0.04em;
 }
 
@@ -582,17 +582,17 @@ a.context-card.is-recovery:hover {
 
 .context-attention-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
-.context-label,
 .priority-label,
 .guest-name {
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .context-label {
   font-size: 20px;
+  font-weight: 700;
 }
 
 .context-unit,
@@ -623,6 +623,7 @@ a.context-card.is-recovery:hover {
 .results h2 {
   margin: 0;
   font-size: 18px;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 
@@ -661,7 +662,7 @@ a.context-card.is-recovery:hover {
   background: var(--gray);
   color: var(--ink);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -714,7 +715,7 @@ a.context-card.is-recovery:hover {
 .table-card-head h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 
@@ -772,12 +773,12 @@ a.context-card.is-recovery:hover {
   background: #ececec;
   color: #3a3a3a;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .category-pill {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
 }
 
@@ -799,7 +800,7 @@ a.context-card.is-recovery:hover {
 
 .cell-strong,
 .cell-value {
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .cell-muted {
@@ -813,7 +814,7 @@ a.context-card.is-recovery:hover {
 .cell-view a,
 .back-link {
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 400;
   text-decoration: none;
 }
 
@@ -899,6 +900,59 @@ a.context-card.is-recovery:hover {
   color: var(--muted);
 }
 
+.listing-tools {
+  display: flex;
+  justify-content: flex-start;
+  padding: 12px 16px 4px;
+}
+
+.incident-form {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.incident-input {
+  flex: 1 1 180px;
+  min-width: 0;
+  border: 1px solid #d5d5d5;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.incident-input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.add-incident,
+.incident-cancel {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.add-incident {
+  background: var(--accent);
+  color: #fff;
+}
+
+.incident-cancel {
+  background: transparent;
+  color: var(--muted);
+}
+
 .status-select {
   appearance: none;
   border: 1px solid #d5d5d5;
@@ -911,7 +965,7 @@ a.context-card.is-recovery:hover {
   color: var(--ink);
   font: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   cursor: pointer;
 }
 
@@ -921,7 +975,7 @@ a.context-card.is-recovery:hover {
   background: var(--surface);
   color: var(--ink);
   font-size: 18px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: -0.03em;
   text-align: left;
   text-transform: none;
@@ -971,7 +1025,7 @@ a.context-card.is-recovery:hover {
 
 .settled-label {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   white-space: nowrap;
 }
 

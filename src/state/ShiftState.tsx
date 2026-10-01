@@ -1,9 +1,16 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { actions as seed, type ActionStatus, type ShiftAction } from "../data/shift";
+import { actions as seed, type ActionStatus, type Severity, type ShiftAction } from "../data/shift";
+
+interface NewIncident {
+  guestId: string;
+  label: string;
+  severity: Severity;
+}
 
 interface ShiftStateValue {
   actions: ShiftAction[];
   setActionStatus: (id: string, status: ActionStatus) => void;
+  addIncident: (incident: NewIncident) => void;
 }
 
 const ShiftContext = createContext<ShiftStateValue | null>(null);
@@ -28,6 +35,24 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
             };
           }),
         );
+      },
+      addIncident: ({ guestId, label, severity }: NewIncident) => {
+        const text = label.trim();
+        if (!guestId || !text) return;
+        setActions((current) => [
+          {
+            id: `incident-${crypto.randomUUID()}`,
+            guestId,
+            category: "recovery",
+            label: text,
+            listing: "recovery",
+            severity,
+            proximity: 1,
+            timingLabel: "Today",
+            status: "pending",
+          },
+          ...current,
+        ]);
       },
     }),
     [actions],

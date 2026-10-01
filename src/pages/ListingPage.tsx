@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   categoryLabels,
   guestById,
+  guests,
   listings,
   money,
   shiftDateLabel,
@@ -11,6 +12,7 @@ import {
   type Category,
   type Guest,
   type ListingId,
+  type Severity,
   type ShiftAction,
 } from "../data/shift";
 import { useShift } from "../state/ShiftState";
@@ -25,12 +27,13 @@ function positiveLabel(category: Category): string {
   if (category === "upselling") return "Sold";
   if (category === "loyalty") return "Signed up";
   if (category === "guest-experience") return "Done";
-  return "Start";
+  return "Solved";
 }
 
 function sectionTitle(action: ShiftAction): string {
   if (action.status === "rejected") return "Rejected";
-  if (action.category === "recovery") return "In progress";
+  if (action.status === "solved") return "Solved";
+  if (action.status === "confirmed") return "Confirmed with guest";
   return positiveLabel(action.category);
 }
 
@@ -54,7 +57,7 @@ function openRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
     .map((action) => ({ guest: guestById(action.guestId), action }));
 }
 
-function settledRows(listingId: ListingId, actions: ShiftAction[], status: "done" | "rejected"): Row[] {
+function settledRows(listingId: ListingId, actions: ShiftAction[], status: ActionStatus): Row[] {
   return actionsForListing(listingId, actions)
     .filter((action) => action.status === status)
     .map((action) => ({ guest: guestById(action.guestId), action }));
@@ -85,6 +88,24 @@ function MarkStatus({
   action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
+  if (action.category === "recovery") {
+    return (
+      <select
+        className="status-select"
+        aria-label="Mark the status"
+        value={action.status}
+        onChange={(event) => {
+          const next = event.target.value;
+          if (next === "pending" || next === "solved" || next === "confirmed") onStatus(action.id, next);
+        }}
+      >
+        <option value="pending">Pending</option>
+        <option value="solved">Solved</option>
+        <option value="confirmed">Confirmed with guest</option>
+      </select>
+    );
+  }
+
   return (
     <select
       className="status-select"
@@ -99,7 +120,7 @@ function MarkStatus({
         Select
       </option>
       <option value="done">{positiveLabel(action.category)}</option>
-      {action.category === "recovery" ? null : <option value="rejected">Rejected</option>}
+      <option value="rejected">Rejected</option>
     </select>
   );
 }
@@ -143,49 +164,44 @@ function ListingRows({
       </td>
       {isRecovery ? <td>{action.severity ? label(action.severity) : "—"}</td> : null}
       <td>
-        {settled ? (
-          <span className="settled-label">{sectionTitle(action)}</span>
-        ) : (
+        {action.category === "recovery" || !settled ? (
           <MarkStatus action={action} onStatus={onStatus} />
+        ) : (
+          <span className="settled-label">{sectionTitle(action)}</span>
         )}
       </td>
-      <td className="cell-mark">{settled ? <OutcomeMark rejected={action.status === "rejected"} /> : null}</td>
+      <td className="cell-mark">
+        {action.status === "confirmed" || (settled && action.status === "rejected") ? (
+          <OutcomeMark rejected={action.status === "rejected"} />
+        ) : settled && action.status === "done" ? (
+          <OutcomeMark rejected={false} />
+        ) : null}
+      </td>
     </tr>
   ));
 }
 
 function ListingCard({
-  title,
-  heading,
   pending,
-  completed,
-  rejected,
-  completedLabel,
+  groups,
   isRecovery,
   focus,
   onStatus,
+  tools,
 }: {
-  title: string;
-  heading?: "h1";
   pending: Row[];
-  completed: Row[];
-  rejected: Row[];
-  completedLabel: string;
+  groups: { title: string; rows: Row[] }[];
   isRecovery: boolean;
   focus: string | null;
   onStatus: (id: string, status: ActionStatus) => void;
+  tools?: ReactNode;
 }) {
-  const Heading = heading;
   const columnCount = isRecovery ? 8 : 7;
-  const hasRows = pending.length + completed.length + rejected.length > 0;
+  const hasRows = pending.length + groups.reduce((total, group) => total + group.rows.length, 0) > 0;
 
   return (
     <section className="table-card" data-testid="listing-open">
-      {Heading ? (
-        <header className="table-card-head">
-          <Heading>{title}</Heading>
-        </header>
-      ) : null}
+      {tools}
       {hasRows ? (
         <table className="listing-table">
           <thead>
@@ -202,22 +218,16 @@ function ListingCard({
           </thead>
           <tbody>
             <ListingRows rows={pending} isRecovery={isRecovery} focus={focus} onStatus={onStatus} />
-            {completed.length > 0 ? (
-              <>
-                <tr className="listing-group">
-                  <th colSpan={columnCount}>{completedLabel}</th>
-                </tr>
-                <ListingRows rows={completed} isRecovery={isRecovery} focus={focus} settled onStatus={onStatus} />
-              </>
-            ) : null}
-            {rejected.length > 0 ? (
-              <>
-                <tr className="listing-group">
-                  <th colSpan={columnCount}>Rejected</th>
-                </tr>
-                <ListingRows rows={rejected} isRecovery={isRecovery} focus={focus} settled onStatus={onStatus} />
-              </>
-            ) : null}
+            {groups.map((group) =>
+              group.rows.length > 0 ? (
+                <Fragment key={group.title}>
+                  <tr className="listing-group">
+                    <th colSpan={columnCount}>{group.title}</th>
+                  </tr>
+                  <ListingRows rows={group.rows} isRecovery={isRecovery} focus={focus} settled onStatus={onStatus} />
+                </Fragment>
+              ) : null,
+            )}
           </tbody>
         </table>
       ) : (
@@ -227,15 +237,97 @@ function ListingCard({
   );
 }
 
+function AddIncident({ onAdd }: { onAdd: (incident: { guestId: string; label: string; severity: Severity }) => void }) {
+  const [open, setOpen] = useState(false);
+  const [guestId, setGuestId] = useState("");
+  const [labelText, setLabelText] = useState("");
+  const [severity, setSeverity] = useState<Severity>("normal");
+
+  function close() {
+    setOpen(false);
+    setGuestId("");
+    setLabelText("");
+    setSeverity("normal");
+  }
+
+  return (
+    <div className="listing-tools">
+      {open ? (
+        <form
+          className="incident-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!guestId || !labelText.trim()) return;
+            onAdd({ guestId, label: labelText, severity });
+            close();
+          }}
+        >
+          <select
+            className="status-select"
+            aria-label="Guest"
+            value={guestId}
+            onChange={(event) => setGuestId(event.target.value)}
+            required
+          >
+            <option value="" disabled>
+              Guest
+            </option>
+            {guests.map((guest) => (
+              <option key={guest.id} value={guest.id}>
+                {guest.name} · Room {guest.room}
+              </option>
+            ))}
+          </select>
+          <input
+            className="incident-input"
+            aria-label="Incident"
+            placeholder="What happened"
+            value={labelText}
+            onChange={(event) => setLabelText(event.target.value)}
+            required
+          />
+          <select
+            className="status-select"
+            aria-label="Severity"
+            value={severity}
+            onChange={(event) => setSeverity(event.target.value as Severity)}
+          >
+            <option value="urgent">Urgent</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+          </select>
+          <button type="submit" className="add-incident">
+            Add
+          </button>
+          <button type="button" className="incident-cancel" onClick={close}>
+            Cancel
+          </button>
+        </form>
+      ) : (
+        <button type="button" className="add-incident" onClick={() => setOpen(true)}>
+          Add incident
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ListingPage({ listingId }: { listingId: ListingId }) {
-  const { actions, setActionStatus } = useShift();
+  const { actions, setActionStatus, addIncident } = useShift();
   const [params] = useSearchParams();
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
   const pending = openRows(listingId, actions);
-  const completed = settledRows(listingId, actions, "done");
-  const rejected = settledRows(listingId, actions, "rejected");
+  const groups = isRecovery
+    ? [
+        { title: "Solved", rows: settledRows(listingId, actions, "solved") },
+        { title: "Confirmed with guest", rows: settledRows(listingId, actions, "confirmed") },
+      ]
+    : [
+        { title: completedTitle, rows: settledRows(listingId, actions, "done") },
+        { title: "Rejected", rows: settledRows(listingId, actions, "rejected") },
+      ];
 
   useEffect(() => {
     document.title = `${listing.title} · Guest Experience`;
@@ -267,14 +359,12 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         </h1>
       </header>
       <ListingCard
-        title={listing.title}
         pending={pending}
-        completed={completed}
-        rejected={rejected}
-        completedLabel={isRecovery ? "In progress" : completedTitle}
+        groups={groups}
         isRecovery={isRecovery}
         focus={focus}
         onStatus={setActionStatus}
+        tools={isRecovery ? <AddIncident onAdd={addIncident} /> : undefined}
       />
     </div>
   );

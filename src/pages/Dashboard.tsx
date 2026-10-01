@@ -87,7 +87,12 @@ export function Dashboard() {
 
   const { actions } = useShift();
   const pending = actions.filter(isPending);
-  const incidents = pending.filter((action) => action.category === "recovery").sort(compareActions);
+  const incidents = actions
+    .filter(
+      (action) =>
+        action.category === "recovery" && (action.status === "pending" || action.status === "solved"),
+    )
+    .sort(compareActions);
 
   return (
     <div className="page" data-testid="dashboard">
@@ -131,7 +136,7 @@ export function Dashboard() {
         })}
         <Link to={listings.recovery.path} className="context-card is-recovery" data-testid="context-recovery">
           <OpenArrow />
-          <span className="context-count">{countForListing("recovery", pending)}</span>
+          <span className="context-count">{countForListing("recovery", actions)}</span>
           <span className="context-label">{listings.recovery.title}</span>
           <span className="context-unit">{listings.recovery.unit}</span>
         </Link>

@@ -6,7 +6,7 @@ export type Severity = "urgent" | "normal" | "low";
 
 export type StayMoment = "check-in" | "check-out" | "in-house";
 
-export type ActionStatus = "pending" | "done" | "rejected";
+export type ActionStatus = "pending" | "done" | "rejected" | "solved" | "confirmed";
 
 export interface Guest {
   id: string;
@@ -314,7 +314,11 @@ export function guestsForListing(listing: ListingId, source: ShiftAction[] = act
 }
 
 export function countForListing(listing: ListingId, source: ShiftAction[] = actions): number {
-  if (listing === "recovery") return actionsForListing(listing, source).filter(isPending).length;
+  if (listing === "recovery") {
+    return actionsForListing(listing, source).filter(
+      (action) => action.status === "pending" || action.status === "solved",
+    ).length;
+  }
   return guestsForListing(listing, source).length;
 }
 
