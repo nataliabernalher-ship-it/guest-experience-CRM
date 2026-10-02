@@ -951,3 +951,13 @@ export const shiftDateLabel = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "long",
 }).format(shiftDay);
+
+const shiftTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export function formatShiftTime(now: Date = new Date()): string {
+  return shiftTimeFormatter.format(now);
+}

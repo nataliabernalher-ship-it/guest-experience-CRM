@@ -13,8 +13,8 @@ import {
   momentCategoryCounts,
   money,
   reservationCount,
-  shiftDateLabel,
 } from "../data/shift";
+import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
 const stayListings = ["check-ins", "in-house", "check-outs"] as const;
@@ -24,13 +24,6 @@ function greeting(now: Date): string {
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
-}
-
-function shiftName(now: Date): string {
-  const hour = now.getHours();
-  if (hour >= 6 && hour < 14) return "Morning shift";
-  if (hour >= 14 && hour < 22) return "Evening shift";
-  return "Night shift";
 }
 
 function stayLine(guest: Guest): string {
@@ -103,10 +96,7 @@ export function Dashboard() {
           <p className="eyebrow">Today&apos;s shift</p>
           <h1>{greeting(new Date())}</h1>
         </div>
-        <p className="shift-corner">
-          <span>{shiftDateLabel}</span>
-          <span>{shiftName(new Date())}</span>
-        </p>
+        <ShiftCorner showShift />
       </header>
 
       <section className="context" aria-label="Shift context">

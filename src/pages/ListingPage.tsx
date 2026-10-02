@@ -7,7 +7,6 @@ import {
   guests,
   listings,
   money,
-  shiftDateLabel,
   type ActionStatus,
   type Category,
   type Guest,
@@ -16,6 +15,7 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
 const completedTitle = "Sold, Signed up, Notified";
@@ -427,12 +427,10 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
       <header className="page-header">
-        {listingId === "check-ins" ? (
+        {listingId === "check-ins" || listingId === "in-house" || listingId === "check-outs" ? (
           <div className="page-title-row">
             <h1>{listing.title}</h1>
-            <p className="shift-corner">
-              <span>{shiftDateLabel}</span>
-            </p>
+            <ShiftCorner />
           </div>
         ) : (
           <h1>{listing.title}</h1>
