@@ -16,7 +16,7 @@ import {
 } from "../data/shift";
 import { useShift } from "../state/ShiftState";
 
-const stayListings = ["check-ins", "check-outs", "in-house"] as const;
+const stayListings = ["check-ins", "in-house", "check-outs"] as const;
 
 function greeting(now: Date): string {
   const hour = now.getHours();

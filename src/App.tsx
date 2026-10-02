@@ -5,6 +5,7 @@ import { ListingPage } from "./pages/ListingPage";
 import { GuestProfile } from "./pages/GuestProfile";
 import { GuestsPage } from "./pages/GuestsPage";
 import { OpportunitiesPage } from "./pages/OpportunitiesPage";
+import { ConfigurationPage } from "./pages/ConfigurationPage";
 
 export function App() {
   return (
@@ -18,6 +19,7 @@ export function App() {
         <Route path="opportunities" element={<OpportunitiesPage />} />
         <Route path="guests/:guestId" element={<GuestProfile />} />
         <Route path="guests" element={<GuestsPage />} />
+        <Route path="configuration" element={<ConfigurationPage />} />
       </Route>
     </Routes>
   );

@@ -60,6 +60,7 @@ h2 {
   position: sticky;
   top: 0;
   padding: 28px 18px;
+  overflow: hidden;
   background: var(--sidebar);
   color: #fff;
 }
@@ -116,6 +117,10 @@ h2 {
 
 .nav {
   display: grid;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .nav-group {
@@ -147,29 +152,37 @@ h2 {
 }
 
 .sidebar-foot {
+  flex: none;
   margin-top: auto;
-  padding: 16px 12px 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px 0 4px;
 }
 
 .sidebar-user {
   margin: 0;
+  padding: 10px 12px 0;
   color: #fff;
   font-size: 14px;
   font-weight: 400;
 }
 
+.sidebar-foot .nav-rule {
+  margin: 10px 12px;
+}
+
 .sidebar-logout {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 6px;
-  padding: 0;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
   border: 0;
+  border-radius: 12px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  font: inherit;
   font-weight: 400;
+  text-align: left;
   cursor: pointer;
 }
 
@@ -1034,7 +1047,7 @@ a.context-card.is-recovery:hover {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 16px 4px;
+  padding: 16px 16px 28px;
 }
 
 .guest-tags {
@@ -1363,7 +1376,7 @@ a.context-card.is-recovery:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px 4px;
+  padding: 12px 16px 28px;
 }
 
 .incident-form {
