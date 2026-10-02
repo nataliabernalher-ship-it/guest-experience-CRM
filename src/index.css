@@ -116,7 +116,17 @@ h2 {
 
 .nav {
   display: grid;
+}
+
+.nav-group {
+  display: grid;
   gap: 4px;
+}
+
+.nav-rule {
+  height: 1px;
+  margin: 10px 12px;
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .nav-link {

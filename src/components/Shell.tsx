@@ -1,13 +1,17 @@
 import { NavLink, Outlet } from "react-router-dom";
 
-const nav = [
-  { to: "/", label: "Dashboard", end: true },
-  { to: "/check-ins", label: "Check-ins", end: true },
-  { to: "/check-outs", label: "Check-outs", end: true },
-  { to: "/in-house", label: "In-house", end: true },
-  { to: "/guests", label: "Guest Profiles", end: false },
-  { to: "/opportunities", label: "Opportunities", end: false },
-  { to: "/recovery", label: "Recovery", end: false },
+const navGroups = [
+  [{ to: "/", label: "Dashboard", end: true }],
+  [
+    { to: "/check-ins", label: "Check-ins", end: true },
+    { to: "/check-outs", label: "Check-outs", end: true },
+    { to: "/in-house", label: "In-house", end: true },
+  ],
+  [
+    { to: "/opportunities", label: "Opportunities", end: false },
+    { to: "/recovery", label: "Recovery", end: false },
+    { to: "/guests", label: "Guest Profiles", end: false },
+  ],
 ];
 
 export function Shell() {
@@ -24,15 +28,20 @@ export function Shell() {
           </span>
         </div>
         <nav className="nav" aria-label="Primary">
-          {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
-            >
-              {item.label}
-            </NavLink>
+          {navGroups.map((group, index) => (
+            <div key={group[0].to} className="nav-group">
+              {index > 0 ? <div className="nav-rule" role="separator" /> : null}
+              {group.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-foot">
