@@ -81,12 +81,6 @@ export interface Listing {
 
 export const shiftDay = new Date(2026, 8, 30);
 
-export const expectedOnDay = {
-  "check-ins": 23,
-  "check-outs": 18,
-  "in-house": 46,
-} as const;
-
 export const last7Days = {
   upsellingRevenue: { value: 840, direction: "up" },
   loyaltySignUps: { value: 6, direction: "down" },
@@ -389,6 +383,266 @@ export const guests: Guest[] = [
   },
 ];
 
+function seedGuest(
+  guest: Pick<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin"> &
+    Partial<Omit<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin">>,
+): Guest {
+  return {
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    partySize: 1,
+    birthDate: "1 January 1990",
+    profession: "Guest",
+    hobbies: "Travel",
+    companions: [],
+    notes: [],
+    past: [],
+    stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }],
+    ...guest,
+  };
+}
+
+guests.push(
+  seedGuest({
+    id: "clara",
+    name: "Clara Dubois",
+    room: "401",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Lyon",
+    previousStays: 1,
+  }),
+  seedGuest({
+    id: "hugo",
+    name: "Hugo Berg",
+    room: "402",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "2 Oct 2026",
+    origin: "Oslo",
+  }),
+  seedGuest({
+    id: "ines",
+    name: "Inés Navarro",
+    room: "403",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "4 Oct 2026",
+    origin: "Valencia",
+    partySize: 2,
+    companions: [{ name: "Marco Navarro" }],
+  }),
+  seedGuest({
+    id: "omar",
+    name: "Omar Farid",
+    room: "404",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "1 Oct 2026",
+    origin: "Dubai",
+  }),
+  seedGuest({
+    id: "priya",
+    name: "Priya Sharma",
+    room: "405",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "5 Oct 2026",
+    origin: "Mumbai",
+    previousStays: 2,
+    loyaltyMember: true,
+  }),
+  seedGuest({
+    id: "lucas",
+    name: "Lucas Meyer",
+    room: "406",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Zurich",
+  }),
+  seedGuest({
+    id: "aisha",
+    name: "Aisha Benali",
+    room: "407",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "2 Oct 2026",
+    origin: "Casablanca",
+  }),
+  seedGuest({
+    id: "erik",
+    name: "Erik Johansson",
+    room: "408",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "4 Oct 2026",
+    origin: "Gothenburg",
+    partySize: 2,
+    companions: [{ name: "Eva Johansson" }],
+  }),
+  seedGuest({
+    id: "mei",
+    name: "Mei Chen",
+    room: "409",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Singapore",
+    vip: true,
+    previousStays: 3,
+    loyaltyMember: true,
+  }),
+  seedGuest({
+    id: "jonas",
+    name: "Jonas Keller",
+    room: "411",
+    moment: "in-house",
+    arrival: "28 Sep 2026",
+    departure: "2 Oct 2026",
+    origin: "Vienna",
+  }),
+  seedGuest({
+    id: "rosa",
+    name: "Rosa Almeida",
+    room: "412",
+    moment: "in-house",
+    arrival: "27 Sep 2026",
+    departure: "1 Oct 2026",
+    origin: "Lisbon",
+    previousStays: 1,
+  }),
+  seedGuest({
+    id: "felix",
+    name: "Felix Braun",
+    room: "413",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Munich",
+  }),
+  seedGuest({
+    id: "yara",
+    name: "Yara Haddad",
+    room: "414",
+    moment: "in-house",
+    arrival: "28 Sep 2026",
+    departure: "4 Oct 2026",
+    origin: "Beirut",
+    partySize: 2,
+    companions: [{ name: "Samir Haddad" }],
+  }),
+  seedGuest({
+    id: "noah",
+    name: "Noah Williams",
+    room: "415",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "2 Oct 2026",
+    origin: "Toronto",
+  }),
+  seedGuest({
+    id: "giulia",
+    name: "Giulia Conti",
+    room: "416",
+    moment: "in-house",
+    arrival: "27 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Rome",
+    previousStays: 2,
+    loyaltyMember: true,
+  }),
+  seedGuest({
+    id: "samuel",
+    name: "Samuel Okafor",
+    room: "417",
+    moment: "in-house",
+    arrival: "28 Sep 2026",
+    departure: "1 Oct 2026",
+    origin: "Accra",
+  }),
+  seedGuest({
+    id: "helena",
+    name: "Helena Novak",
+    room: "419",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "4 Oct 2026",
+    origin: "Prague",
+  }),
+  seedGuest({
+    id: "diego",
+    name: "Diego Rojas",
+    room: "420",
+    moment: "in-house",
+    arrival: "26 Sep 2026",
+    departure: "2 Oct 2026",
+    origin: "Santiago",
+    previousStays: 1,
+  }),
+  seedGuest({
+    id: "freya",
+    name: "Freya Olsen",
+    room: "421",
+    moment: "in-house",
+    arrival: "28 Sep 2026",
+    departure: "3 Oct 2026",
+    origin: "Copenhagen",
+  }),
+  seedGuest({
+    id: "arthur",
+    name: "Arthur Reed",
+    room: "422",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "1 Oct 2026",
+    origin: "Dublin",
+  }),
+  seedGuest({
+    id: "camille",
+    name: "Camille Roux",
+    room: "119",
+    moment: "check-out",
+    arrival: "27 Sep 2026",
+    departure: "30 Sep 2026",
+    origin: "Paris",
+    previousStays: 1,
+  }),
+  seedGuest({
+    id: "ivan",
+    name: "Ivan Petrov",
+    room: "120",
+    moment: "check-out",
+    arrival: "26 Sep 2026",
+    departure: "30 Sep 2026",
+    origin: "Sofia",
+  }),
+  seedGuest({
+    id: "leila",
+    name: "Leila Mansour",
+    room: "121",
+    moment: "check-out",
+    arrival: "28 Sep 2026",
+    departure: "30 Sep 2026",
+    origin: "Tunis",
+    partySize: 2,
+    companions: [{ name: "Karim Mansour" }],
+  }),
+  seedGuest({
+    id: "harry",
+    name: "Harry Collins",
+    room: "122",
+    moment: "check-out",
+    arrival: "25 Sep 2026",
+    departure: "30 Sep 2026",
+    origin: "Manchester",
+    previousStays: 2,
+    loyaltyMember: true,
+  }),
+);
+
 export function stayMomentLabel(moment: StayMoment): string {
   if (moment === "check-in") return "Check-in";
   if (moment === "check-out") return "Check-out";
@@ -430,6 +684,23 @@ export function isLoyaltyMember(guest: Guest, source: ShiftAction[]): boolean {
 }
 
 export type GuestStayFilter = "all" | "arriving" | "leaving" | "in-house";
+
+export function peopleCount(moment?: StayMoment): number {
+  if (!moment) return guests.length;
+  return guests.filter((guest) => guest.moment === moment).length;
+}
+
+/** Reservations for the day (hotel-wide). More guests than bookings when parties share a reservation. */
+export function reservationCount(moment: StayMoment): number {
+  if (moment === "check-in") return 6;
+  if (moment === "in-house") return 10;
+  return 4;
+}
+
+/** People with a profile at that stay moment — same count as Guest Profiles filters. */
+export function guestHeadcount(moment: StayMoment): number {
+  return peopleCount(moment);
+}
 
 export function guestsForFilter(filter: GuestStayFilter, source: Guest[] = guests): Guest[] {
   const moment =

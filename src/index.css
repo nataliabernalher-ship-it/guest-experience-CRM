@@ -425,6 +425,13 @@ h2 {
   gap: 24px;
 }
 
+.page-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
 .shift-corner {
   display: flex;
   flex-shrink: 0;
@@ -501,6 +508,12 @@ h2 {
   font-size: 16px;
 }
 
+.people-total {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
 .back-link {
   color: var(--ink);
   text-decoration: none;
@@ -527,7 +540,7 @@ h2 {
   grid-template-columns: minmax(0, 1fr) auto;
   align-content: start;
   column-gap: 8px;
-  min-height: 168px;
+  min-height: 148px;
   padding: 18px 14px 10px;
   color: inherit;
   text-decoration: none;
@@ -589,6 +602,18 @@ a.context-card.is-recovery:hover {
   min-width: 0;
 }
 
+.context-figures {
+  display: grid;
+  gap: 4px;
+  flex: none;
+}
+
+.context-people {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
 .context-total .context-label {
   min-width: 0;
 }
@@ -607,12 +632,7 @@ a.context-card.is-recovery:hover {
   grid-column: 1 / -1;
   align-content: start;
   gap: 8px;
-  margin-top: 40px;
-}
-
-.context-attention-title {
-  font-size: 13px;
-  font-weight: 700;
+  margin-top: 28px;
 }
 
 .priority-label,
@@ -635,8 +655,9 @@ a.context-card.is-recovery:hover {
 .context-breakdown {
   display: grid;
   gap: 4px;
-  color: var(--muted);
+  color: var(--ink);
   font-size: 12px;
+  font-weight: 600;
   line-height: 1.4;
 }
 

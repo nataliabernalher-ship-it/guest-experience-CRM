@@ -427,10 +427,25 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
       <header className="page-header">
-        <h1>
-          {listing.title}
-          {listingId === "check-ins" ? <span className="listing-date">{shiftDateLabel}</span> : null}
-        </h1>
+        {listingId === "check-ins" ? (
+          <div className="page-title-row">
+            <h1>{listing.title}</h1>
+            <p className="shift-corner">
+              <span>{shiftDateLabel}</span>
+            </p>
+          </div>
+        ) : (
+          <h1>{listing.title}</h1>
+        )}
+        {listingId === "check-ins" ? (
+          <p className="lede">These check-ins have the following opportunities to action.</p>
+        ) : null}
+        {listingId === "in-house" ? (
+          <p className="lede">These actions are still pending. Locate the guest.</p>
+        ) : null}
+        {listingId === "check-outs" ? (
+          <p className="lede">Before the guest leaves, take these actions.</p>
+        ) : null}
       </header>
       <ListingCard
         pending={pending}

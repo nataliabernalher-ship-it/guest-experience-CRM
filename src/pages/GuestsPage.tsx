@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { guestsForFilter, isLoyaltyMember, shiftDay, type Guest, type GuestStayFilter } from "../data/shift";
+import { guestsForFilter, isLoyaltyMember, peopleCount, shiftDay, type Guest, type GuestStayFilter } from "../data/shift";
 import { useShift } from "../state/ShiftState";
 
 const filters: { id: GuestStayFilter; label: string }[] = [
@@ -93,6 +93,7 @@ export function GuestsPage() {
     <div className="page" data-testid="guests-list">
       <header className="page-header">
         <h1>Guest Profiles</h1>
+        <p className="people-total">{peopleCount()} guests</p>
       </header>
       <section className="table-card">
         <div className="guest-toolbar">

@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import {
   compareActions,
   countForListing,
-  expectedOnDay,
   guestById,
+  guestHeadcount,
   returningGuests,
   type Guest,
   isPending,
@@ -12,6 +12,7 @@ import {
   listings,
   momentCategoryCounts,
   money,
+  reservationCount,
   shiftDateLabel,
 } from "../data/shift";
 import { useShift } from "../state/ShiftState";
@@ -112,6 +113,9 @@ export function Dashboard() {
         {stayListings.map((id) => {
           const listing = listings[id];
           const counts = momentCategoryCounts(id, pending);
+          const moment = listing.moment!;
+          const reservations = reservationCount(moment);
+          const guests = guestHeadcount(moment);
           return (
             <Link
               key={id}
@@ -121,11 +125,15 @@ export function Dashboard() {
             >
               <OpenArrow />
               <span className="context-total">
-                <span className="context-count">{expectedOnDay[id]}</span>
+                <span className="context-figures">
+                  <span className="context-count">{reservations}</span>
+                  <span className="context-people">
+                    {guests} {guests === 1 ? "guest" : "guests"}
+                  </span>
+                </span>
                 <span className="context-label">{listing.title}</span>
               </span>
               <span className="context-attention">
-                <span className="context-attention-title">Needs your attention</span>
                 <span className="context-breakdown">
                   <span>{counts.upselling} Upselling</span>
                   <span>{counts.loyalty} Loyalty</span>
