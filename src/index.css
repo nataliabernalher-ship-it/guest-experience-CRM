@@ -18,8 +18,7 @@
   box-sizing: border-box;
 }
 
-html:has([data-testid="guests-list"]),
-html:has([data-testid^="listing-"]) {
+html {
   scrollbar-gutter: stable;
 }
 
