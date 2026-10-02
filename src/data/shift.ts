@@ -8,6 +8,31 @@ export type StayMoment = "check-in" | "check-out" | "in-house";
 
 export type ActionStatus = "pending" | "done" | "rejected" | "solved" | "confirmed";
 
+export interface Companion {
+  name: string;
+  /** Si existe, el acompañante tiene ficha propia. */
+  guestId?: string;
+}
+
+export interface PastStay {
+  roomType: string;
+  from: string;
+  to: string;
+}
+
+export interface GuestNote {
+  text: string;
+  author: string;
+  date: string;
+}
+
+export interface PastRecord {
+  id: string;
+  kind: "incident" | "opportunity";
+  label: string;
+  when: string;
+}
+
 export interface Guest {
   id: string;
   name: string;
@@ -16,6 +41,19 @@ export interface Guest {
   /** Estancias anteriores a la actual. 0 significa primera visita. */
   previousStays: number;
   vip: boolean;
+  /** Inscrito en el programa de loyalty. */
+  loyaltyMember: boolean;
+  arrival: string;
+  departure: string;
+  partySize: number;
+  origin: string;
+  birthDate: string;
+  profession: string;
+  hobbies: string;
+  companions: Companion[];
+  stays: PastStay[];
+  notes: GuestNote[];
+  past: PastRecord[];
 }
 
 export interface ShiftAction {
@@ -93,16 +131,312 @@ export const categoryLabels: Record<Category, string> = {
 };
 
 export const guests: Guest[] = [
-  { id: "laura", name: "Laura Martín", room: "302", moment: "check-in", previousStays: 4, vip: true },
-  { id: "james", name: "James Okonkwo", room: "214", moment: "check-in", previousStays: 0, vip: false },
-  { id: "paul", name: "Paul Adeyemi", room: "108", moment: "check-in", previousStays: 0, vip: false },
-  { id: "elena", name: "Elena Varga", room: "221", moment: "check-out", previousStays: 3, vip: false },
-  { id: "amira", name: "Amira Hassan", room: "118", moment: "check-out", previousStays: 0, vip: false },
-  { id: "sofia", name: "Sofia Ricci", room: "305", moment: "in-house", previousStays: 2, vip: true },
-  { id: "tom", name: "Tom Becker", room: "510", moment: "in-house", previousStays: 0, vip: false },
-  { id: "kenji", name: "Kenji Sato", room: "418", moment: "in-house", previousStays: 6, vip: true },
-  { id: "nina", name: "Nina Kowalski", room: "330", moment: "in-house", previousStays: 1, vip: false },
+  {
+    id: "laura",
+    name: "Laura Martín",
+    room: "302",
+    moment: "check-in",
+    previousStays: 4,
+    vip: true,
+    loyaltyMember: false,
+    arrival: "30 Sep 2026",
+    departure: "4 Oct 2026",
+    partySize: 3,
+    origin: "Madrid",
+    birthDate: "14 March 1984",
+    profession: "Architect",
+    hobbies: "Contemporary art, cycling",
+    companions: [
+      { name: "Marta Lind", guestId: "marta" },
+      { name: "Anna Martín" },
+    ],
+    stays: [
+      { roomType: "Deluxe king", from: "30 Sep 2026", to: "4 Oct 2026" },
+      { roomType: "Junior suite", from: "2 May 2026", to: "6 May 2026" },
+      { roomType: "Deluxe king", from: "18 Nov 2025", to: "21 Nov 2025" },
+      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025" },
+      { roomType: "Deluxe king", from: "3 Feb 2025", to: "7 Feb 2025" },
+    ],
+    notes: [
+      { text: "Prefers a high floor and a quiet room.", author: "Reception", date: "2 May 2026" },
+      { text: "Asked for oat milk at breakfast last stay.", author: "Reception", date: "18 Nov 2025" },
+    ],
+    past: [
+      { id: "laura-past-spa", kind: "opportunity", label: "Spa afternoon", when: "May 2026" },
+      { id: "laura-past-pillow", kind: "incident", label: "Extra pillows", when: "Nov 2025" },
+      { id: "laura-past-late", kind: "opportunity", label: "Late check-out", when: "Aug 2025" },
+    ],
+  },
+  {
+    id: "james",
+    name: "James Okonkwo",
+    room: "214",
+    moment: "check-in",
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "30 Sep 2026",
+    departure: "2 Oct 2026",
+    partySize: 1,
+    origin: "Lagos",
+    birthDate: "3 June 1991",
+    profession: "Product manager",
+    hobbies: "Photography",
+    companions: [],
+    stays: [{ roomType: "Superior double", from: "30 Sep 2026", to: "2 Oct 2026" }],
+    notes: [{ text: "Prefers a late breakfast and a quiet table.", author: "Reception", date: "29 Sep 2026" }],
+    past: [],
+  },
+  {
+    id: "paul",
+    name: "Paul Adeyemi",
+    room: "108",
+    moment: "check-in",
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "30 Sep 2026",
+    departure: "5 Oct 2026",
+    partySize: 2,
+    origin: "London",
+    birthDate: "22 January 1988",
+    profession: "Journalist",
+    hobbies: "Jazz, long walks",
+    companions: [{ name: "David Adeyemi" }],
+    stays: [{ roomType: "Superior twin", from: "30 Sep 2026", to: "5 Oct 2026" }],
+    notes: [],
+    past: [],
+  },
+  {
+    id: "elena",
+    name: "Elena Varga",
+    room: "221",
+    moment: "check-out",
+    previousStays: 3,
+    vip: false,
+    loyaltyMember: true,
+    arrival: "26 Sep 2026",
+    departure: "30 Sep 2026",
+    partySize: 2,
+    origin: "Budapest",
+    birthDate: "9 September 1979",
+    profession: "Gallery owner",
+    hobbies: "Wine, design fairs",
+    companions: [{ name: "Andras Varga" }],
+    stays: [
+      { roomType: "Deluxe king", from: "26 Sep 2026", to: "30 Sep 2026" },
+      { roomType: "Deluxe king", from: "11 Apr 2026", to: "14 Apr 2026" },
+      { roomType: "Junior suite", from: "20 Oct 2025", to: "24 Oct 2025" },
+      { roomType: "Garden room", from: "2 Jun 2025", to: "6 Jun 2025" },
+    ],
+    notes: [{ text: "Does not use the minibar.", author: "Reception", date: "11 Apr 2026" }],
+    past: [
+      { id: "elena-past-noise", kind: "incident", label: "Noise from the corridor", when: "Apr 2026" },
+      { id: "elena-past-upgrade", kind: "opportunity", label: "Suite upgrade", when: "Oct 2025" },
+    ],
+  },
+  {
+    id: "amira",
+    name: "Amira Hassan",
+    room: "118",
+    moment: "check-out",
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "27 Sep 2026",
+    departure: "30 Sep 2026",
+    partySize: 1,
+    origin: "Cairo",
+    birthDate: "17 December 1994",
+    profession: "Physician",
+    hobbies: "Swimming",
+    companions: [],
+    stays: [{ roomType: "Superior double", from: "27 Sep 2026", to: "30 Sep 2026" }],
+    notes: [{ text: "Likes the pool first thing in the morning.", author: "Reception", date: "28 Sep 2026" }],
+    past: [],
+  },
+  {
+    id: "sofia",
+    name: "Sofia Ricci",
+    room: "305",
+    moment: "in-house",
+    previousStays: 2,
+    vip: true,
+    loyaltyMember: true,
+    arrival: "28 Sep 2026",
+    departure: "3 Oct 2026",
+    partySize: 2,
+    origin: "Milan",
+    birthDate: "5 May 1986",
+    profession: "Fashion editor",
+    hobbies: "Tennis, cooking",
+    companions: [{ name: "Luca Ricci" }],
+    stays: [
+      { roomType: "Junior suite", from: "28 Sep 2026", to: "3 Oct 2026" },
+      { roomType: "Junior suite", from: "14 Jan 2026", to: "18 Jan 2026" },
+      { roomType: "Deluxe king", from: "7 Sep 2025", to: "11 Sep 2025" },
+    ],
+    notes: [
+      { text: "Greets the team by name.", author: "Reception", date: "28 Sep 2026" },
+      { text: "Likes fashion magazines left on the desk.", author: "Reception", date: "14 Jan 2026" },
+    ],
+    past: [
+      { id: "sofia-past-ac", kind: "incident", label: "Air conditioning too warm", when: "Jan 2026" },
+      { id: "sofia-past-dinner", kind: "opportunity", label: "Restaurant reservation", when: "Sep 2025" },
+    ],
+  },
+  {
+    id: "tom",
+    name: "Tom Becker",
+    room: "510",
+    moment: "in-house",
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "29 Sep 2026",
+    departure: "2 Oct 2026",
+    partySize: 1,
+    origin: "Hamburg",
+    birthDate: "30 July 1990",
+    profession: "Engineer",
+    hobbies: "Running",
+    companions: [],
+    stays: [{ roomType: "Superior double", from: "29 Sep 2026", to: "2 Oct 2026" }],
+    notes: [],
+    past: [],
+  },
+  {
+    id: "kenji",
+    name: "Kenji Sato",
+    room: "418",
+    moment: "in-house",
+    previousStays: 6,
+    vip: true,
+    loyaltyMember: true,
+    arrival: "27 Sep 2026",
+    departure: "4 Oct 2026",
+    partySize: 2,
+    origin: "Kyoto",
+    birthDate: "1 October 1976",
+    profession: "University professor",
+    hobbies: "Calligraphy, tea",
+    companions: [{ name: "Yuki Sato" }],
+    stays: [
+      { roomType: "Deluxe king", from: "27 Sep 2026", to: "4 Oct 2026" },
+      { roomType: "Deluxe king", from: "4 Mar 2026", to: "10 Mar 2026" },
+      { roomType: "Junior suite", from: "16 Nov 2025", to: "20 Nov 2025" },
+      { roomType: "Deluxe king", from: "8 Jul 2025", to: "13 Jul 2025" },
+      { roomType: "Garden room", from: "22 Feb 2025", to: "26 Feb 2025" },
+      { roomType: "Deluxe king", from: "3 Oct 2024", to: "8 Oct 2024" },
+    ],
+    notes: [
+      { text: "Takes tea in the room after dinner.", author: "Reception", date: "27 Sep 2026" },
+      { text: "Always books a high floor.", author: "Reception", date: "4 Mar 2026" },
+    ],
+    past: [
+      { id: "kenji-past-water", kind: "incident", label: "Hot water slow to arrive", when: "Mar 2026" },
+      { id: "kenji-past-loyalty", kind: "opportunity", label: "Loyalty renewal", when: "Nov 2025" },
+      { id: "kenji-past-pillow", kind: "incident", label: "Firm pillow request", when: "Jul 2025" },
+      { id: "kenji-past-spa", kind: "opportunity", label: "Spa for two", when: "Feb 2025" },
+      { id: "kenji-past-cake", kind: "opportunity", label: "Birthday cake", when: "Oct 2024" },
+    ],
+  },
+  {
+    id: "nina",
+    name: "Nina Kowalski",
+    room: "330",
+    moment: "in-house",
+    previousStays: 1,
+    vip: false,
+    loyaltyMember: true,
+    arrival: "28 Sep 2026",
+    departure: "1 Oct 2026",
+    partySize: 2,
+    origin: "Krakow",
+    birthDate: "19 February 1992",
+    profession: "Translator",
+    hobbies: "Cinema",
+    companions: [{ name: "Piotr Kowalski" }],
+    stays: [
+      { roomType: "Superior double", from: "28 Sep 2026", to: "1 Oct 2026" },
+      { roomType: "Superior double", from: "12 Dec 2025", to: "15 Dec 2025" },
+    ],
+    notes: [{ text: "Reads in the lounge in the evening.", author: "Reception", date: "28 Sep 2026" }],
+    past: [{ id: "nina-past-safe", kind: "incident", label: "Room safe would not open", when: "Dec 2025" }],
+  },
+  {
+    id: "marta",
+    name: "Marta Lind",
+    room: "255",
+    moment: "in-house",
+    previousStays: 1,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "29 Sep 2026",
+    departure: "4 Oct 2026",
+    partySize: 1,
+    origin: "Stockholm",
+    birthDate: "11 August 1987",
+    profession: "Interior designer",
+    hobbies: "Ceramics, sailing",
+    companions: [{ name: "Laura Martín", guestId: "laura" }],
+    stays: [
+      { roomType: "Deluxe king", from: "29 Sep 2026", to: "4 Oct 2026" },
+      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025" },
+    ],
+    notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
+    past: [{ id: "marta-past-room", kind: "opportunity", label: "Adjoining rooms", when: "Aug 2025" }],
+  },
 ];
+
+export function stayMomentLabel(moment: StayMoment): string {
+  if (moment === "check-in") return "Check-in";
+  if (moment === "check-out") return "Check-out";
+  return "In-house";
+}
+
+export function listingForMoment(moment: StayMoment): ListingId {
+  if (moment === "check-in") return "check-ins";
+  if (moment === "check-out") return "check-outs";
+  return "in-house";
+}
+
+export const upsellServices = [
+  { id: "transfer", label: "Airport transfer", offer: "Offer airport transfer", value: 65 },
+  { id: "spa", label: "Spa massage", offer: "Offer a spa massage", value: 80 },
+  { id: "late", label: "Late check-out", offer: "Offer late check-out", value: 45 },
+] as const;
+
+export const experienceTypes = [
+  { id: "birthday", label: "Birthday detail" },
+  { id: "anniversary", label: "Anniversary detail" },
+  { id: "vip", label: "VIP welcome gift" },
+] as const;
+
+export const housekeepingOptions = [
+  { id: "notified", label: "Housekeeping notified" },
+  { id: "not-notified", label: "Housekeeping not notified" },
+] as const;
+
+export function isVipOrReturning(guest: Guest): boolean {
+  return guest.vip || guest.previousStays >= 1;
+}
+
+export function isLoyaltyMember(guest: Guest, source: ShiftAction[]): boolean {
+  if (guest.loyaltyMember) return true;
+  return source.some(
+    (action) => action.guestId === guest.id && action.category === "loyalty" && action.status === "done",
+  );
+}
+
+export type GuestStayFilter = "all" | "arriving" | "leaving" | "in-house";
+
+export function guestsForFilter(filter: GuestStayFilter, source: Guest[] = guests): Guest[] {
+  const moment =
+    filter === "arriving" ? "check-in" : filter === "leaving" ? "check-out" : filter === "in-house" ? "in-house" : null;
+  const list = moment ? source.filter((guest) => guest.moment === moment) : source;
+  return [...list].sort((a, b) => a.name.localeCompare(b.name));
+}
 
 export function returningGuests(source: Guest[] = guests): Guest[] {
   return source

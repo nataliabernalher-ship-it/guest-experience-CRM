@@ -1,8 +1,8 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
-  categoryLabels,
+  compareActions,
   guestById,
   guests,
   listings,
@@ -15,9 +15,17 @@ import {
   type Severity,
   type ShiftAction,
 } from "../data/shift";
+import { CategoryPill } from "../components/CategoryPill";
 import { useShift } from "../state/ShiftState";
 
 const completedTitle = "Sold, Signed up, Done";
+
+const severityFilters: { id: "all" | Severity; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "urgent", label: "Urgent" },
+  { id: "normal", label: "Normal" },
+  { id: "low", label: "Low" },
+];
 
 function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -55,6 +63,26 @@ function openRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
   return actionsForListing(listingId, actions)
     .filter((action) => action.status === "pending")
     .map((action) => ({ guest: guestById(action.guestId), action }));
+}
+
+function matchesSeverity(action: ShiftAction, severity: "all" | Severity): boolean {
+  return severity === "all" || action.severity === severity;
+}
+
+function recoveryRows(actions: ShiftAction[], status: ActionStatus, severity: "all" | Severity): Row[] {
+  return actionsForListing("recovery", actions)
+    .filter((action) => action.status === status && matchesSeverity(action, severity))
+    .map((action) => ({ guest: guestById(action.guestId), action }));
+}
+
+function stayIncidentRows(listingId: ListingId, actions: ShiftAction[], status: "pending" | "solved"): Row[] {
+  const moment = listings[listingId].moment;
+  if (moment !== "check-out" && moment !== "in-house") return [];
+  return actions
+    .filter((action) => action.category === "recovery" && action.status === status)
+    .map((action) => ({ guest: guestById(action.guestId), action }))
+    .filter((row) => row.guest.moment === moment)
+    .sort((a, b) => compareActions(a.action, b.action));
 }
 
 function settledRows(listingId: ListingId, actions: ShiftAction[], status: ActionStatus): Row[] {
@@ -155,9 +183,7 @@ function ListingRows({
       <td>{guest.room}</td>
       <td className="cell-strong">{action.label}</td>
       <td>
-        <span className="category-pill" data-category={action.category}>
-          {categoryLabels[action.category]}
-        </span>
+        <CategoryPill category={action.category} />
       </td>
       <td className="cell-value">
         {action.category === "upselling" && action.value != null ? money.format(action.value) : null}
@@ -203,7 +229,17 @@ function ListingCard({
     <section className="table-card" data-testid="listing-open">
       {tools}
       {hasRows ? (
-        <table className="listing-table">
+        <table className={isRecovery ? "listing-table is-recovery" : "listing-table"}>
+          <colgroup>
+            <col className="col-guest" />
+            <col className="col-room" />
+            <col className="col-action" />
+            <col className="col-category" />
+            <col className="col-value" />
+            {isRecovery ? <col className="col-severity" /> : null}
+            <col className="col-status" />
+            <col className="col-mark" />
+          </colgroup>
           <thead>
             <tr>
               <th>Guest</th>
@@ -231,61 +267,95 @@ function ListingCard({
           </tbody>
         </table>
       ) : (
-        <p className="listing-empty">No pending actions.</p>
+        <p className="listing-empty">{isRecovery ? "No incidents." : "No pending actions."}</p>
       )}
     </section>
   );
 }
 
-function AddIncident({ onAdd }: { onAdd: (incident: { guestId: string; label: string; severity: Severity }) => void }) {
-  const [open, setOpen] = useState(false);
+function IncidentDrawer({
+  onClose,
+  onAdd,
+}: {
+  onClose: () => void;
+  onAdd: (incident: { guestId: string; label: string; severity: Severity }) => void;
+}) {
+  const [query, setQuery] = useState("");
   const [guestId, setGuestId] = useState("");
   const [labelText, setLabelText] = useState("");
   const [severity, setSeverity] = useState<Severity>("normal");
 
-  function close() {
-    setOpen(false);
-    setGuestId("");
-    setLabelText("");
-    setSeverity("normal");
+  const guest = guests.find((item) => item.id === guestId);
+  const needle = query.trim().toLowerCase();
+  const matches = needle
+    ? guests
+        .filter((item) => item.name.toLowerCase().includes(needle) || item.room.includes(needle))
+        .slice(0, 6)
+    : [];
+
+  function save() {
+    if (!guest || !labelText.trim()) return;
+    onAdd({ guestId: guest.id, label: labelText, severity });
+    onClose();
   }
 
   return (
-    <div className="listing-tools">
-      {open ? (
-        <form
-          className="incident-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!guestId || !labelText.trim()) return;
-            onAdd({ guestId, label: labelText, severity });
-            close();
-          }}
-        >
-          <select
-            className="status-select"
-            aria-label="Guest"
-            value={guestId}
-            onChange={(event) => setGuestId(event.target.value)}
-            required
-          >
-            <option value="" disabled>
-              Guest
-            </option>
-            {guests.map((guest) => (
-              <option key={guest.id} value={guest.id}>
-                {guest.name} · Room {guest.room}
-              </option>
+    <div className="drawer-root">
+      <button type="button" className="drawer-backdrop" aria-label="Close" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-labelledby="incident-title">
+        <header className="drawer-head">
+          <h2 id="incident-title">Open incident</h2>
+          <button type="button" className="incident-cancel" onClick={onClose}>
+            Cancel
+          </button>
+        </header>
+        <label className="drawer-field">
+          Guest
+          <input
+            className="incident-input"
+            aria-label="Search guests"
+            placeholder="Search by name or room"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setGuestId("");
+            }}
+          />
+        </label>
+        {!guest && matches.length > 0 ? (
+          <ul className="suggest">
+            {matches.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuestId(item.id);
+                    setQuery(item.name);
+                  }}
+                >
+                  {item.name}
+                  <span>Room {item.room}</span>
+                </button>
+              </li>
             ))}
-          </select>
+          </ul>
+        ) : null}
+        <label className="drawer-field">
+          Room
+          <input className="incident-input" readOnly value={guest?.room ?? ""} placeholder="Room" />
+        </label>
+        <label className="drawer-field">
+          Incident
           <input
             className="incident-input"
             aria-label="Incident"
             placeholder="What happened"
             value={labelText}
             onChange={(event) => setLabelText(event.target.value)}
-            required
           />
+        </label>
+        <label className="drawer-field">
+          Severity
           <select
             className="status-select"
             aria-label="Severity"
@@ -296,18 +366,11 @@ function AddIncident({ onAdd }: { onAdd: (incident: { guestId: string; label: st
             <option value="normal">Normal</option>
             <option value="low">Low</option>
           </select>
-          <button type="submit" className="add-incident">
-            Add
-          </button>
-          <button type="button" className="incident-cancel" onClick={close}>
-            Cancel
-          </button>
-        </form>
-      ) : (
-        <button type="button" className="add-incident" onClick={() => setOpen(true)}>
-          Add incident
+        </label>
+        <button type="button" className="add-incident" disabled={!guest || !labelText.trim()} onClick={save}>
+          Open incident
         </button>
-      )}
+      </aside>
     </div>
   );
 }
@@ -315,18 +378,22 @@ function AddIncident({ onAdd }: { onAdd: (incident: { guestId: string; label: st
 export function ListingPage({ listingId }: { listingId: ListingId }) {
   const { actions, setActionStatus, addIncident } = useShift();
   const [params] = useSearchParams();
+  const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
-  const pending = openRows(listingId, actions);
+  const pending = isRecovery
+    ? recoveryRows(actions, "pending", severity)
+    : [...openRows(listingId, actions), ...stayIncidentRows(listingId, actions, "pending")].sort((a, b) =>
+        compareActions(a.action, b.action),
+      );
   const groups = isRecovery
-    ? [
-        { title: "Solved", rows: settledRows(listingId, actions, "solved") },
-        { title: "Confirmed with guest", rows: settledRows(listingId, actions, "confirmed") },
-      ]
+    ? [{ title: "Solved", rows: recoveryRows(actions, "solved", severity) }]
     : [
         { title: completedTitle, rows: settledRows(listingId, actions, "done") },
         { title: "Rejected", rows: settledRows(listingId, actions, "rejected") },
+        { title: "Solved", rows: stayIncidentRows(listingId, actions, "solved") },
       ];
 
   useEffect(() => {
@@ -338,21 +405,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
       <header className="page-header">
-        {isRecovery ? null : (
-          <Link to="/" className="listing-back">
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path
-                d="M11 7H3M6 3.5 2.5 7 6 10.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Back to dashboard
-          </Link>
-        )}
         <h1>
           {listing.title}
           {listingId === "check-ins" ? <span className="listing-date">{shiftDateLabel}</span> : null}
@@ -364,8 +416,33 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         isRecovery={isRecovery}
         focus={focus}
         onStatus={setActionStatus}
-        tools={isRecovery ? <AddIncident onAdd={addIncident} /> : undefined}
+        tools={
+          isRecovery ? (
+            <div className="listing-tools">
+              <div className="guest-tags" role="tablist" aria-label="Severity">
+                {severityFilters.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={severity === item.id}
+                    className={severity === item.id ? "guest-tag is-active" : "guest-tag"}
+                    onClick={() => setSeverity(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <button type="button" className="add-incident" onClick={() => setDrawerOpen(true)}>
+                Open incident
+              </button>
+            </div>
+          ) : undefined
+        }
       />
+      {isRecovery && drawerOpen ? (
+        <IncidentDrawer onClose={() => setDrawerOpen(false)} onAdd={addIncident} />
+      ) : null}
     </div>
   );
 }

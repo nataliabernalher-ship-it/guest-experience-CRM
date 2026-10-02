@@ -3,7 +3,8 @@ import { Shell } from "./components/Shell";
 import { Dashboard } from "./pages/Dashboard";
 import { ListingPage } from "./pages/ListingPage";
 import { GuestProfile } from "./pages/GuestProfile";
-import { LaterPage } from "./pages/LaterPage";
+import { GuestsPage } from "./pages/GuestsPage";
+import { OpportunitiesPage } from "./pages/OpportunitiesPage";
 
 export function App() {
   return (
@@ -14,9 +15,9 @@ export function App() {
         <Route path="check-outs" element={<ListingPage listingId="check-outs" />} />
         <Route path="in-house" element={<ListingPage listingId="in-house" />} />
         <Route path="recovery" element={<ListingPage listingId="recovery" />} />
-        <Route path="opportunities" element={<LaterPage title="Opportunities" />} />
+        <Route path="opportunities" element={<OpportunitiesPage />} />
         <Route path="guests/:guestId" element={<GuestProfile />} />
-        <Route path="guests" element={<LaterPage title="Guests" />} />
+        <Route path="guests" element={<GuestsPage />} />
       </Route>
     </Routes>
   );

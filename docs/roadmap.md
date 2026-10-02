@@ -57,13 +57,58 @@ Un solo estado. Resolver en cualquier listado actualiza el Dashboard.
 
 **Comprobación.** Vender un spa de precio conocido aumenta Upselling revenue en el Dashboard al volver. Rechazar una alta no aumenta Loyalty sign-ups. Un huésped con spa y loyalty resuelto solo en spa sigue en Needs attention.
 
+### 6. Guests, listado y ficha
+
+El listado más largo de huéspedes. No resuelve acciones.
+
+- Tags arriba del listado: `All`, `Arriving today`, `Leaving today`, `In house`.
+- Cada fila: nombre, fechas de estancia, habitación, número de personas, columna VIP and returning (`Yes` o `No`) y `View profile`.
+- `View profile` abre la ficha a pantalla completa. Arriba, un enlace vuelve al listado de Guests, no al Dashboard.
+- Cuatro cuadrantes:
+  - Arriba izquierda: datos personales. Avatar, nombre, lugar de origen, fecha de nacimiento, acompañantes (el nombre enlaza a su ficha si también está registrado), profesión y aficiones.
+  - Arriba derecha, con scroll: incidencias y opportunities abiertas y cerradas, también las pasadas.
+  - Abajo izquierda, con scroll: historial de estancias, con tipo de habitación y fechas.
+  - Abajo derecha: anotaciones sobre el huésped. En este paso se leen; no se crean ni se editan.
+
+**Comprobación.** `All` muestra a todos. `Arriving today`, `Leaving today` e `In house` dejan solo ese momento. Un acompañante con ficha abre su perfil; uno sin ficha no es un enlace. Los cuadrantes de incidencias e historial hacen scroll dentro de su caja. Volver regresa al listado, con el tag que estaba seleccionado.
+
+### 7. Opportunities
+
+Listado de oportunidades que el sistema ya ha generado. No incluye Recovery.
+
+- Loyalty: el huésped no está en el programa y se le invita.
+- Guest Experience: cumpleaños, aniversario o bienvenida VIP.
+- Upselling: el huésped puede contratar un servicio.
+- Columnas de venta solo en Upselling: número de personas, valor unitario y valor total (personas × precio). En Loyalty y Guest Experience esas tres columnas son un guión.
+- Botón para que recepción añada una oportunidad a mano. Abre un drawer por la derecha.
+  - Buscador de huésped con autocompletado del nombre. Al elegirlo se rellenan la habitación y el momento (check-in, check-out o in-house).
+  - Upselling: elegir servicio.
+  - Guest Experience: tipo, y si housekeeping está avisado o no.
+  - Loyalty: sin campos extra.
+- La oportunidad nueva queda pendiente y aparece también en el listado del momento de la estancia, donde ya se resuelve.
+
+**Comprobación.** El listado muestra las oportunidades de ejemplo y ninguna incidencia. Un spa enseña personas, precio y total; una invitación al programa y un detalle de cumpleaños llevan guión en esas columnas. El drawer rellena habitación y momento al elegir al huésped, y guardar crea la fila.
+
+### 8. Recovery
+
+Listado de incidencias abiertas. Siguen visibles en Pending y Solved. Solo `Confirmed with guest` las quita del listado.
+
+- Tags a la izquierda, como en Guests: `All`, `Urgent`, `Normal` y `Low`. Filtran tanto las pendientes como las Solved.
+- Botón `Open incident` a la derecha. Abre un drawer por la derecha.
+  - Buscador de huésped por nombre o habitación. Al elegirlo se rellenan el nombre y la habitación.
+  - Texto de la incidencia y severidad.
+- La incidencia nueva queda `Pending`.
+- La misma incidencia aparece en In-house o en Check-outs, según el momento del huésped. No aparece en Check-ins.
+- Confirmarla con el huésped la quita de Recovery y de ese listado de estancia a la vez.
+
+**Comprobación.** `Urgent` deja solo las urgentes, incluidas las Solved de esa severidad. `Confirmed with guest` quita la fila. Una incidencia de un huésped en casa se ve en In-house y en Recovery; una de salida, en Check-outs. Ninguna sale en Check-ins. El drawer rellena la habitación al elegir el nombre o el número.
+
 ## Después — fuera de esta fase
 
 Sigue siendo producto, y no entra en la v1:
 
-- Tabla de Opportunities, filtros y drawer.
-- Guests como lista operativa, búsqueda y Guest Profile a página completa.
-- Notas, crear una oportunidad a mano y crear un Recovery a mano.
+- Búsqueda de Guests.
+- Escribir notas nuevas.
 - Drawer de Recovery: comentarios, historial y cierre con `Confirmed with guest`.
 - Llegada real del PMS y el bloque *Why this was suggested* / nota original. En la v1 las oportunidades nacen ya creadas.
 - Caducidad automática de `Pending` a `Not completed`.
