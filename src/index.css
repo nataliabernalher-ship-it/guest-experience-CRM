@@ -1145,8 +1145,8 @@ a.context-card.is-recovery:hover {
 }
 
 .guest-tag.is-active {
-  border-color: var(--accent);
-  background: var(--accent);
+  border-color: var(--ink);
+  background: var(--ink);
   color: #fff;
 }
 

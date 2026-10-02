@@ -446,6 +446,9 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         {listingId === "check-outs" ? (
           <p className="lede">Before the guest leaves, take these actions.</p>
         ) : null}
+        {listingId === "recovery" ? (
+          <p className="lede">Open incidents that need to be resolved.</p>
+        ) : null}
       </header>
       <ListingCard
         pending={pending}
