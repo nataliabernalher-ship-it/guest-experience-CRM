@@ -671,7 +671,7 @@ a.context-card.is-recovery:hover {
 
 .priority-row {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 88px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
   padding: 12px 12px;
@@ -709,6 +709,16 @@ a.context-card.is-recovery:hover {
 
 .priority-label {
   font-size: 14px;
+}
+
+.incident-status {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.incident-status.is-advanced {
+  color: var(--ink);
 }
 
 .results {

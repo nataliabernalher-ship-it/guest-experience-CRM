@@ -40,6 +40,7 @@ function positiveLabel(category: Category): string {
 
 function sectionTitle(action: ShiftAction): string {
   if (action.status === "rejected") return "Rejected";
+  if (action.status === "notified") return "Notified";
   if (action.status === "solved") return "Solved";
   if (action.status === "confirmed") return "Confirmed with guest";
   return positiveLabel(action.category);
@@ -75,7 +76,7 @@ function recoveryRows(actions: ShiftAction[], status: ActionStatus, severity: "a
     .map((action) => ({ guest: guestById(action.guestId), action }));
 }
 
-function stayIncidentRows(listingId: ListingId, actions: ShiftAction[], status: "pending" | "solved"): Row[] {
+function stayIncidentRows(listingId: ListingId, actions: ShiftAction[], status: "pending" | "notified" | "solved"): Row[] {
   const moment = listings[listingId].moment;
   if (moment !== "check-out" && moment !== "in-house") return [];
   return actions
@@ -124,10 +125,11 @@ function MarkStatus({
         value={action.status}
         onChange={(event) => {
           const next = event.target.value;
-          if (next === "pending" || next === "solved" || next === "confirmed") onStatus(action.id, next);
+          if (next === "pending" || next === "notified" || next === "solved" || next === "confirmed") onStatus(action.id, next);
         }}
       >
         <option value="pending">Pending</option>
+        <option value="notified">Notified</option>
         <option value="solved">Solved</option>
         <option value="confirmed">Confirmed with guest</option>
       </select>
@@ -405,10 +407,14 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         compareActions(a.action, b.action),
       );
   const groups = isRecovery
-    ? [{ title: "Solved", rows: recoveryRows(actions, "solved", severity) }]
+    ? [
+        { title: "Notified", rows: recoveryRows(actions, "notified", severity) },
+        { title: "Solved", rows: recoveryRows(actions, "solved", severity) },
+      ]
     : [
         { title: completedTitle, rows: settledRows(listingId, actions, "done") },
         { title: "Rejected", rows: settledRows(listingId, actions, "rejected") },
+        { title: "Notified", rows: stayIncidentRows(listingId, actions, "notified") },
         { title: "Solved", rows: stayIncidentRows(listingId, actions, "solved") },
       ];
 

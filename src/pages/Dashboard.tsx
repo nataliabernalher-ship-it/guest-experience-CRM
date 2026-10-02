@@ -90,7 +90,8 @@ export function Dashboard() {
   const incidents = actions
     .filter(
       (action) =>
-        action.category === "recovery" && (action.status === "pending" || action.status === "solved"),
+        action.category === "recovery" &&
+        (action.status === "pending" || action.status === "notified" || action.status === "solved"),
     )
     .sort(compareActions);
 
@@ -168,6 +169,9 @@ export function Dashboard() {
                       <span className="priority-meta">
                         {guest.name} · Room {guest.room}
                       </span>
+                    </span>
+                    <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
+                      {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
                     </span>
                   </Link>
                 </li>

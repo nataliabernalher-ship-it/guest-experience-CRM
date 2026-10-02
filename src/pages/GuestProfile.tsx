@@ -18,7 +18,7 @@ function initials(name: string): string {
 }
 
 function isOpen(action: ShiftAction): boolean {
-  return action.status === "pending" || action.status === "solved";
+  return action.status === "pending" || action.status === "notified" || action.status === "solved";
 }
 
 export function GuestProfile() {
