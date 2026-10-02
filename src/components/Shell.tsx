@@ -10,8 +10,8 @@ const navGroups = [
   [
     { to: "/opportunities", label: "Opportunities", end: false },
     { to: "/recovery", label: "Recovery", end: false },
-    { to: "/guests", label: "Guest Profiles", end: false },
   ],
+  [{ to: "/guests", label: "Guest Profiles", end: false }],
 ];
 
 export function Shell() {

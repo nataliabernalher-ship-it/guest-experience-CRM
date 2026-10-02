@@ -39,6 +39,7 @@ function saleCell(action: ShiftAction, amount: number | null) {
 function positiveLabel(category: Category): string {
   if (category === "upselling") return "Sold";
   if (category === "loyalty") return "Signed up";
+  if (category === "guest-experience") return "Notified";
   return "Done";
 }
 
@@ -95,6 +96,18 @@ function OpportunityRows({
       <td>
         {settled ? (
           <span className="settled-label">{action.status === "rejected" ? "Rejected" : positiveLabel(action.category)}</span>
+        ) : action.category === "guest-experience" ? (
+          <select
+            className="status-select"
+            aria-label="Mark the status"
+            value="pending"
+            onChange={(event) => {
+              if (event.target.value === "done") onStatus(action.id, "done");
+            }}
+          >
+            <option value="pending">Pending</option>
+            <option value="done">Notified</option>
+          </select>
         ) : (
           <select
             className="status-select"
@@ -198,7 +211,7 @@ export function OpportunitiesPage() {
                 {done.length > 0 ? (
                   <>
                     <tr className="listing-group">
-                      <th colSpan={9}>Sold, Signed up, Done</th>
+                      <th colSpan={9}>Sold, Signed up, Notified</th>
                     </tr>
                     <OpportunityRows rows={done} settled onStatus={setActionStatus} />
                   </>

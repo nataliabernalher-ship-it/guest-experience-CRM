@@ -18,7 +18,7 @@ import {
 import { CategoryPill } from "../components/CategoryPill";
 import { useShift } from "../state/ShiftState";
 
-const completedTitle = "Sold, Signed up, Done";
+const completedTitle = "Sold, Signed up, Notified";
 
 const severityFilters: { id: "all" | Severity; label: string }[] = [
   { id: "all", label: "All" },
@@ -34,7 +34,7 @@ function label(value: string): string {
 function positiveLabel(category: Category): string {
   if (category === "upselling") return "Sold";
   if (category === "loyalty") return "Signed up";
-  if (category === "guest-experience") return "Done";
+  if (category === "guest-experience") return "Notified";
   return "Solved";
 }
 
@@ -130,6 +130,22 @@ function MarkStatus({
         <option value="pending">Pending</option>
         <option value="solved">Solved</option>
         <option value="confirmed">Confirmed with guest</option>
+      </select>
+    );
+  }
+
+  if (action.category === "guest-experience") {
+    return (
+      <select
+        className="status-select"
+        aria-label="Mark the status"
+        value="pending"
+        onChange={(event) => {
+          if (event.target.value === "done") onStatus(action.id, "done");
+        }}
+      >
+        <option value="pending">Pending</option>
+        <option value="done">Notified</option>
       </select>
     );
   }
