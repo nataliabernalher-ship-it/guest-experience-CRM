@@ -113,7 +113,6 @@ export function Dashboard() {
               className="context-card"
               data-testid={`context-${id}`}
             >
-              <OpenArrow />
               <span className="context-total">
                 <span className="context-figures">
                   <span className="context-count">{reservations}</span>

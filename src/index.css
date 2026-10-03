@@ -268,22 +268,22 @@ h2 {
 }
 
 .board-side .table-card {
-  flex: none;
-  height: calc((100% - 18px) * 2 / 3);
+  flex: 1;
+  height: auto;
   min-height: 0;
 }
 
 .board-side .results {
   flex: none;
-  height: calc((100% - 18px) / 3);
+  height: auto;
   min-height: 0;
   margin-top: 0;
-  padding: 8px 8px 12px;
-  gap: 8px;
+  padding: 14px 10px 14px;
+  gap: 12px;
   overflow: hidden;
-  align-content: stretch;
+  align-content: start;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
   background: linear-gradient(180deg, #2c2c2c 0%, #151515 100%);
   border-color: #0f0f0f;
   color: #fff;
@@ -297,7 +297,7 @@ h2 {
 
 .board-side .results-head {
   grid-column: 1 / -1;
-  padding: 4px 8px 0;
+  padding: 2px 8px 0;
 }
 
 .board-side .results-head h2 {
@@ -316,11 +316,11 @@ h2 {
 .board-side .result {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 2px;
   min-width: 0;
   min-height: 0;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border-radius: 12px;
   background: #333333;
 }
@@ -358,7 +358,7 @@ h2 {
 
 .vip-list {
   margin: 0;
-  padding: 4px 8px 8px;
+  padding: 0 8px 8px;
   list-style: none;
 }
 
@@ -366,14 +366,15 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 8px;
-  border-radius: 12px;
+  padding: 16px 14px;
+  border-top: 1px solid #f2f2f2;
+  border-radius: 0;
   color: inherit;
   text-decoration: none;
 }
 
 .vip-row:hover {
-  background: rgba(21, 21, 21, 0.04);
+  background: #f7f7f7;
 }
 
 .vip-copy {
@@ -636,10 +637,10 @@ a.context-card.is-recovery:hover {
 
 .context-total {
   display: flex;
-  grid-column: 1;
+  grid-column: 1 / -1;
   grid-row: 1;
   align-items: baseline;
-  gap: 12px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -736,14 +737,15 @@ a.context-card.is-recovery:hover {
   grid-template-columns: 88px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
-  padding: 12px 12px;
-  border-radius: 16px;
+  padding: 16px 14px;
+  border-top: 1px solid #f2f2f2;
+  border-radius: 0;
   color: inherit;
   text-decoration: none;
 }
 
 .priority-row:hover {
-  background: #f5f5f5;
+  background: #f7f7f7;
 }
 
 .severity {
