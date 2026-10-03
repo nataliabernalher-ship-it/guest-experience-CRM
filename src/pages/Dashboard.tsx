@@ -114,13 +114,11 @@ export function Dashboard() {
               data-testid={`context-${id}`}
             >
               <span className="context-total">
-                <span className="context-figures">
-                  <span className="context-count">{reservations}</span>
-                  <span className="context-people">
-                    {guests} {guests === 1 ? "guest" : "guests"}
-                  </span>
-                </span>
+                <span className="context-count">{reservations}</span>
                 <span className="context-label">{listing.title}</span>
+                <span className="context-people">
+                  {guests} {guests === 1 ? "guest" : "guests"}
+                </span>
               </span>
               <span className="context-attention">
                 <span className="context-breakdown">
