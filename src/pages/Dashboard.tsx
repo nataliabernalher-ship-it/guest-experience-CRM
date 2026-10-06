@@ -38,10 +38,14 @@ function GuestMark({ guest }: { guest: Guest }) {
   return <span className="guest-none">–</span>;
 }
 
-function opportunityForGuest(guestId: string, source: ShiftAction[]): ShiftAction | undefined {
-  const forGuest = source.filter(
+function checkInActionsForGuest(guestId: string, source: ShiftAction[]): ShiftAction[] {
+  return source.filter(
     (action) => action.guestId === guestId && action.listing === "check-ins" && action.category !== "recovery",
   );
+}
+
+function opportunityForGuest(guestId: string, source: ShiftAction[]): ShiftAction | undefined {
+  const forGuest = checkInActionsForGuest(guestId, source);
   return forGuest.find((action) => action.status === "pending") ?? forGuest[0];
 }
 
@@ -75,7 +79,9 @@ export function Dashboard() {
   const { actions } = useShift();
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const recoveryCount = countForListing("recovery", actions);
-  const checkInGuests = guests.filter((guest) => guest.moment === "check-in");
+  const checkInGuests = guests.filter(
+    (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
+  );
   const incidents = actions
     .filter(
       (action) =>
@@ -135,7 +141,7 @@ export function Dashboard() {
       <div className="board">
         <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
           <header className="table-card-head">
-            <h2 id="checkins-heading">Today&apos;s check-ins</h2>
+            <h2 id="checkins-heading">Today check-in with actions</h2>
           </header>
           <ul className="vip-list board-scroll">
             {checkInGuests.map((guest) => {
