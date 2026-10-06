@@ -290,9 +290,9 @@ h2 {
   align-content: start;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   grid-template-rows: auto auto;
-  background: linear-gradient(180deg, #2c2c2c 0%, #151515 100%);
-  border-color: #0f0f0f;
-  color: #fff;
+  background: var(--surface-raised);
+  border-color: rgba(21, 21, 21, 0.08);
+  color: var(--ink);
 }
 
 .board-side .results-head {
@@ -307,10 +307,13 @@ h2 {
   letter-spacing: -0.03em;
   line-height: 1.2;
   white-space: nowrap;
+  color: var(--ink);
 }
 
 .board-side .results .result-label {
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
 }
 
 .board-side .result {
@@ -321,18 +324,15 @@ h2 {
   min-width: 0;
   min-height: 0;
   padding: 8px 10px;
+  border: 1px solid rgba(21, 21, 21, 0.06);
   border-radius: 12px;
-  background: #333333;
+  background: #f7f8f7;
 }
 
 .board-side .result-value {
   font-size: 18px;
   line-height: 1;
-}
-
-.board-side .results .result-label {
-  font-size: 12px;
-  line-height: 1.2;
+  color: var(--ink);
 }
 
 .board-side .result-figure {
@@ -667,7 +667,7 @@ a.context-card.is-recovery:hover {
 }
 
 .context-label {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 700;
 }
 
