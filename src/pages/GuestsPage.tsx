@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { guestsForFilter, isLoyaltyMember, peopleCount, shiftDay, type Guest, type GuestStayFilter } from "../data/shift";
 import { useShift } from "../state/ShiftState";
 
@@ -186,12 +186,12 @@ export function GuestsPage() {
                   }}
                 >
                   <td>
-                    <span className="guest-cell">
+                    <Link to={href} className="guest-cell guest-link" onClick={(event) => event.stopPropagation()}>
                       <span className="avatar" aria-hidden="true">
                         {initials(guest.name)}
                       </span>
                       <span className="cell-strong">{guest.name}</span>
-                    </span>
+                    </Link>
                   </td>
                   <td className="guest-dates">
                     {guest.arrival} – {guest.departure}

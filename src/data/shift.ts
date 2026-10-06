@@ -69,6 +69,19 @@ export interface ShiftAction {
   /** Importe estimado en euros. Solo upselling. */
   value?: number;
   status: ActionStatus;
+  /** Recovery: detalle largo de la incidencia. */
+  description?: string;
+  createdAt?: string;
+  notifiedAt?: string;
+  solvedAt?: string;
+  confirmedAt?: string;
+  history?: IncidentHistoryEntry[];
+}
+
+export interface IncidentHistoryEntry {
+  status: ActionStatus;
+  at: string;
+  note: string;
 }
 
 export interface Listing {
@@ -80,6 +93,29 @@ export interface Listing {
 }
 
 export const shiftDay = new Date(2026, 8, 30);
+
+export function shiftDateTime(hour: number, minute: number): string {
+  return new Date(2026, 8, 30, hour, minute, 0).toISOString();
+}
+
+export function formatIncidentWhen(value?: string): string {
+  if (!value) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+export function incidentHistoryNote(status: ActionStatus): string {
+  if (status === "notified") return "Department notified";
+  if (status === "solved") return "Marked as solved";
+  if (status === "confirmed") return "Confirmed with guest";
+  return "Incident opened";
+}
 
 export const last7Days = {
   upsellingRevenue: { value: 840, direction: "up" },
@@ -721,50 +757,65 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     guestId: "sofia",
     category: "recovery",
     label: "Follow up on the air conditioning",
+    description: "Guest reported the room is too warm and the air conditioning does not cool properly.",
     listing: "recovery",
     severity: "urgent",
     proximity: 3,
     timingLabel: "Later today",
+    createdAt: shiftDateTime(7, 12),
+    history: [{ status: "pending", at: shiftDateTime(7, 12), note: "Incident opened" }],
   },
   {
     id: "amira-noise",
     guestId: "amira",
     category: "recovery",
     label: "Follow up on the noise complaint",
+    description: "Guest asked reception to address noise from the corridor during the night.",
     listing: "recovery",
     severity: "normal",
     proximity: 0,
     timingLabel: "This morning",
+    createdAt: shiftDateTime(6, 40),
+    history: [{ status: "pending", at: shiftDateTime(6, 40), note: "Incident opened" }],
   },
   {
     id: "tom-minibar",
     guestId: "tom",
     category: "recovery",
     label: "Follow up on the minibar charge",
+    description: "Guest disputes a minibar charge that appears on the folio.",
     listing: "recovery",
     severity: "low",
     proximity: 0,
     timingLabel: "This morning",
+    createdAt: shiftDateTime(8, 5),
+    history: [{ status: "pending", at: shiftDateTime(8, 5), note: "Incident opened" }],
   },
   {
     id: "kenji-water",
     guestId: "kenji",
     category: "recovery",
     label: "Follow up on the hot water",
+    description: "Hot water takes a long time to arrive in the bathroom.",
     listing: "recovery",
     severity: "normal",
     proximity: 1,
     timingLabel: "Today",
+    createdAt: shiftDateTime(9, 20),
+    history: [{ status: "pending", at: shiftDateTime(9, 20), note: "Incident opened" }],
   },
   {
     id: "nina-safe",
     guestId: "nina",
     category: "recovery",
     label: "Follow up on the room safe",
+    description: "The room safe would not open after the guest entered the code.",
     listing: "recovery",
     severity: "low",
     proximity: 2,
     timingLabel: "Today",
+    createdAt: shiftDateTime(10, 15),
+    history: [{ status: "pending", at: shiftDateTime(10, 15), note: "Incident opened" }],
   },
   {
     id: "james-transfer",

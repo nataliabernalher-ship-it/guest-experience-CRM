@@ -102,7 +102,6 @@ h2 {
 .brand-note,
 .eyebrow,
 .lede,
-.context-unit,
 .category-label,
 .priority-meta,
 .result-label,
@@ -255,10 +254,29 @@ h2 {
   height: 100%;
 }
 
-.board-side .table-card {
+.board > .table-card.is-checkins {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin-top: 0;
+}
+
+.board > .table-card.is-checkins .vip-list {
+  flex: 1;
+  min-height: 0;
+}
+
+.board-side .table-card,
+.board-side .panel {
   flex: 1;
   height: auto;
   min-height: 0;
+}
+
+.board-side .panel {
+  display: flex;
+  flex-direction: column;
 }
 
 .board-side .results {
@@ -355,8 +373,40 @@ h2 {
   text-decoration: none;
 }
 
+.vip-row.is-checkin {
+  gap: 10px;
+}
+
 .vip-row:hover {
   background: #f7f7f7;
+}
+
+.checkins-foot {
+  flex: none;
+  padding: 10px 14px 14px;
+}
+
+.view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f6f5 100%);
+  box-shadow:
+    0 1px 1px rgba(21, 21, 21, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.view-all:hover {
+  border-color: rgba(21, 21, 21, 0.2);
+  background: #fff;
 }
 
 .vip-copy {
@@ -547,28 +597,11 @@ h2 {
   grid-template-columns: minmax(0, 1fr) auto;
   align-content: start;
   column-gap: 8px;
-  min-height: 148px;
-  padding: 26px 14px 22px;
+  min-height: 0;
+  padding: 18px 16px;
   color: inherit;
   text-decoration: none;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
-}
-
-.context-arrow {
-  grid-column: 2;
-  grid-row: 1;
-  margin-top: 4px;
-  color: var(--ink);
-}
-
-.context-card.is-recovery .context-count,
-.context-card.is-recovery .context-label,
-.context-card.is-recovery .context-unit {
-  grid-column: 1;
-}
-
-.context-card.is-recovery .context-arrow {
-  color: #fff;
 }
 
 a.context-card:hover {
@@ -577,17 +610,13 @@ a.context-card:hover {
 }
 
 .context-card.is-recovery {
-  padding: 26px 18px 22px;
+  padding: 18px 16px;
   background: linear-gradient(180deg, #ff8f45 0%, #f47920 52%, #e06814 100%);
   border-color: #d96212;
   color: #fff;
 }
 
-.context-card.is-recovery .context-label {
-  margin-top: 10px;
-}
-
-.context-card.is-recovery .context-unit {
+.context-card.is-recovery .context-people {
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -632,14 +661,6 @@ a.context-card.is-recovery:hover {
   font-size: 32px;
 }
 
-.context-attention {
-  display: grid;
-  grid-column: 1 / -1;
-  align-content: start;
-  gap: 8px;
-  margin-top: 28px;
-}
-
 .priority-label,
 .guest-name {
   font-weight: 400;
@@ -650,20 +671,10 @@ a.context-card.is-recovery:hover {
   font-weight: 700;
 }
 
-.context-unit,
 .result-label,
 .action-tags,
 .guest-room {
   font-size: 13px;
-}
-
-.context-breakdown {
-  display: grid;
-  gap: 4px;
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.4;
 }
 
 .panel {
@@ -700,15 +711,145 @@ a.context-card.is-recovery:hover {
   grid-template-columns: 88px minmax(0, 1fr) auto;
   gap: 10px;
   align-items: center;
+  width: 100%;
   padding: 16px 14px;
+  border: 0;
   border-top: 1px solid #f2f2f2;
   border-radius: 0;
+  background: transparent;
   color: inherit;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .priority-row:hover {
   background: #f7f7f7;
+}
+
+.listing-table tbody tr.is-incident-row {
+  cursor: pointer;
+}
+
+.listing-table tbody tr.is-incident-row:hover {
+  background: #f7f7f7;
+}
+
+.modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(21, 21, 21, 0.34);
+  cursor: pointer;
+}
+
+.incident-modal {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 22px;
+  width: min(560px, 100%);
+  max-height: min(860px, calc(100vh - 48px));
+  overflow: auto;
+  padding: 28px 28px 24px;
+  border: 1px solid rgba(21, 21, 21, 0.08);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f7f6 100%);
+}
+
+.incident-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.incident-modal-head h2 {
+  margin: 6px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.incident-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+  margin: 0;
+}
+
+.incident-facts .is-wide {
+  grid-column: 1 / -1;
+}
+
+.incident-facts dt {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.incident-facts dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.incident-times {
+  display: grid;
+  gap: 10px;
+}
+
+.incident-times div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid #f2f2f2;
+}
+
+.incident-times span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.incident-times strong {
+  font-size: 14px;
+  font-weight: 400;
+  text-align: right;
+}
+
+.drawer-field .incident-input.is-area {
+  resize: vertical;
+  min-height: 96px;
+  border-radius: 16px;
+}
+
+.priority-label {
+  color: inherit;
+  text-decoration: none;
+}
+
+.priority-label:hover {
+  text-decoration: underline;
+}
+
+.priority-row .severity {
+  text-decoration: none;
+}
+
+.priority-row .incident-status {
+  text-decoration: none;
 }
 
 .severity {
@@ -813,13 +954,13 @@ a.context-card.is-recovery:hover {
 .listing-table col.col-status { width: 15%; }
 .listing-table col.col-mark { width: 6%; }
 
-.listing-table.is-recovery col.col-guest { width: 17%; }
+.listing-table.is-recovery col.col-guest { width: 16%; }
 .listing-table.is-recovery col.col-room { width: 7%; }
-.listing-table.is-recovery col.col-action { width: 22%; }
-.listing-table.is-recovery col.col-category { width: 14%; }
-.listing-table.is-recovery col.col-value { width: 4%; }
+.listing-table.is-recovery col.col-action { width: 20%; }
+.listing-table.is-recovery col.col-category { width: 13%; }
+.listing-table.is-recovery col.col-created { width: 14%; }
 .listing-table.is-recovery col.col-severity { width: 8%; }
-.listing-table.is-recovery col.col-status { width: 22%; }
+.listing-table.is-recovery col.col-status { width: 16%; }
 .listing-table.is-recovery col.col-mark { width: 6%; }
 
 .listing-table.is-opportunities col.col-guest { width: 15%; }
@@ -1012,6 +1153,15 @@ a.context-card.is-recovery:hover {
   white-space: nowrap;
 }
 
+.guest-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.guest-link:hover .cell-strong {
+  text-decoration: underline;
+}
+
 .avatar {
   display: grid;
   width: 32px;
@@ -1066,6 +1216,11 @@ a.context-card.is-recovery:hover {
 .cell-strong,
 .cell-value {
   font-weight: 400;
+}
+
+.cell-created {
+  color: #b0b0b0;
+  white-space: nowrap;
 }
 
 .cell-muted {

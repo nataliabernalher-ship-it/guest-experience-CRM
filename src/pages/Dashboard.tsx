@@ -1,19 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   compareActions,
   countForListing,
   guestById,
   guestHeadcount,
-  returningGuests,
+  guests,
   type Guest,
-  isPending,
   last7Days,
   listings,
-  momentCategoryCounts,
   money,
   reservationCount,
+  type ShiftAction,
 } from "../data/shift";
+import { CategoryPill } from "../components/CategoryPill";
+import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
@@ -27,29 +28,21 @@ function greeting(now: Date): string {
 }
 
 function stayLine(guest: Guest): string {
-  const where =
-    guest.moment === "check-in"
-      ? "Arriving today"
-      : guest.moment === "check-out"
-        ? "Departing today"
-        : "In-house";
   const stays = guest.previousStays === 1 ? "1 stay" : `${guest.previousStays} stays`;
-  return `Room ${guest.room} · ${where} · ${stays}`;
+  return `Room ${guest.room} · Arriving today · ${stays}`;
 }
 
-function OpenArrow() {
-  return (
-    <svg className="context-arrow" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <path
-        d="M3.5 10.5 10.5 3.5M5.5 3.5h5v5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+function GuestMark({ guest }: { guest: Guest }) {
+  if (guest.vip) return <span className="guest-badge is-vip">VIP</span>;
+  if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
+  return <span className="guest-none">–</span>;
+}
+
+function opportunityForGuest(guestId: string, source: ShiftAction[]): ShiftAction | undefined {
+  const forGuest = source.filter(
+    (action) => action.guestId === guestId && action.listing === "check-ins" && action.category !== "recovery",
   );
+  return forGuest.find((action) => action.status === "pending") ?? forGuest[0];
 }
 
 function TrendArrow({ direction }: { direction: "up" | "down" }) {
@@ -80,7 +73,9 @@ export function Dashboard() {
   }, []);
 
   const { actions } = useShift();
-  const pending = actions.filter(isPending);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const recoveryCount = countForListing("recovery", actions);
+  const checkInGuests = guests.filter((guest) => guest.moment === "check-in");
   const incidents = actions
     .filter(
       (action) =>
@@ -88,6 +83,10 @@ export function Dashboard() {
         (action.status === "pending" || action.status === "notified" || action.status === "solved"),
     )
     .sort(compareActions);
+  const selectedIncident =
+    selectedIncidentId == null
+      ? null
+      : actions.find((action) => action.id === selectedIncidentId && action.category === "recovery") ?? null;
 
   return (
     <div className="page" data-testid="dashboard">
@@ -102,7 +101,6 @@ export function Dashboard() {
       <section className="context" aria-label="Shift context">
         {stayListings.map((id) => {
           const listing = listings[id];
-          const counts = momentCategoryCounts(id, pending);
           const moment = listing.moment!;
           const reservations = reservationCount(moment);
           const guests = guestHeadcount(moment);
@@ -120,81 +118,90 @@ export function Dashboard() {
                   {guests} {guests === 1 ? "guest" : "guests"}
                 </span>
               </span>
-              <span className="context-attention">
-                <span className="context-breakdown">
-                  <span>{counts.upselling} Upselling</span>
-                  <span>{counts.loyalty} Loyalty</span>
-                  <span>{counts.guestExperience} Guest experience</span>
-                </span>
-              </span>
             </Link>
           );
         })}
         <Link to={listings.recovery.path} className="context-card is-recovery" data-testid="context-recovery">
-          <OpenArrow />
-          <span className="context-count">{countForListing("recovery", actions)}</span>
-          <span className="context-label">{listings.recovery.title}</span>
-          <span className="context-unit">{listings.recovery.unit}</span>
+          <span className="context-total">
+            <span className="context-count">{recoveryCount}</span>
+            <span className="context-label">{listings.recovery.title}</span>
+            <span className="context-people">
+              {recoveryCount === 1 ? "1 incident" : `${recoveryCount} incidents`}
+            </span>
+          </span>
         </Link>
       </section>
 
       <div className="board">
-        <section className="panel" aria-labelledby="priority-heading">
-          <div className="panel-head">
-            <h2 id="priority-heading">Incidents that need to be resolved</h2>
-            <p>Follow up on these incidents.</p>
-          </div>
-          <ol className="priority board-scroll" data-testid="priority-list">
-            {incidents.map((action) => {
-              const guest = guestById(action.guestId);
-              const listing = listings[action.listing];
+        <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
+          <header className="table-card-head">
+            <h2 id="checkins-heading">Today&apos;s check-ins</h2>
+          </header>
+          <ul className="vip-list board-scroll">
+            {checkInGuests.map((guest) => {
+              const opportunity = opportunityForGuest(guest.id, actions);
               return (
-                <li key={action.id}>
-                  <Link
-                    to={`${listing.path}?action=${action.id}`}
-                    className="priority-row"
-                    data-testid="priority-action"
-                    data-severity={action.severity ?? "none"}
-                  >
-                    <span className={`severity severity-${action.severity ?? "none"}`}>
-                      {action.severity}
-                    </span>
-                    <span className="priority-copy">
-                      <span className="priority-label">{action.label}</span>
-                      <span className="priority-meta">
-                        {guest.name} · Room {guest.room}
-                      </span>
-                    </span>
-                    <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
-                      {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-
-        <div className="board-side">
-          <section className="table-card" aria-labelledby="returning-heading" data-testid="vip-returning">
-            <header className="table-card-head">
-              <h2 id="returning-heading">VIP and returning</h2>
-            </header>
-            <ul className="vip-list board-scroll">
-              {returningGuests().map((guest) => (
                 <li key={guest.id}>
-                  <Link to={`/guests/${guest.id}`} className="vip-row">
+                  <Link to={`/guests/${guest.id}`} className="vip-row is-checkin">
                     <span className="vip-copy">
                       <span className="vip-name">{guest.name}</span>
                       <span className="vip-meta">{stayLine(guest)}</span>
                     </span>
-                    <span className={`guest-badge ${guest.vip ? "is-vip" : "is-returning"}`}>
-                      {guest.vip ? "VIP" : "Returning"}
-                    </span>
+                    <GuestMark guest={guest} />
+                    {opportunity ? (
+                      <CategoryPill category={opportunity.category} />
+                    ) : (
+                      <span className="guest-none">–</span>
+                    )}
                   </Link>
                 </li>
-              ))}
-            </ul>
+              );
+            })}
+          </ul>
+          <div className="checkins-foot">
+            <Link to={listings["check-ins"].path} className="view-all">
+              View all
+            </Link>
+          </div>
+        </section>
+
+        <div className="board-side">
+          <section className="panel" aria-labelledby="priority-heading">
+            <div className="panel-head">
+              <h2 id="priority-heading">Incidents that need to be resolved</h2>
+              <p>Follow up on these incidents.</p>
+            </div>
+            <ol className="priority board-scroll" data-testid="priority-list">
+              {incidents.map((action) => {
+                const guest = guestById(action.guestId);
+                return (
+                  <li key={action.id}>
+                    <button
+                      type="button"
+                      className="priority-row"
+                      data-testid="priority-action"
+                      data-severity={action.severity ?? "none"}
+                      onClick={() => setSelectedIncidentId(action.id)}
+                    >
+                      <span className={`severity severity-${action.severity ?? "none"}`}>
+                        {action.severity}
+                      </span>
+                      <span className="priority-copy">
+                        <span className="priority-label">{action.label}</span>
+                        <span className="priority-meta">
+                          {guest.name}
+                          {" · Room "}
+                          {guest.room}
+                        </span>
+                      </span>
+                      <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
+                        {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
 
           <section className="results" aria-label="Milestones achieved in the last 7 days">
@@ -225,6 +232,9 @@ export function Dashboard() {
           </section>
         </div>
       </div>
+      {selectedIncident ? (
+        <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
+      ) : null}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   compareActions,
+  formatIncidentWhen,
   guestById,
   guests,
   listings,
@@ -15,6 +16,7 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
@@ -177,37 +179,60 @@ function ListingRows({
   focus,
   settled,
   onStatus,
+  onOpenIncident,
 }: {
   rows: Row[];
   isRecovery: boolean;
   focus: string | null;
   settled?: boolean;
   onStatus: (id: string, status: ActionStatus) => void;
+  onOpenIncident: (action: ShiftAction) => void;
 }) {
   return rows.map(({ guest, action }) => (
     <tr
       key={action.id}
       id={`action-${action.id}`}
-      className={settled ? "is-settled" : focus === action.id ? "is-focused" : undefined}
+      className={[
+        settled ? "is-settled" : null,
+        focus === action.id ? "is-focused" : null,
+        action.category === "recovery" ? "is-incident-row" : null,
+      ]
+        .filter(Boolean)
+        .join(" ") || undefined}
+      onClick={
+        action.category === "recovery"
+          ? () => {
+              onOpenIncident(action);
+            }
+          : undefined
+      }
     >
       <td>
-        <span className="guest-cell">
+        <Link
+          to={`/guests/${guest.id}`}
+          className="guest-cell guest-link"
+          onClick={(event) => event.stopPropagation()}
+        >
           <span className="avatar" aria-hidden="true">
             {initials(guest.name)}
           </span>
           <span className="cell-strong">{guest.name}</span>
-        </span>
+        </Link>
       </td>
       <td>{guest.room}</td>
       <td className="cell-strong">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
       </td>
-      <td className="cell-value">
-        {action.category === "upselling" && action.value != null ? money.format(action.value) : null}
-      </td>
+      {isRecovery ? (
+        <td className="cell-created">{formatIncidentWhen(action.createdAt)}</td>
+      ) : (
+        <td className="cell-value">
+          {action.category === "upselling" && action.value != null ? money.format(action.value) : null}
+        </td>
+      )}
       {isRecovery ? <td>{action.severity ? label(action.severity) : "—"}</td> : null}
-      <td>
+      <td onClick={(event) => event.stopPropagation()}>
         {action.category === "recovery" || !settled ? (
           <MarkStatus action={action} onStatus={onStatus} />
         ) : (
@@ -231,6 +256,7 @@ function ListingCard({
   isRecovery,
   focus,
   onStatus,
+  onOpenIncident,
   tools,
 }: {
   pending: Row[];
@@ -238,6 +264,7 @@ function ListingCard({
   isRecovery: boolean;
   focus: string | null;
   onStatus: (id: string, status: ActionStatus) => void;
+  onOpenIncident: (action: ShiftAction) => void;
   tools?: ReactNode;
 }) {
   const columnCount = isRecovery ? 8 : 7;
@@ -253,7 +280,7 @@ function ListingCard({
             <col className="col-room" />
             <col className="col-action" />
             <col className="col-category" />
-            <col className="col-value" />
+            {isRecovery ? <col className="col-created" /> : <col className="col-value" />}
             {isRecovery ? <col className="col-severity" /> : null}
             <col className="col-status" />
             <col className="col-mark" />
@@ -264,21 +291,34 @@ function ListingCard({
               <th>Room</th>
               <th>Action</th>
               <th>Category</th>
-              <th>Value</th>
+              {isRecovery ? <th>Created</th> : <th>Value</th>}
               {isRecovery ? <th>Severity</th> : null}
               <th>Mark the status</th>
               <th />
             </tr>
           </thead>
           <tbody>
-            <ListingRows rows={pending} isRecovery={isRecovery} focus={focus} onStatus={onStatus} />
+            <ListingRows
+              rows={pending}
+              isRecovery={isRecovery}
+              focus={focus}
+              onStatus={onStatus}
+              onOpenIncident={onOpenIncident}
+            />
             {groups.map((group) =>
               group.rows.length > 0 ? (
                 <Fragment key={group.title}>
                   <tr className="listing-group">
                     <th colSpan={columnCount}>{group.title}</th>
                   </tr>
-                  <ListingRows rows={group.rows} isRecovery={isRecovery} focus={focus} settled onStatus={onStatus} />
+                  <ListingRows
+                    rows={group.rows}
+                    isRecovery={isRecovery}
+                    focus={focus}
+                    settled
+                    onStatus={onStatus}
+                    onOpenIncident={onOpenIncident}
+                  />
                 </Fragment>
               ) : null,
             )}
@@ -296,11 +336,12 @@ function IncidentDrawer({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (incident: { guestId: string; label: string; severity: Severity }) => void;
+  onAdd: (incident: { guestId: string; label: string; description: string; severity: Severity }) => void;
 }) {
   const [query, setQuery] = useState("");
   const [guestId, setGuestId] = useState("");
   const [labelText, setLabelText] = useState("");
+  const [description, setDescription] = useState("");
   const [severity, setSeverity] = useState<Severity>("normal");
 
   const guest = guests.find((item) => item.id === guestId);
@@ -313,7 +354,7 @@ function IncidentDrawer({
 
   function save() {
     if (!guest || !labelText.trim()) return;
-    onAdd({ guestId: guest.id, label: labelText, severity });
+    onAdd({ guestId: guest.id, label: labelText, description, severity });
     onClose();
   }
 
@@ -363,13 +404,24 @@ function IncidentDrawer({
           <input className="incident-input" readOnly value={guest?.room ?? ""} placeholder="Room" />
         </label>
         <label className="drawer-field">
-          Incident
+          Title
           <input
             className="incident-input"
-            aria-label="Incident"
-            placeholder="What happened"
+            aria-label="Incident title"
+            placeholder="Short title"
             value={labelText}
             onChange={(event) => setLabelText(event.target.value)}
+          />
+        </label>
+        <label className="drawer-field">
+          Description
+          <textarea
+            className="incident-input is-area"
+            aria-label="Incident description"
+            placeholder="What happened"
+            rows={4}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
           />
         </label>
         <label className="drawer-field">
@@ -398,6 +450,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const [params] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
@@ -417,12 +470,18 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         { title: "Notified", rows: stayIncidentRows(listingId, actions, "notified") },
         { title: "Solved", rows: stayIncidentRows(listingId, actions, "solved") },
       ];
+  const selectedIncident =
+    selectedIncidentId == null
+      ? null
+      : actions.find((action) => action.id === selectedIncidentId && action.category === "recovery") ?? null;
 
   useEffect(() => {
     document.title = `${listing.title} · Guest Experience`;
     if (!focus) return;
     document.getElementById(`action-${focus}`)?.scrollIntoView({ block: "center" });
-  }, [focus, listing.title]);
+    const focused = actions.find((action) => action.id === focus && action.category === "recovery");
+    if (focused) setSelectedIncidentId(focused.id);
+  }, [focus, listing.title, actions]);
 
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
@@ -454,6 +513,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         isRecovery={isRecovery}
         focus={focus}
         onStatus={setActionStatus}
+        onOpenIncident={(action) => setSelectedIncidentId(action.id)}
         tools={
           isRecovery ? (
             <div className="listing-tools">
@@ -480,6 +540,9 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
       />
       {isRecovery && drawerOpen ? (
         <IncidentDrawer onClose={() => setDrawerOpen(false)} onAdd={addIncident} />
+      ) : null}
+      {selectedIncident ? (
+        <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
       ) : null}
     </div>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   experienceTypes,
   guestById,
@@ -73,12 +74,12 @@ function OpportunityRows({
   return rows.map(({ guest, action }) => (
     <tr key={action.id} className={settled ? "is-settled" : undefined}>
       <td>
-        <span className="guest-cell">
+        <Link to={`/guests/${guest.id}`} className="guest-cell guest-link">
           <span className="avatar" aria-hidden="true">
             {initials(guest.name)}
           </span>
           <span className="cell-strong">{guest.name}</span>
-        </span>
+        </Link>
       </td>
       <td>{guest.room}</td>
       <td className="cell-strong">{action.label}</td>

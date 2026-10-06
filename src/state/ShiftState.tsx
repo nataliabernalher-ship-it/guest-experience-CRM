@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 import {
   actions as seed,
   guestById,
+  incidentHistoryNote,
   listingForMoment,
   type ActionStatus,
   type Category,
@@ -13,6 +14,7 @@ import {
 interface NewIncident {
   guestId: string;
   label: string;
+  description?: string;
   severity: Severity;
 }
 
@@ -49,28 +51,44 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
               status === "pending" &&
               action.category !== "recovery" &&
               (action.listing === "check-ins" || action.listing === "check-outs");
+            if (action.category !== "recovery" || action.status === status) {
+              return {
+                ...action,
+                status,
+                listing: deferToInHouse ? "in-house" : action.listing,
+              };
+            }
+            const at = new Date().toISOString();
             return {
               ...action,
               status,
-              listing: deferToInHouse ? "in-house" : action.listing,
+              notifiedAt: status === "notified" ? (action.notifiedAt ?? at) : action.notifiedAt,
+              solvedAt: status === "solved" ? (action.solvedAt ?? at) : action.solvedAt,
+              confirmedAt: status === "confirmed" ? (action.confirmedAt ?? at) : action.confirmedAt,
+              history: [...(action.history ?? []), { status, at, note: incidentHistoryNote(status) }],
             };
           }),
         );
       },
-      addIncident: ({ guestId, label, severity }: NewIncident) => {
+      addIncident: ({ guestId, label, description, severity }: NewIncident) => {
         const text = label.trim();
         if (!guestId || !text) return;
+        const at = new Date().toISOString();
+        const detail = description?.trim() || text;
         setActions((current) => [
           {
             id: `incident-${crypto.randomUUID()}`,
             guestId,
             category: "recovery",
             label: text,
+            description: detail,
             listing: "recovery",
             severity,
             proximity: 1,
             timingLabel: "Today",
             status: "pending",
+            createdAt: at,
+            history: [{ status: "pending", at, note: incidentHistoryNote("pending") }],
           },
           ...current,
         ]);
