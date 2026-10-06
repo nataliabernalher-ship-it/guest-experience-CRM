@@ -51,20 +51,41 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
               status === "pending" &&
               action.category !== "recovery" &&
               (action.listing === "check-ins" || action.listing === "check-outs");
-            if (action.category !== "recovery" || action.status === status) {
+            if (action.category !== "recovery") {
               return {
                 ...action,
                 status,
                 listing: deferToInHouse ? "in-house" : action.listing,
               };
             }
+            if (action.status === status) return action;
             const at = new Date().toISOString();
+            const stamps =
+              status === "pending"
+                ? { notifiedAt: undefined, solvedAt: undefined, confirmedAt: undefined }
+                : status === "notified"
+                  ? {
+                      notifiedAt: action.notifiedAt ?? at,
+                      solvedAt: undefined,
+                      confirmedAt: undefined,
+                    }
+                  : status === "solved"
+                    ? {
+                        notifiedAt: action.notifiedAt ?? at,
+                        solvedAt: action.solvedAt ?? at,
+                        confirmedAt: undefined,
+                      }
+                    : status === "confirmed"
+                      ? {
+                          notifiedAt: action.notifiedAt ?? at,
+                          solvedAt: action.solvedAt ?? at,
+                          confirmedAt: action.confirmedAt ?? at,
+                        }
+                      : {};
             return {
               ...action,
               status,
-              notifiedAt: status === "notified" ? (action.notifiedAt ?? at) : action.notifiedAt,
-              solvedAt: status === "solved" ? (action.solvedAt ?? at) : action.solvedAt,
-              confirmedAt: status === "confirmed" ? (action.confirmedAt ?? at) : action.confirmedAt,
+              ...stamps,
               history: [...(action.history ?? []), { status, at, note: incidentHistoryNote(status) }],
             };
           }),

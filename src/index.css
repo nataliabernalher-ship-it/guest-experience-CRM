@@ -781,6 +781,24 @@ a.context-card.is-recovery:hover {
   letter-spacing: -0.04em;
 }
 
+.modal-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(21, 21, 21, 0.1);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  border-color: rgba(21, 21, 21, 0.2);
+  background: #f7f7f7;
+}
+
 .incident-facts {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -811,7 +829,7 @@ a.context-card.is-recovery:hover {
 
 .incident-times div {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 10px 0;
@@ -827,6 +845,119 @@ a.context-card.is-recovery:hover {
   font-size: 14px;
   font-weight: 400;
   text-align: right;
+}
+
+.incident-timeline-list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.incident-timeline-list li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  bottom: -22px;
+  left: 11px;
+  width: 2px;
+  background: var(--accent);
+}
+
+.incident-timeline-list li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 10px 0;
+}
+
+.incident-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  box-sizing: border-box;
+}
+
+.incident-node.is-done {
+  background: #fff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.incident-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  min-height: 24px;
+}
+
+.incident-step-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.incident-step-label {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.incident-step-when {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.incident-step-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.incident-undo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(244, 121, 32, 0.35);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.incident-undo:hover {
+  border-color: var(--accent);
+  background: rgba(244, 121, 32, 0.08);
+}
+
+.incident-mark {
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f6f5 100%);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.incident-mark:hover {
+  border-color: rgba(21, 21, 21, 0.22);
+  background: #fff;
 }
 
 .drawer-field .incident-input.is-area {
