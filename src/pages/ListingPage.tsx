@@ -28,6 +28,14 @@ const severityFilters: { id: "all" | Severity; label: string }[] = [
   { id: "low", label: "Low" },
 ];
 
+const categoryFilters: { id: "all" | Category; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "upselling", label: "Upselling" },
+  { id: "guest-experience", label: "Special amenities" },
+  { id: "loyalty", label: "Loyalty" },
+  { id: "recovery", label: "Recovery" },
+];
+
 function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -112,17 +120,21 @@ function matchesSeverity(action: ShiftAction, severity: "all" | Severity): boole
   return severity === "all" || action.severity === severity;
 }
 
-function recoveryRows(actions: ShiftAction[], status: ActionStatus, severity: "all" | Severity): Row[] {
+function matchesCategory(action: ShiftAction, category: "all" | Category): boolean {
+  return category === "all" || action.category === category;
+}
+
+function recoveryRows(actions: ShiftAction[], severity: "all" | Severity): Row[] {
   return actionsForListing("recovery", actions)
-    .filter((action) => action.status === status && matchesSeverity(action, severity))
+    .filter((action) => matchesSeverity(action, severity))
     .map((action) => ({ guest: guestById(action.guestId), action }));
 }
 
-function stayIncidentRows(listingId: ListingId, actions: ShiftAction[], status: "pending" | "notified" | "solved"): Row[] {
+function stayIncidentRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
   const moment = listings[listingId].moment;
-  if (moment !== "check-out" && moment !== "in-house") return [];
+  if (!moment) return [];
   return actions
-    .filter((action) => action.category === "recovery" && action.status === status)
+    .filter((action) => action.category === "recovery")
     .map((action) => ({ guest: guestById(action.guestId), action }))
     .filter((row) => row.guest.moment === moment)
     .sort((a, b) => compareActions(a.action, b.action));
@@ -618,6 +630,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const { actions, setActionStatus, addIncident } = useShift();
   const [params] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
+  const [category, setCategory] = useState<(typeof categoryFilters)[number]["id"]>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
@@ -625,19 +638,11 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
   const pending = isRecovery
-    ? recoveryRows(actions, "pending", severity)
-    : [...opportunityRows(listingId, actions), ...stayIncidentRows(listingId, actions, "pending")].sort((a, b) =>
-        compareActions(a.action, b.action),
-      );
-  const groups = isRecovery
-    ? [
-        { title: "Notified", rows: recoveryRows(actions, "notified", severity) },
-        { title: "Solved", rows: recoveryRows(actions, "solved", severity) },
-      ]
-    : [
-        { title: "Notified", rows: stayIncidentRows(listingId, actions, "notified") },
-        { title: "Solved", rows: stayIncidentRows(listingId, actions, "solved") },
-      ];
+    ? recoveryRows(actions, severity)
+    : [...opportunityRows(listingId, actions), ...stayIncidentRows(listingId, actions)]
+        .filter(({ action }) => matchesCategory(action, category))
+        .sort((a, b) => compareActions(a.action, b.action));
+  const groups: { title: string; rows: Row[] }[] = [];
   const selectedIncident =
     selectedIncidentId == null
       ? null
@@ -710,7 +715,24 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                 Open incident
               </button>
             </div>
-          ) : undefined
+          ) : (
+            <div className="listing-tools">
+              <div className="guest-tags" role="tablist" aria-label="Category">
+                {categoryFilters.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={category === item.id}
+                    className={category === item.id ? "guest-tag is-active" : "guest-tag"}
+                    onClick={() => setCategory(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
         }
       />
       {isRecovery && drawerOpen ? (
