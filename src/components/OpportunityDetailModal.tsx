@@ -11,6 +11,7 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "./CategoryPill";
+import { useAutomations } from "../state/AutomationsState";
 import { useShift } from "../state/ShiftState";
 
 function CloseIcon() {
@@ -64,10 +65,15 @@ export function OpportunityDetailModal({
   onClose: () => void;
 }) {
   const { setActionStatus } = useShift();
+  const { automations } = useAutomations();
   const guest = guestById(action.guestId);
   const pending = action.status === "pending";
   const service = action.category === "upselling" ? upsellServiceFor(action) : undefined;
   const experience = action.category === "guest-experience" ? experienceParts(action.label) : null;
+  const matchedAutomation = automations.find(
+    (item) => item.category === action.category && item.actionLabel === action.label,
+  );
+  const details = action.description?.trim() || matchedAutomation?.description?.trim() || "";
 
   function respond(status: Extract<ActionStatus, "done" | "rejected">) {
     if (action.status === status) return;
@@ -146,6 +152,12 @@ export function OpportunityDetailModal({
             <dt>Guest response</dt>
             <dd>{outcomeLabel(action)}</dd>
           </div>
+          {details ? (
+            <div className="is-wide">
+              <dt>Details</dt>
+              <dd className="opportunity-details">{details}</dd>
+            </div>
+          ) : null}
         </dl>
 
         {pending ? (

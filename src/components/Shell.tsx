@@ -11,7 +11,10 @@ const navGroups = [
     { to: "/opportunities", label: "Opportunities", end: false },
     { to: "/recovery", label: "Recovery", end: false },
   ],
-  [{ to: "/guests", label: "Guest Profiles", end: false }],
+  [
+    { to: "/guests", label: "Guest Profiles", end: false },
+    { to: "/automations", label: "Automations", end: false },
+  ],
 ];
 
 export function Shell() {
@@ -28,31 +31,33 @@ export function Shell() {
           </span>
         </div>
         <nav className="nav" aria-label="Primary">
-          {navGroups.map((group, index) => (
-            <div key={group[0].to} className="nav-group">
-              {index > 0 ? <div className="nav-rule" role="separator" /> : null}
-              {group.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
+          {navGroups.map((group, index) => {
+            const hidden = group[0].to === "/opportunities";
+            return (
+              <div
+                key={group[0].to}
+                className={hidden ? "nav-group is-hidden" : "nav-group"}
+                aria-hidden={hidden || undefined}
+              >
+                {!hidden && index > 0 ? <div className="nav-rule" role="separator" /> : null}
+                {group.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
+                    tabIndex={hidden ? -1 : undefined}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
         <div className="sidebar-foot">
           <p className="sidebar-user">Clara Mendes</p>
           <div className="nav-rule" role="separator" />
-          <NavLink
-            to="/automations"
-            className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
-          >
-            Automations
-          </NavLink>
           <button type="button" className="sidebar-logout">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path

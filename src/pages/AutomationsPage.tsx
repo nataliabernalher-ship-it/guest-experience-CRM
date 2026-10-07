@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   actionsByCategory,
   automationCategoryLabel,
-  automationSeed,
   defaultOperatorForField,
   defaultValueForField,
   defaultValuePerPerson,
@@ -27,9 +26,12 @@ import {
   type AutomationTiming,
   type ConditionField,
   type ConditionOperator,
+  worldSubregionLabels,
 } from "../data/automations";
+import { subregionsForContinent, worldContinents } from "../data/regions";
 import { money } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { createAutomationId, useAutomations } from "../state/AutomationsState";
 
 type Draft = {
   name: string;
@@ -38,6 +40,7 @@ type Draft = {
   valuePerPerson: string;
   conditions: AutomationCondition[];
   timing: AutomationTiming;
+  description: string;
 };
 
 function toDraft(automation: Automation): Draft {
@@ -53,6 +56,7 @@ function toDraft(automation: Automation): Draft {
           : "",
     conditions: automation.conditions.map((condition) => ({ ...condition })),
     timing: automation.timing,
+    description: automation.description ?? "",
   };
 }
 
@@ -60,11 +64,94 @@ function valueOptionsFor(field: ConditionField): string[] | null {
   if (field === "loyalty-status") return [...loyaltyStatusValues];
   if (field === "previously-used-service") return [...serviceValues];
   if (field === "room-category") return [...roomCategoryValues];
+  if (field === "guest-region") return [...worldSubregionLabels];
   return null;
 }
 
+function regionOptionGroups() {
+  return worldContinents.map((continent) => ({
+    label: continent.label,
+    options: subregionsForContinent(continent.id).map((item) => item.label),
+  }));
+}
+
+function ActionCombobox({
+  value,
+  options,
+  onChange,
+}: {
+  value: string;
+  options: string[];
+  onChange: (value: string, fromOption: boolean) => void;
+}) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const filtered = options.filter((option) =>
+    option.toLowerCase().includes(value.trim().toLowerCase()),
+  );
+  const suggestions = value.trim() ? filtered : options;
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, [open]);
+
+  return (
+    <div className="action-combobox" ref={rootRef}>
+      <input
+        className="incident-input"
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-label="Opportunity action"
+        placeholder="Type or select an action"
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value, false);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setOpen(false);
+          if (event.key === "ArrowDown") setOpen(true);
+        }}
+      />
+      {open && suggestions.length > 0 ? (
+        <ul className="action-combobox-list" id={listId} role="listbox">
+          {suggestions.map((option) => (
+            <li key={option} role="option" aria-selected={option === value}>
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => {
+                  onChange(option, true);
+                  setOpen(false);
+                }}
+              >
+                {option}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 export function AutomationsPage() {
-  const [automations, setAutomations] = useState<Automation[]>(() => automationSeed);
+  const {
+    automations,
+    setStatus,
+    upsert,
+    duplicate,
+    remove: removeAutomation,
+  } = useAutomations();
   const [drawerMode, setDrawerMode] = useState<"closed" | "create" | "edit">("closed");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() => {
@@ -72,6 +159,7 @@ export function AutomationsPage() {
     return {
       ...base,
       valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
+      description: base.description ?? "",
     };
   });
 
@@ -90,6 +178,7 @@ export function AutomationsPage() {
     setDraft({
       ...base,
       valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
+      description: base.description ?? "",
     });
     setDrawerMode("create");
   }
@@ -105,28 +194,8 @@ export function AutomationsPage() {
     setEditingId(null);
   }
 
-  function setStatus(id: string, status: AutomationStatus) {
-    setAutomations((current) => current.map((item) => (item.id === id ? { ...item, status } : item)));
-  }
-
-  function duplicate(automation: Automation) {
-    setAutomations((current) => [
-      {
-        ...automation,
-        id: `auto-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        name: `${automation.name} (copy)`,
-        status: "active",
-        conditions: automation.conditions.map((condition) => ({
-          ...condition,
-          id: `condition-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        })),
-      },
-      ...current,
-    ]);
-  }
-
   function remove(id: string) {
-    setAutomations((current) => current.filter((item) => item.id !== id));
+    removeAutomation(id);
     if (editingId === id) closeDrawer();
   }
 
@@ -141,6 +210,7 @@ export function AutomationsPage() {
         : undefined;
     if (draft.category === "upselling" && valuePerPerson == null) return;
 
+    const description = draft.description.trim();
     const payload = {
       name,
       category: draft.category,
@@ -148,21 +218,18 @@ export function AutomationsPage() {
       valuePerPerson,
       conditions: draft.conditions,
       timing: draft.timing,
+      description: description || undefined,
+      status: (editing?.status ?? "active") as AutomationStatus,
     };
 
     if (drawerMode === "edit" && editingId) {
-      setAutomations((current) =>
-        current.map((item) => (item.id === editingId ? { ...item, ...payload } : item)),
-      );
+      upsert({ id: editingId, ...payload });
     } else {
-      setAutomations((current) => [
-        {
-          id: `auto-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-          ...payload,
-          status: "active",
-        },
-        ...current,
-      ]);
+      upsert({
+        id: createAutomationId(),
+        ...payload,
+        status: "active",
+      });
     }
     closeDrawer();
   }
@@ -247,7 +314,7 @@ export function AutomationsPage() {
       )}
 
       {drawerMode !== "closed" ? (
-        <AutomationBuilderDrawer
+        <AutomationBuilderModal
           mode={drawerMode}
           draft={draft}
           title={drawerMode === "edit" ? (editing?.name ?? "Edit automation") : "Create automation"}
@@ -261,7 +328,7 @@ export function AutomationsPage() {
   );
 }
 
-function AutomationBuilderDrawer({
+function AutomationBuilderModal({
   mode,
   draft,
   title,
@@ -317,225 +384,283 @@ function AutomationBuilderDrawer({
       ...draft,
       category,
       actionLabel,
-      valuePerPerson:
-        category === "upselling" ? String(defaultValuePerPerson(actionLabel)) : "",
+      valuePerPerson: category === "upselling" ? String(defaultValuePerPerson(actionLabel)) : "",
     });
   }
 
   return (
-    <div className="drawer-root">
-      <button type="button" className="drawer-backdrop" aria-label="Close" onClick={onClose} />
-      <aside className="drawer is-wide" role="dialog" aria-labelledby="automation-builder-title">
-        <header className="drawer-head">
+    <div className="modal-root">
+      <button type="button" className="modal-backdrop" aria-label="Close" onClick={onClose} />
+      <div className="automation-modal" role="dialog" aria-modal="true" aria-labelledby="automation-builder-title">
+        <header className="automation-modal-head">
           <div>
             <p className="eyebrow">{mode === "edit" ? "Edit" : "New"}</p>
             <h2 id="automation-builder-title">{title}</h2>
           </div>
-          <button type="button" className="incident-cancel" onClick={onClose}>
-            Cancel
+          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+              <path
+                d="M3 3l8 8M11 3 3 11"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
           </button>
         </header>
 
-        <label className="drawer-field">
-          Automation name
-          <input
-            className="incident-input"
-            aria-label="Automation name"
-            placeholder="e.g. Loyalty signup"
-            value={draft.name}
-            onChange={(event) => onChange({ ...draft, name: event.target.value })}
-          />
-        </label>
+        <div className="automation-modal-body">
+          <div className="automation-modal-main">
+            <label className="drawer-field">
+              Automation name
+              <input
+                className="incident-input"
+                aria-label="Automation name"
+                placeholder="e.g. Loyalty signup"
+                value={draft.name}
+                onChange={(event) => onChange({ ...draft, name: event.target.value })}
+              />
+            </label>
 
-        <section className="rule-section" aria-labelledby="when-heading">
-          <h3 id="when-heading">WHEN</h3>
-          <p className="rule-prompt">When should this automation run?</p>
-          <div className="condition-list">
-            {draft.conditions.map((condition, index) => (
-              <div key={condition.id} className="condition-row">
-                {index > 0 ? <span className="condition-and">AND</span> : null}
-                <div className="condition-controls">
-                  <label className="drawer-field">
-                    Guest data
-                    <select
-                      className="status-select"
-                      aria-label="Condition field"
-                      value={condition.field}
-                      onChange={(event) =>
-                        updateCondition(condition.id, { field: event.target.value as ConditionField })
-                      }
-                    >
-                      {conditionFields.map((field) => (
-                        <option key={field.id} value={field.id}>
-                          {field.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="drawer-field">
-                    Match
-                    <select
-                      className="status-select"
-                      aria-label="Condition operator"
-                      value={condition.operator}
-                      onChange={(event) =>
-                        updateCondition(condition.id, { operator: event.target.value as ConditionOperator })
-                      }
-                    >
-                      {operatorsForField(condition.field).map((operator) => (
-                        <option key={operator.id} value={operator.id}>
-                          {operator.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {fieldNeedsValue(condition.field, condition.operator) ? (
-                    <label className="drawer-field">
-                      Value
-                      {valueOptionsFor(condition.field) ? (
-                        <select
-                          className="status-select"
-                          aria-label="Condition value"
-                          value={condition.value}
-                          onChange={(event) => updateCondition(condition.id, { value: event.target.value })}
+            <section className="rule-section" aria-labelledby="when-heading">
+              <h3 id="when-heading">WHEN</h3>
+              <p className="rule-prompt">When should this automation run?</p>
+              <div className="condition-list">
+                {draft.conditions.map((condition, index) => (
+                  <div key={condition.id} className="condition-row">
+                    {index > 0 ? <span className="condition-and">AND</span> : null}
+                    <div className="condition-controls">
+                      <div className="condition-fields">
+                        <label className="drawer-field">
+                          Guest data
+                          <select
+                            className="status-select"
+                            aria-label="Condition field"
+                            value={condition.field}
+                            onChange={(event) =>
+                              updateCondition(condition.id, { field: event.target.value as ConditionField })
+                            }
+                          >
+                            {conditionFields.map((field) => (
+                              <option key={field.id} value={field.id}>
+                                {field.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="drawer-field">
+                          Match
+                          <select
+                            className="status-select"
+                            aria-label="Condition operator"
+                            value={condition.operator}
+                            onChange={(event) =>
+                              updateCondition(condition.id, {
+                                operator: event.target.value as ConditionOperator,
+                              })
+                            }
+                          >
+                            {operatorsForField(condition.field).map((operator) => (
+                              <option key={operator.id} value={operator.id}>
+                                {operator.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {fieldNeedsValue(condition.field, condition.operator) ? (
+                          <label className="drawer-field">
+                            Value
+                            {valueOptionsFor(condition.field) ? (
+                              <select
+                                className="status-select"
+                                aria-label="Condition value"
+                                value={condition.value}
+                                onChange={(event) =>
+                                  updateCondition(condition.id, { value: event.target.value })
+                                }
+                              >
+                                {condition.field === "guest-region"
+                                  ? regionOptionGroups().map((group) => (
+                                      <optgroup key={group.label} label={group.label}>
+                                        {group.options.map((value) => (
+                                          <option key={value} value={value}>
+                                            {value}
+                                          </option>
+                                        ))}
+                                      </optgroup>
+                                    ))
+                                  : valueOptionsFor(condition.field)!.map((value) => (
+                                      <option key={value} value={value}>
+                                        {value}
+                                      </option>
+                                    ))}
+                              </select>
+                            ) : (
+                              <input
+                                className="incident-input"
+                                aria-label="Condition value"
+                                value={condition.value}
+                                onChange={(event) =>
+                                  updateCondition(condition.id, { value: event.target.value })
+                                }
+                              />
+                            )}
+                          </label>
+                        ) : null}
+                      </div>
+                      {draft.conditions.length > 1 ? (
+                        <button
+                          type="button"
+                          className="condition-remove"
+                          aria-label="Remove condition"
+                          onClick={() => removeCondition(condition.id)}
                         >
-                          {valueOptionsFor(condition.field)!.map((value) => (
-                            <option key={value} value={value}>
-                              {value}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          className="incident-input"
-                          aria-label="Condition value"
-                          value={condition.value}
-                          onChange={(event) => updateCondition(condition.id, { value: event.target.value })}
-                        />
-                      )}
-                    </label>
-                  ) : null}
-                  {draft.conditions.length > 1 ? (
-                    <button
-                      type="button"
-                      className="row-action is-danger"
-                      onClick={() => removeCondition(condition.id)}
-                    >
-                      Remove
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-          <button type="button" className="rule-add" onClick={addCondition}>
-            + Add condition
-          </button>
-        </section>
-
-        <section className="rule-section" aria-labelledby="then-heading">
-          <h3 id="then-heading">THEN</h3>
-          <p className="rule-prompt">What should reception do?</p>
-          <div className="then-grid">
-            <label className="drawer-field">
-              Category
-              <select
-                className="status-select"
-                aria-label="Opportunity category"
-                value={draft.category}
-                onChange={(event) => setCategory(event.target.value as AutomationCategory)}
-              >
-                <option value="upselling">Upselling</option>
-                <option value="loyalty">Loyalty</option>
-                <option value="guest-experience">Special amenities</option>
-              </select>
-            </label>
-            <label className="drawer-field">
-              Action
-              <select
-                className="status-select"
-                aria-label="Opportunity action"
-                value={draft.actionLabel}
-                onChange={(event) => {
-                  const actionLabel = event.target.value;
-                  onChange({
-                    ...draft,
-                    actionLabel,
-                    valuePerPerson:
-                      draft.category === "upselling"
-                        ? String(defaultValuePerPerson(actionLabel))
-                        : draft.valuePerPerson,
-                  });
-                }}
-              >
-                {actions.map((action) => (
-                  <option key={action} value={action}>
-                    {action}
-                  </option>
+                          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                            <path
+                              d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
                 ))}
-              </select>
-            </label>
-            {draft.category === "upselling" ? (
+              </div>
+              <button type="button" className="rule-add" onClick={addCondition}>
+                + Add condition
+              </button>
+            </section>
+
+            <section className="rule-section" aria-labelledby="then-heading">
+              <h3 id="then-heading">THEN</h3>
+              <p className="rule-prompt">What should reception do?</p>
+              <div className="then-grid">
+                <label className="drawer-field">
+                  Category
+                  <select
+                    className="status-select"
+                    aria-label="Opportunity category"
+                    value={draft.category}
+                    onChange={(event) => setCategory(event.target.value as AutomationCategory)}
+                  >
+                    <option value="upselling">Upselling</option>
+                    <option value="loyalty">Loyalty</option>
+                    <option value="guest-experience">Special amenities</option>
+                  </select>
+                </label>
+                <label className="drawer-field">
+                  Action
+                  <ActionCombobox
+                    value={draft.actionLabel}
+                    options={actions}
+                    onChange={(actionLabel, fromOption) => {
+                      onChange({
+                        ...draft,
+                        actionLabel,
+                        valuePerPerson:
+                          draft.category === "upselling" && fromOption
+                            ? String(defaultValuePerPerson(actionLabel))
+                            : draft.valuePerPerson,
+                      });
+                    }}
+                  />
+                </label>
+                {draft.category === "upselling" ? (
+                  <label className="drawer-field">
+                    Value per person (€)
+                    <input
+                      className="incident-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      aria-label="Value per person"
+                      placeholder="e.g. 80"
+                      value={draft.valuePerPerson}
+                      onChange={(event) => onChange({ ...draft, valuePerPerson: event.target.value })}
+                    />
+                  </label>
+                ) : null}
+              </div>
+              <p className="rule-note">
+                This creates an opportunity for reception to act on — it does not contact the guest.
+              </p>
+            </section>
+
+            <section className="rule-section" aria-labelledby="timing-heading">
+              <h3 id="timing-heading">TIMING</h3>
+              <p className="rule-prompt">When should reception act?</p>
               <label className="drawer-field">
-                Value per person (€)
-                <input
-                  className="incident-input"
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputMode="decimal"
-                  aria-label="Value per person"
-                  placeholder="e.g. 80"
-                  value={draft.valuePerPerson}
-                  onChange={(event) => onChange({ ...draft, valuePerPerson: event.target.value })}
+                Timing
+                <select
+                  className="status-select"
+                  aria-label="Timing"
+                  value={draft.timing}
+                  onChange={(event) =>
+                    onChange({ ...draft, timing: event.target.value as AutomationTiming })
+                  }
+                >
+                  {timingOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </section>
+
+            <section className="rule-section" aria-labelledby="details-heading">
+              <h3 id="details-heading">DETAILS / DESCRIPTION</h3>
+              <p className="rule-prompt">Add details or a description for this automation</p>
+              <label className="drawer-field">
+                Details
+                <textarea
+                  className="incident-input is-area"
+                  aria-label="Details or description"
+                  placeholder="Write details or a description"
+                  rows={4}
+                  value={draft.description}
+                  onChange={(event) => onChange({ ...draft, description: event.target.value })}
                 />
               </label>
-            ) : null}
+            </section>
           </div>
-          <p className="rule-note">This creates an opportunity for reception to act on — it does not contact the guest.</p>
-        </section>
 
-        <section className="rule-section" aria-labelledby="timing-heading">
-          <h3 id="timing-heading">TIMING</h3>
-          <p className="rule-prompt">When should reception act?</p>
-          <label className="drawer-field">
-            Timing
-            <select
-              className="status-select"
-              aria-label="Timing"
-              value={draft.timing}
-              onChange={(event) => onChange({ ...draft, timing: event.target.value as AutomationTiming })}
-            >
-              {timingOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </section>
-
-        <section className="rule-summary" aria-label="Rule summary">
-          <h3>Rule summary</h3>
-          <div className="rule-summary-body">
-            <p className="rule-summary-label">WHEN</p>
-            {whenLines.map((line, index) => (
-              <p key={`${line}-${index}`} className="rule-summary-line">
-                {index > 0 ? <span className="condition-and">AND</span> : null}
-                {line}
+          <aside className="automation-modal-side" aria-label="Rule summary">
+            <section className="rule-summary is-sticky">
+              <h3>Rule summary</h3>
+              <div className="rule-summary-body">
+                <p className="rule-summary-label">WHEN</p>
+                {whenLines.map((line, index) => (
+                  <p key={`${line}-${index}`} className="rule-summary-line">
+                    {index > 0 ? <span className="condition-and">AND</span> : null}
+                    {line}
+                  </p>
+                ))}
+                <p className="rule-summary-label">THEN</p>
+                <p className="rule-summary-line">{thenLine}</p>
+                <p className="rule-summary-label">AT</p>
+                <p className="rule-summary-line">{atLine}</p>
+                {draft.description.trim() ? (
+                  <>
+                    <p className="rule-summary-label">DETAILS</p>
+                    <p className="rule-summary-line is-soft">{draft.description.trim()}</p>
+                  </>
+                ) : null}
+              </div>
+              <p className="rule-summary-hint">
+                {automationCategoryLabel(draft.category)} opportunity · guest data match · reception acts
               </p>
-            ))}
-            <p className="rule-summary-label">THEN</p>
-            <p className="rule-summary-line">{thenLine}</p>
-            <p className="rule-summary-label">AT</p>
-            <p className="rule-summary-line">{atLine}</p>
-          </div>
-          <p className="rule-summary-hint">
-            {automationCategoryLabel(draft.category)} opportunity · guest data match · reception acts
-          </p>
-        </section>
+            </section>
+          </aside>
+        </div>
 
-        <div className="drawer-actions">
+        <div className="automation-modal-actions">
           <button type="button" className="incident-cancel" onClick={onClose}>
             Cancel
           </button>
@@ -543,7 +668,7 @@ function AutomationBuilderDrawer({
             Save automation
           </button>
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

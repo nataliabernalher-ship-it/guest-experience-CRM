@@ -23,6 +23,7 @@ interface NewOpportunity {
   category: Exclude<Category, "recovery">;
   label: string;
   value?: number;
+  description?: string;
 }
 
 interface ShiftStateValue {
@@ -114,10 +115,11 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
           ...current,
         ]);
       },
-      addOpportunity: ({ guestId, category, label, value }: NewOpportunity) => {
+      addOpportunity: ({ guestId, category, label, value, description }: NewOpportunity) => {
         const text = label.trim();
         if (!guestId || !text) return;
         const guest = guestById(guestId);
+        const detail = description?.trim();
         setActions((current) => [
           {
             id: `opportunity-${crypto.randomUUID()}`,
@@ -128,6 +130,7 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
             proximity: 1,
             timingLabel: "Today",
             value: category === "upselling" ? value : undefined,
+            description: detail || undefined,
             status: "pending",
           },
           ...current,

@@ -1,6 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { guestsForFilter, isLoyaltyMember, peopleCount, shiftDay, type Guest, type GuestStayFilter } from "../data/shift";
+import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
+import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import {
+  guestById,
+  guestsForFilter,
+  isLoyaltyMember,
+  peopleCount,
+  shiftDay,
+  type Guest,
+  type GuestStayFilter,
+} from "../data/shift";
 import { useShift } from "../state/ShiftState";
 
 const filters: { id: GuestStayFilter; label: string }[] = [
@@ -48,17 +58,46 @@ function age(birthDate: string): number {
   return years;
 }
 
-function EyeIcon() {
+function shortStayDate(value: string): string {
+  return value.replace(/\b(\d{2})(\d{2})\b/, "$2");
+}
+
+function stayRange(arrival: string, departure: string): string {
+  return `${shortStayDate(arrival)} – ${shortStayDate(departure)}`;
+}
+
+function LightbulbIcon() {
   return (
-    <svg className="guest-eye" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
       <path
-        d="M1.5 9S4.2 4.5 9 4.5 16.5 9 16.5 9 13.8 13.5 9 13.5 1.5 9 1.5 9Z"
+        d="M8 1.75a3.6 3.6 0 0 0-2.2 6.45c.3.24.45.5.5.85v.7h3.4v-.7c.05-.35.2-.61.5-.85A3.6 3.6 0 0 0 8 1.75Z"
         fill="none"
         stroke="currentColor"
-        strokeWidth="1.4"
+        strokeWidth="1.3"
         strokeLinejoin="round"
       />
-      <circle cx="9" cy="9" r="2.15" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M6.6 12.35h2.8M7 13.6h2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function BandageIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <rect
+        x="2.4"
+        y="5.6"
+        width="11.2"
+        height="4.8"
+        rx="2.2"
+        transform="rotate(-35 8 8)"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
+      <circle cx="8" cy="8" r="0.85" fill="currentColor" />
+      <circle cx="6.55" cy="9.1" r="0.55" fill="currentColor" />
+      <circle cx="9.45" cy="6.9" r="0.55" fill="currentColor" />
     </svg>
   );
 }
@@ -71,8 +110,10 @@ function GuestMarks({ guest }: { guest: Guest }) {
 
 export function GuestsPage() {
   const navigate = useNavigate();
-  const { actions } = useShift();
+  const { actions, addIncident, addOpportunity } = useShift();
   const [params, setParams] = useSearchParams();
+  const [opportunityGuestId, setOpportunityGuestId] = useState<string | null>(null);
+  const [incidentGuestId, setIncidentGuestId] = useState<string | null>(null);
   const filter = selectedFilter(params.get("stay"));
   const query = params.get("q") ?? "";
   const needle = query.trim().toLowerCase();
@@ -84,6 +125,8 @@ export function GuestsPage() {
   if (filter !== "all") profileQuery.set("stay", filter);
   if (query) profileQuery.set("q", query);
   const profileSuffix = profileQuery.size ? `?${profileQuery}` : "";
+  const opportunityGuest = opportunityGuestId ? guestById(opportunityGuestId) : null;
+  const incidentGuest = incidentGuestId ? guestById(incidentGuestId) : null;
 
   useEffect(() => {
     document.title = "Guest Profiles · Guest Experience";
@@ -145,7 +188,7 @@ export function GuestsPage() {
             <col className="col-age" />
             <col className="col-vip" />
             <col className="col-loyalty" />
-            <col className="col-view" />
+            <col className="col-actions" />
           </colgroup>
           <thead>
             <tr>
@@ -193,9 +236,7 @@ export function GuestsPage() {
                       <span className="cell-strong">{guest.name}</span>
                     </Link>
                   </td>
-                  <td className="guest-dates">
-                    {guest.arrival} – {guest.departure}
-                  </td>
+                  <td className="guest-dates">{stayRange(guest.arrival, guest.departure)}</td>
                   <td>{guest.room}</td>
                   <td>{guest.partySize}</td>
                   <td>{guest.origin}</td>
@@ -207,7 +248,32 @@ export function GuestsPage() {
                     {member ? "Member" : "Not enrolled"}
                   </td>
                   <td className="cell-view">
-                    <EyeIcon />
+                    <div className="guest-row-actions">
+                      <button
+                        type="button"
+                        className="guest-quick-add"
+                        aria-label={`Add opportunity for ${guest.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpportunityGuestId(guest.id);
+                        }}
+                      >
+                        <LightbulbIcon />
+                        <span aria-hidden="true">+</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="guest-quick-add"
+                        aria-label={`Open incident for ${guest.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIncidentGuestId(guest.id);
+                        }}
+                      >
+                        <BandageIcon />
+                        <span aria-hidden="true">+</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -215,6 +281,16 @@ export function GuestsPage() {
           </tbody>
         </table>
       </section>
+      {opportunityGuest ? (
+        <GuestOpportunityDrawer
+          guest={opportunityGuest}
+          onClose={() => setOpportunityGuestId(null)}
+          onAdd={addOpportunity}
+        />
+      ) : null}
+      {incidentGuest ? (
+        <GuestIncidentDrawer guest={incidentGuest} onClose={() => setIncidentGuestId(null)} onAdd={addIncident} />
+      ) : null}
     </div>
   );
 }

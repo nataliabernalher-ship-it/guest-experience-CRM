@@ -1,3 +1,4 @@
+import { worldSubregionLabels } from "./regions";
 import type { Category } from "./shift";
 
 export type AutomationStatus = "active" | "inactive";
@@ -12,6 +13,7 @@ export type ConditionField =
   | "stay-reason"
   | "breakfast-included"
   | "room-category"
+  | "guest-region"
   | "arrival-time"
   | "departure-time";
 
@@ -53,6 +55,8 @@ export interface Automation {
   valuePerPerson?: number;
   conditions: AutomationCondition[];
   timing: AutomationTiming;
+  /** Optional details or description for reception. */
+  description?: string;
   status: AutomationStatus;
 }
 
@@ -64,6 +68,7 @@ export const conditionFields: { id: ConditionField; label: string }[] = [
   { id: "stay-reason", label: "Stay reason / reservation note" },
   { id: "breakfast-included", label: "Breakfast included" },
   { id: "room-category", label: "Room category" },
+  { id: "guest-region", label: "Guest region" },
   { id: "arrival-time", label: "Arrival time" },
   { id: "departure-time", label: "Departure time" },
 ];
@@ -95,6 +100,10 @@ const operatorsByField: Record<ConditionField, { id: ConditionOperator; label: s
     { id: "is", label: "is" },
     { id: "is-not", label: "is not" },
   ],
+  "guest-region": [
+    { id: "is", label: "is" },
+    { id: "is-not", label: "is not" },
+  ],
   "arrival-time": [
     { id: "gte", label: "is at or after" },
     { id: "lte", label: "is at or before" },
@@ -121,9 +130,12 @@ export function defaultValueForField(field: ConditionField): string {
   if (field === "stay-reason") return "";
   if (field === "breakfast-included") return "";
   if (field === "room-category") return "Deluxe";
+  if (field === "guest-region") return worldSubregionLabels[0];
   if (field === "arrival-time") return "15:00";
   return "11:00";
 }
+
+export { worldSubregionLabels };
 
 export function fieldNeedsValue(field: ConditionField, operator: ConditionOperator): boolean {
   if (field === "birthday" || field === "breakfast-included") return false;
@@ -274,6 +286,7 @@ export function emptyAutomationDraft(): Omit<Automation, "id" | "status"> {
     valuePerPerson: defaultValuePerPerson(actionLabel),
     conditions: [emptyCondition()],
     timing: "at-check-in",
+    description: "",
   };
 }
 
@@ -293,6 +306,7 @@ export const automationSeed: Automation[] = [
       },
     ],
     timing: "at-check-in",
+    description: "Mention the guest’s previous spa visit and offer a 50-minute treatment.",
     status: "active",
   },
   {
@@ -315,6 +329,7 @@ export const automationSeed: Automation[] = [
       },
     ],
     timing: "at-check-in",
+    description: "Explain member benefits briefly and offer to enrol at the desk.",
     status: "active",
   },
   {
@@ -331,6 +346,7 @@ export const automationSeed: Automation[] = [
       },
     ],
     timing: "on-guest-event",
+    description: "Arrange a complimentary amenity and a handwritten birthday note in the room.",
     status: "active",
   },
   {
@@ -347,6 +363,7 @@ export const automationSeed: Automation[] = [
       },
     ],
     timing: "before-check-in",
+    description: "Prepare a welcome back amenity before arrival for returning guests.",
     status: "active",
   },
   {
@@ -364,6 +381,7 @@ export const automationSeed: Automation[] = [
       },
     ],
     timing: "at-check-in",
-    status: "inactive",
+    description: "Offer breakfast for the stay when it is not included in the rate.",
+    status: "active",
   },
 ];

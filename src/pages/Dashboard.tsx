@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   compareActions,
-  countForListing,
   guestById,
   guestHeadcount,
   guests,
@@ -80,7 +79,6 @@ export function Dashboard() {
   const { actions } = useShift();
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
-  const recoveryCount = countForListing("recovery", actions);
   const checkInGuests = guests.filter(
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
   );
@@ -107,7 +105,38 @@ export function Dashboard() {
           <h1>{greeting(new Date())}</h1>
         </div>
         <ShiftCorner showShift />
-        <section className="results is-header" aria-label="Milestones achieved in the last 7 days">
+      </header>
+
+      <div className="dashboard-top">
+        <section className="context is-unified" aria-labelledby="shift-actions-heading">
+          <header className="context-head">
+            <h2 id="shift-actions-heading">Today&apos;s shift actions</h2>
+          </header>
+          <div className="context-metrics">
+            {stayListings.map((id) => {
+              const listing = listings[id];
+              const moment = listing.moment!;
+              const reservations = reservationCount(moment);
+              const people = guestHeadcount(moment);
+              return (
+                <Link
+                  key={id}
+                  to={listing.path}
+                  className="context-metric"
+                  data-testid={`context-${id}`}
+                >
+                  <span className="context-count">{reservations}</span>
+                  <span className="context-label">{listing.title}</span>
+                  <span className="context-people">
+                    {people} {people === 1 ? "guest" : "guests"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="results is-aside" aria-label="Milestones achieved in the last 7 days">
           <h2>Milestones achieved in the last 7 days</h2>
           <div className="results-metrics">
             <div className="result" data-testid="metric-revenue">
@@ -133,46 +162,7 @@ export function Dashboard() {
             </div>
           </div>
         </section>
-      </header>
-
-      <section className="context is-unified" aria-labelledby="shift-actions-heading">
-        <header className="context-head">
-          <h2 id="shift-actions-heading">Today&apos;s shift actions</h2>
-        </header>
-        <div className="context-metrics">
-          {stayListings.map((id) => {
-            const listing = listings[id];
-            const moment = listing.moment!;
-            const reservations = reservationCount(moment);
-            const people = guestHeadcount(moment);
-            return (
-              <Link
-                key={id}
-                to={listing.path}
-                className="context-metric"
-                data-testid={`context-${id}`}
-              >
-                <span className="context-count">{reservations}</span>
-                <span className="context-label">{listing.title}</span>
-                <span className="context-people">
-                  {people} {people === 1 ? "guest" : "guests"}
-                </span>
-              </Link>
-            );
-          })}
-          <Link
-            to={listings.recovery.path}
-            className="context-metric is-recovery"
-            data-testid="context-recovery"
-          >
-            <span className="context-count">{recoveryCount}</span>
-            <span className="context-label">{listings.recovery.title}</span>
-            <span className="context-people">
-              {recoveryCount === 1 ? "1 incident" : `${recoveryCount} incidents`}
-            </span>
-          </Link>
-        </div>
-      </section>
+      </div>
 
       <div className="board">
         <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">

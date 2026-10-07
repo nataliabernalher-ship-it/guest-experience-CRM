@@ -13,7 +13,9 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { AutomationPreview } from "../components/GuestOpportunityDrawer";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
+import { useAutomations } from "../state/AutomationsState";
 import { useShift } from "../state/ShiftState";
 
 const typeFilters: { id: "all" | Exclude<Category, "recovery">; label: string }[] = [
@@ -378,19 +380,33 @@ function OpportunityDrawer({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (opportunity: { guestId: string; category: Exclude<Category, "recovery">; label: string; value?: number }) => void;
+  onAdd: (opportunity: {
+    guestId: string;
+    category: Exclude<Category, "recovery">;
+    label: string;
+    value?: number;
+    description?: string;
+  }) => void;
 }) {
+  const { activeAutomations } = useAutomations();
   const [query, setQuery] = useState("");
   const [guestId, setGuestId] = useState("");
+  const [automationId, setAutomationId] = useState("");
   const [category, setCategory] = useState<Exclude<Category, "recovery"> | "">("");
   const [serviceId, setServiceId] = useState("");
   const [experienceId, setExperienceId] = useState("");
   const [housekeepingId, setHousekeepingId] = useState("");
 
   const guest = guests.find((item) => item.id === guestId);
+  const selectedAutomation = activeAutomations.find((item) => item.id === automationId) ?? null;
+  const fromAutomation = Boolean(selectedAutomation);
   const matches = query.trim()
     ? guests
-        .filter((item) => item.moment === "check-in" && item.name.toLowerCase().includes(query.trim().toLowerCase()))
+        .filter(
+          (item) =>
+            (item.moment === "check-in" || item.moment === "check-out" || item.moment === "in-house") &&
+            item.name.toLowerCase().includes(query.trim().toLowerCase()),
+        )
         .slice(0, 6)
     : [];
 
@@ -399,8 +415,34 @@ function OpportunityDrawer({
     setQuery(name);
   }
 
+  function applyAutomation(id: string) {
+    setAutomationId(id);
+    const automation = activeAutomations.find((item) => item.id === id);
+    if (!automation) {
+      setCategory("");
+      return;
+    }
+    setCategory(automation.category);
+    setServiceId("");
+    setExperienceId("");
+    setHousekeepingId("");
+  }
+
   function save() {
-    if (!guest || !category) return;
+    if (!guest) return;
+    if (selectedAutomation) {
+      onAdd({
+        guestId: guest.id,
+        category: selectedAutomation.category,
+        label: selectedAutomation.actionLabel,
+        value:
+          selectedAutomation.category === "upselling" ? selectedAutomation.valuePerPerson : undefined,
+        description: selectedAutomation.description,
+      });
+      onClose();
+      return;
+    }
+    if (!category) return;
     if (category === "upselling") {
       const service = upsellServices.find((item) => item.id === serviceId);
       if (!service) return;
@@ -418,9 +460,10 @@ function OpportunityDrawer({
 
   const ready =
     Boolean(guest) &&
-    (category === "loyalty" ||
-      (category === "upselling" && serviceId) ||
-      (category === "guest-experience" && experienceId && housekeepingId));
+    (fromAutomation ||
+      category === "loyalty" ||
+      (category === "upselling" && Boolean(serviceId)) ||
+      (category === "guest-experience" && Boolean(experienceId) && Boolean(housekeepingId)));
 
   return (
     <div className="drawer-root">
@@ -470,69 +513,104 @@ function OpportunityDrawer({
             placeholder="Check-in, check-out or in-house"
           />
         </label>
-        <label className="drawer-field">
-          Opportunity type
-          <select
-            className="status-select"
-            aria-label="Opportunity type"
-            value={category}
-            onChange={(event) => setCategory(event.target.value as Exclude<Category, "recovery"> | "")}
-          >
-            <option value="">Select</option>
-            <option value="upselling">Upselling</option>
-            <option value="guest-experience">Special amenities</option>
-            <option value="loyalty">Loyalty</option>
-          </select>
-        </label>
-        {category === "upselling" ? (
+        {activeAutomations.length > 0 ? (
           <label className="drawer-field">
-            Service
-            <select className="status-select" aria-label="Service" value={serviceId} onChange={(event) => setServiceId(event.target.value)}>
-              <option value="">Select</option>
-              {upsellServices.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.label}
+            From automation
+            <select
+              className="status-select"
+              aria-label="From automation"
+              value={automationId}
+              onChange={(event) => {
+                if (event.target.value) applyAutomation(event.target.value);
+                else {
+                  setAutomationId("");
+                  setCategory("");
+                }
+              }}
+            >
+              <option value="">Select manually</option>
+              {activeAutomations.map((automation) => (
+                <option key={automation.id} value={automation.id}>
+                  {automation.name}
                 </option>
               ))}
             </select>
           </label>
         ) : null}
-        {category === "guest-experience" ? (
+        {selectedAutomation ? (
+          <AutomationPreview automation={selectedAutomation} />
+        ) : (
           <>
             <label className="drawer-field">
-              Type
+              Opportunity type
               <select
                 className="status-select"
-                aria-label="Special amenities type"
-                value={experienceId}
-                onChange={(event) => setExperienceId(event.target.value)}
+                aria-label="Opportunity type"
+                value={category}
+                onChange={(event) => setCategory(event.target.value as Exclude<Category, "recovery"> | "")}
               >
                 <option value="">Select</option>
-                {experienceTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
+                <option value="upselling">Upselling</option>
+                <option value="guest-experience">Special amenities</option>
+                <option value="loyalty">Loyalty</option>
               </select>
             </label>
-            <label className="drawer-field">
-              Housekeeping
-              <select
-                className="status-select"
-                aria-label="Housekeeping"
-                value={housekeepingId}
-                onChange={(event) => setHousekeepingId(event.target.value)}
-              >
-                <option value="">Select</option>
-                {housekeepingOptions.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {category === "upselling" ? (
+              <label className="drawer-field">
+                Service
+                <select
+                  className="status-select"
+                  aria-label="Service"
+                  value={serviceId}
+                  onChange={(event) => setServiceId(event.target.value)}
+                >
+                  <option value="">Select</option>
+                  {upsellServices.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {category === "guest-experience" ? (
+              <>
+                <label className="drawer-field">
+                  Type
+                  <select
+                    className="status-select"
+                    aria-label="Special amenities type"
+                    value={experienceId}
+                    onChange={(event) => setExperienceId(event.target.value)}
+                  >
+                    <option value="">Select</option>
+                    {experienceTypes.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="drawer-field">
+                  Housekeeping
+                  <select
+                    className="status-select"
+                    aria-label="Housekeeping"
+                    value={housekeepingId}
+                    onChange={(event) => setHousekeepingId(event.target.value)}
+                  >
+                    <option value="">Select</option>
+                    {housekeepingOptions.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : null}
           </>
-        ) : null}
+        )}
         <button type="button" className="add-incident" disabled={!ready} onClick={save}>
           Add opportunity
         </button>

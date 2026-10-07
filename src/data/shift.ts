@@ -1,3 +1,5 @@
+import { regionFromOrigin, type WorldSubregionId } from "./regions";
+
 export type ListingId = "check-ins" | "check-outs" | "in-house" | "recovery";
 
 export type Category = "upselling" | "loyalty" | "guest-experience" | "recovery";
@@ -47,6 +49,8 @@ export interface Guest {
   departure: string;
   partySize: number;
   origin: string;
+  /** World subregion where the guest lives. */
+  region: WorldSubregionId;
   birthDate: string;
   profession: string;
   hobbies: string;
@@ -160,7 +164,8 @@ export const categoryLabels: Record<Category, string> = {
   recovery: "Recovery",
 };
 
-export const guests: Guest[] = [
+export const guests: Guest[] = (
+  [
   {
     id: "laura",
     name: "Laura Martín",
@@ -417,13 +422,17 @@ export const guests: Guest[] = [
     notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
     past: [{ id: "marta-past-room", kind: "opportunity", label: "Adjoining rooms", when: "Aug 2025" }],
   },
-];
+  ] as Array<Omit<Guest, "region"> & { region?: WorldSubregionId }>
+).map((guest) => ({
+  ...guest,
+  region: guest.region ?? regionFromOrigin(guest.origin),
+}));
 
 function seedGuest(
   guest: Pick<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin"> &
     Partial<Omit<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin">>,
 ): Guest {
-  return {
+  const merged = {
     previousStays: 0,
     vip: false,
     loyaltyMember: false,
@@ -436,6 +445,10 @@ function seedGuest(
     past: [],
     stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }],
     ...guest,
+  };
+  return {
+    ...merged,
+    region: guest.region ?? regionFromOrigin(merged.origin),
   };
 }
 
@@ -818,24 +831,56 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     history: [{ status: "pending", at: shiftDateTime(10, 15), note: "Incident opened" }],
   },
   {
-    id: "james-transfer",
-    guestId: "james",
-    category: "upselling",
-    label: "Offer airport transfer",
-    listing: "check-ins",
-    proximity: 0,
-    timingLabel: "This morning",
-    value: 65,
-  },
-  {
     id: "laura-spa",
     guestId: "laura",
     category: "upselling",
-    label: "Offer a spa massage",
+    label: "Offer Spa treatment",
+    description: "Mention the guest’s previous spa visit and offer a 50-minute treatment.",
     listing: "check-ins",
-    proximity: 1,
+    proximity: 0,
     timingLabel: "Today",
     value: 80,
+  },
+  {
+    id: "james-breakfast",
+    guestId: "james",
+    category: "upselling",
+    label: "Offer Breakfast",
+    description: "Offer breakfast for the stay when it is not included in the rate.",
+    listing: "check-ins",
+    proximity: 1,
+    timingLabel: "This morning",
+    value: 28,
+  },
+  {
+    id: "laura-loyalty",
+    guestId: "laura",
+    category: "loyalty",
+    label: "Invite to Loyalty program",
+    description: "Explain member benefits briefly and offer to enrol at the desk.",
+    listing: "check-ins",
+    proximity: 2,
+    timingLabel: "Today",
+  },
+  {
+    id: "paul-birthday",
+    guestId: "paul",
+    category: "guest-experience",
+    label: "Send Birthday amenity",
+    description: "Arrange a complimentary amenity and a handwritten birthday note in the room.",
+    listing: "check-ins",
+    proximity: 3,
+    timingLabel: "Today",
+  },
+  {
+    id: "mei-returning",
+    guestId: "mei",
+    category: "guest-experience",
+    label: "Send Returning Guest amenity",
+    description: "Prepare a welcome back amenity before arrival for returning guests.",
+    listing: "check-ins",
+    proximity: 4,
+    timingLabel: "Today",
   },
   {
     id: "kenji-birthday",
@@ -855,24 +900,6 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     proximity: 2,
     timingLabel: "Today",
     value: 45,
-  },
-  {
-    id: "laura-loyalty",
-    guestId: "laura",
-    category: "loyalty",
-    label: "Invite to the loyalty programme",
-    listing: "check-ins",
-    proximity: 2,
-    timingLabel: "Today",
-  },
-  {
-    id: "paul-birthday",
-    guestId: "paul",
-    category: "guest-experience",
-    label: "Birthday detail",
-    listing: "check-ins",
-    proximity: 4,
-    timingLabel: "Today",
   },
   {
     id: "amira-birthday",

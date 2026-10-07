@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
+import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import { formatGuestRegion } from "../data/regions";
 import {
   categoryLabels,
-  experienceTypes,
   guests,
-  housekeepingOptions,
-  stayMomentLabel,
-  upsellServices,
-  type Category,
-  type Guest,
   type GuestStayFilter,
   type PastStay,
-  type Severity,
   type ShiftAction,
 } from "../data/shift";
 import { useShift } from "../state/ShiftState";
@@ -149,6 +145,10 @@ export function GuestProfile() {
               <div>
                 <dt>Origin</dt>
                 <dd>{guest.origin}</dd>
+              </div>
+              <div>
+                <dt>Region</dt>
+                <dd>{formatGuestRegion(guest.region)}</dd>
               </div>
               <div>
                 <dt>Date of birth</dt>
@@ -311,237 +311,11 @@ export function GuestProfile() {
         </div>
       </div>
       {incidentOpen ? (
-        <ProfileIncidentDrawer
-          guest={guest}
-          onClose={() => setIncidentOpen(false)}
-          onAdd={addIncident}
-        />
+        <GuestIncidentDrawer guest={guest} onClose={() => setIncidentOpen(false)} onAdd={addIncident} />
       ) : null}
       {opportunityOpen ? (
-        <ProfileOpportunityDrawer
-          guest={guest}
-          onClose={() => setOpportunityOpen(false)}
-          onAdd={addOpportunity}
-        />
+        <GuestOpportunityDrawer guest={guest} onClose={() => setOpportunityOpen(false)} onAdd={addOpportunity} />
       ) : null}
-    </div>
-  );
-}
-
-function ProfileIncidentDrawer({
-  guest,
-  onClose,
-  onAdd,
-}: {
-  guest: Guest;
-  onClose: () => void;
-  onAdd: (incident: { guestId: string; label: string; description: string; severity: Severity }) => void;
-}) {
-  const [labelText, setLabelText] = useState("");
-  const [description, setDescription] = useState("");
-  const [severity, setSeverity] = useState<Severity>("normal");
-
-  function save() {
-    if (!labelText.trim()) return;
-    onAdd({ guestId: guest.id, label: labelText, description, severity });
-    onClose();
-  }
-
-  return (
-    <div className="drawer-root">
-      <button type="button" className="drawer-backdrop" aria-label="Close" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-labelledby="profile-incident-title">
-        <header className="drawer-head">
-          <h2 id="profile-incident-title">Open incident</h2>
-          <button type="button" className="incident-cancel" onClick={onClose}>
-            Cancel
-          </button>
-        </header>
-        <label className="drawer-field">
-          Guest
-          <input className="incident-input" readOnly value={guest.name} />
-        </label>
-        <label className="drawer-field">
-          Room
-          <input className="incident-input" readOnly value={guest.room} />
-        </label>
-        <label className="drawer-field">
-          Title
-          <input
-            className="incident-input"
-            aria-label="Incident title"
-            placeholder="Short title"
-            value={labelText}
-            onChange={(event) => setLabelText(event.target.value)}
-          />
-        </label>
-        <label className="drawer-field">
-          Description
-          <textarea
-            className="incident-input is-area"
-            aria-label="Incident description"
-            placeholder="What happened"
-            rows={4}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-          />
-        </label>
-        <label className="drawer-field">
-          Severity
-          <select
-            className="status-select"
-            aria-label="Severity"
-            value={severity}
-            onChange={(event) => setSeverity(event.target.value as Severity)}
-          >
-            <option value="urgent">Urgent</option>
-            <option value="normal">Normal</option>
-            <option value="low">Low</option>
-          </select>
-        </label>
-        <button type="button" className="add-incident" disabled={!labelText.trim()} onClick={save}>
-          Open incident
-        </button>
-      </aside>
-    </div>
-  );
-}
-
-function ProfileOpportunityDrawer({
-  guest,
-  onClose,
-  onAdd,
-}: {
-  guest: Guest;
-  onClose: () => void;
-  onAdd: (opportunity: {
-    guestId: string;
-    category: Exclude<Category, "recovery">;
-    label: string;
-    value?: number;
-  }) => void;
-}) {
-  const [category, setCategory] = useState<Exclude<Category, "recovery"> | "">("");
-  const [serviceId, setServiceId] = useState("");
-  const [experienceId, setExperienceId] = useState("");
-  const [housekeepingId, setHousekeepingId] = useState("");
-
-  function save() {
-    if (!category) return;
-    if (category === "upselling") {
-      const service = upsellServices.find((item) => item.id === serviceId);
-      if (!service) return;
-      onAdd({ guestId: guest.id, category, label: service.offer, value: service.value });
-    } else if (category === "guest-experience") {
-      const experience = experienceTypes.find((item) => item.id === experienceId);
-      const housekeeping = housekeepingOptions.find((item) => item.id === housekeepingId);
-      if (!experience || !housekeeping) return;
-      onAdd({ guestId: guest.id, category, label: `${experience.label}. ${housekeeping.label}` });
-    } else {
-      onAdd({ guestId: guest.id, category, label: "Invite to the loyalty programme" });
-    }
-    onClose();
-  }
-
-  const ready =
-    category === "loyalty" ||
-    (category === "upselling" && Boolean(serviceId)) ||
-    (category === "guest-experience" && Boolean(experienceId) && Boolean(housekeepingId));
-
-  return (
-    <div className="drawer-root">
-      <button type="button" className="drawer-backdrop" aria-label="Close" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-labelledby="profile-opportunity-title">
-        <header className="drawer-head">
-          <h2 id="profile-opportunity-title">Add opportunity</h2>
-          <button type="button" className="incident-cancel" onClick={onClose}>
-            Cancel
-          </button>
-        </header>
-        <label className="drawer-field">
-          Guest
-          <input className="incident-input" readOnly value={guest.name} />
-        </label>
-        <label className="drawer-field">
-          Room
-          <input className="incident-input" readOnly value={guest.room} />
-        </label>
-        <label className="drawer-field">
-          Stay
-          <input className="incident-input" readOnly value={stayMomentLabel(guest.moment)} />
-        </label>
-        <label className="drawer-field">
-          Opportunity type
-          <select
-            className="status-select"
-            aria-label="Opportunity type"
-            value={category}
-            onChange={(event) => setCategory(event.target.value as Exclude<Category, "recovery"> | "")}
-          >
-            <option value="">Select</option>
-            <option value="upselling">Upselling</option>
-            <option value="guest-experience">Special amenities</option>
-            <option value="loyalty">Loyalty</option>
-          </select>
-        </label>
-        {category === "upselling" ? (
-          <label className="drawer-field">
-            Service
-            <select
-              className="status-select"
-              aria-label="Service"
-              value={serviceId}
-              onChange={(event) => setServiceId(event.target.value)}
-            >
-              <option value="">Select</option>
-              {upsellServices.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {service.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        {category === "guest-experience" ? (
-          <>
-            <label className="drawer-field">
-              Type
-              <select
-                className="status-select"
-                aria-label="Special amenities type"
-                value={experienceId}
-                onChange={(event) => setExperienceId(event.target.value)}
-              >
-                <option value="">Select</option>
-                {experienceTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="drawer-field">
-              Housekeeping
-              <select
-                className="status-select"
-                aria-label="Housekeeping"
-                value={housekeepingId}
-                onChange={(event) => setHousekeepingId(event.target.value)}
-              >
-                <option value="">Select</option>
-                {housekeepingOptions.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </>
-        ) : null}
-        <button type="button" className="add-incident" disabled={!ready} onClick={save}>
-          Add opportunity
-        </button>
-      </aside>
     </div>
   );
 }
