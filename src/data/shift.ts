@@ -156,7 +156,7 @@ export const listings: Record<ListingId, Listing> = {
 export const categoryLabels: Record<Category, string> = {
   upselling: "Upselling",
   loyalty: "Loyalty",
-  "guest-experience": "Guest Experience",
+  "guest-experience": "Special amenities",
   recovery: "Recovery",
 };
 

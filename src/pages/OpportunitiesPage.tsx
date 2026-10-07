@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   experienceTypes,
   guestById,
@@ -14,13 +13,13 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { useShift } from "../state/ShiftState";
 
 const typeFilters: { id: "all" | Exclude<Category, "recovery">; label: string }[] = [
   { id: "all", label: "All" },
   { id: "upselling", label: "Upselling" },
-  { id: "loyalty", label: "Loyalty" },
-  { id: "guest-experience", label: "Guest Experience" },
+  { id: "guest-experience", label: "Special amenities" },
 ];
 
 function initials(name: string): string {
@@ -62,26 +61,91 @@ function OutcomeMark({ rejected }: { rejected: boolean }) {
   );
 }
 
-function OpportunityRows({
-  rows,
-  settled,
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={open ? "guest-chevron is-open" : "guest-chevron"}
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 5.25 7 8.75l3.5-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+type OpportunityRow = { guest: Guest; action: ShiftAction };
+type OpportunityItem =
+  | { kind: "single"; guest: Guest; action: ShiftAction }
+  | { kind: "group"; guest: Guest; actions: ShiftAction[] };
+
+function groupOpportunityRows(rows: OpportunityRow[]): OpportunityItem[] {
+  const items: OpportunityItem[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.guest.id)) continue;
+    seen.add(row.guest.id);
+    const actions = rows.filter((item) => item.guest.id === row.guest.id).map((item) => item.action);
+    if (actions.length <= 1) items.push({ kind: "single", guest: row.guest, action: actions[0] ?? row.action });
+    else items.push({ kind: "group", guest: row.guest, actions });
+  }
+  return items;
+}
+
+function OpportunityOutcomeButtons({
+  action,
   onStatus,
 }: {
-  rows: { guest: Guest; action: ShiftAction }[];
-  settled?: boolean;
+  action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
-  return rows.map(({ guest, action }) => (
-    <tr key={action.id} className={settled ? "is-settled" : undefined}>
-      <td>
-        <Link to={`/guests/${guest.id}`} className="guest-cell guest-link">
-          <span className="avatar" aria-hidden="true">
-            {initials(guest.name)}
-          </span>
-          <span className="cell-strong">{guest.name}</span>
-        </Link>
-      </td>
-      <td>{guest.room}</td>
+  const positive = positiveLabel(action.category);
+  const isDone = action.status === "done";
+  const isRejected = action.status === "rejected";
+
+  return (
+    <div className="outcome-buttons" role="group" aria-label="Guest response">
+      <button
+        type="button"
+        className={isDone ? "outcome-btn is-positive is-selected" : "outcome-btn is-positive"}
+        aria-pressed={isDone}
+        onClick={() => onStatus(action.id, isDone ? "pending" : "done")}
+      >
+        {positive}
+      </button>
+      {action.category === "guest-experience" ? null : (
+        <button
+          type="button"
+          className={isRejected ? "outcome-btn is-negative is-selected" : "outcome-btn is-negative"}
+          aria-pressed={isRejected}
+          onClick={() => onStatus(action.id, isRejected ? "pending" : "rejected")}
+        >
+          Rejected
+        </button>
+      )}
+    </div>
+  );
+}
+
+function OpportunityDetailCells({
+  guest,
+  action,
+  onStatus,
+}: {
+  guest: Guest;
+  action: ShiftAction;
+  onStatus: (id: string, status: ActionStatus) => void;
+}) {
+  return (
+    <>
       <td className="cell-strong">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
@@ -94,48 +158,114 @@ function OpportunityRows({
           action.category === "upselling" && action.value != null ? guest.partySize * action.value : null,
         )}
       </td>
-      <td>
-        {settled ? (
-          <span className="settled-label">{action.status === "rejected" ? "Rejected" : positiveLabel(action.category)}</span>
-        ) : action.category === "guest-experience" ? (
-          <select
-            className="status-select"
-            aria-label="Mark the status"
-            value="pending"
-            onChange={(event) => {
-              if (event.target.value === "done") onStatus(action.id, "done");
-            }}
-          >
-            <option value="pending">Pending</option>
-            <option value="done">Notified</option>
-          </select>
-        ) : (
-          <select
-            className="status-select"
-            aria-label="Mark the status"
-            defaultValue=""
-            onChange={(event) => {
-              const next = event.target.value;
-              if (next === "done" || next === "rejected") onStatus(action.id, next);
-            }}
-          >
-            <option value="" disabled>
-              Select
-            </option>
-            <option value="done">{positiveLabel(action.category)}</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        )}
+      <td onClick={(event) => event.stopPropagation()}>
+        <OpportunityOutcomeButtons action={action} onStatus={onStatus} />
       </td>
-      <td className="cell-mark">{settled ? <OutcomeMark rejected={action.status === "rejected"} /> : null}</td>
-    </tr>
-  ));
+      <td className="cell-mark">
+        {action.status === "rejected" ? (
+          <OutcomeMark rejected />
+        ) : action.status === "done" ? (
+          <OutcomeMark rejected={false} />
+        ) : null}
+      </td>
+    </>
+  );
+}
+
+function OpportunityRows({
+  rows,
+  sectionKey,
+  expandedGuests,
+  onToggleGuest,
+  onStatus,
+  onOpenOpportunity,
+}: {
+  rows: OpportunityRow[];
+  sectionKey: string;
+  expandedGuests: Set<string>;
+  onToggleGuest: (key: string) => void;
+  onStatus: (id: string, status: ActionStatus) => void;
+  onOpenOpportunity: (action: ShiftAction) => void;
+}) {
+  return groupOpportunityRows(rows).map((item) => {
+    if (item.kind === "single") {
+      const { guest, action } = item;
+      return (
+        <tr key={action.id} className="is-opportunity-row" onClick={() => onOpenOpportunity(action)}>
+          <td>
+            <span className="guest-cell">
+              <span className="avatar" aria-hidden="true">
+                {initials(guest.name)}
+              </span>
+              <span className="cell-strong">{guest.name}</span>
+            </span>
+          </td>
+          <td>{guest.room}</td>
+          <OpportunityDetailCells guest={guest} action={action} onStatus={onStatus} />
+        </tr>
+      );
+    }
+
+    const { guest, actions } = item;
+    const [first, ...rest] = actions;
+    const expandKey = `${sectionKey}:${guest.id}`;
+    const open = expandedGuests.has(expandKey);
+
+    return (
+      <Fragment key={`${sectionKey}-group-${guest.id}`}>
+        <tr
+          className={["is-opportunity-group", "is-opportunity-row", open ? "is-open" : null]
+            .filter(Boolean)
+            .join(" ") || undefined}
+          onClick={() => onOpenOpportunity(first)}
+        >
+          <td>
+            <span className="guest-cell">
+              <span className="avatar" aria-hidden="true">
+                {initials(guest.name)}
+              </span>
+              <span className="cell-strong">{guest.name}</span>
+              <button
+                type="button"
+                className="guest-accordion-toggle"
+                aria-expanded={open}
+                aria-label={open ? `Hide opportunities for ${guest.name}` : `Show opportunities for ${guest.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleGuest(expandKey);
+                }}
+              >
+                <ChevronIcon open={open} />
+              </button>
+            </span>
+          </td>
+          <td>{guest.room}</td>
+          <OpportunityDetailCells guest={guest} action={first} onStatus={onStatus} />
+        </tr>
+        {open
+          ? rest.map((action) => (
+              <tr
+                key={action.id}
+                className="is-opportunity-child is-opportunity-row"
+                onClick={() => onOpenOpportunity(action)}
+              >
+                <td />
+                <td>{guest.room}</td>
+                <OpportunityDetailCells guest={guest} action={action} onStatus={onStatus} />
+              </tr>
+            ))
+          : null}
+      </Fragment>
+    );
+  });
 }
 
 export function OpportunitiesPage() {
   const { actions, addOpportunity, setActionStatus } = useShift();
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<(typeof typeFilters)[number]["id"]>("all");
+  const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const opportunities = useMemo(
     () =>
       actions
@@ -145,14 +275,24 @@ export function OpportunitiesPage() {
         .sort((a, b) => a.guest.name.localeCompare(b.guest.name) || a.action.label.localeCompare(b.action.label)),
     [actions, type],
   );
-  const pending = opportunities.filter(({ action }) => action.status === "pending");
-  const done = opportunities.filter(({ action }) => action.status === "done");
-  const rejected = opportunities.filter(({ action }) => action.status === "rejected");
   const hasRows = opportunities.length > 0;
+  const selectedOpportunity =
+    selectedOpportunityId == null
+      ? null
+      : actions.find((action) => action.id === selectedOpportunityId && action.category !== "recovery") ?? null;
 
   useEffect(() => {
     document.title = "Opportunities · Guest Experience";
   }, []);
+
+  function toggleGuest(key: string) {
+    setExpandedGuests((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   return (
     <div className="page" data-testid="opportunities">
@@ -207,25 +347,14 @@ export function OpportunitiesPage() {
           </thead>
           <tbody>
             {hasRows ? (
-              <>
-                <OpportunityRows rows={pending} onStatus={setActionStatus} />
-                {done.length > 0 ? (
-                  <>
-                    <tr className="listing-group">
-                      <th colSpan={9}>Sold, Signed up, Notified</th>
-                    </tr>
-                    <OpportunityRows rows={done} settled onStatus={setActionStatus} />
-                  </>
-                ) : null}
-                {rejected.length > 0 ? (
-                  <>
-                    <tr className="listing-group">
-                      <th colSpan={9}>Rejected</th>
-                    </tr>
-                    <OpportunityRows rows={rejected} settled onStatus={setActionStatus} />
-                  </>
-                ) : null}
-              </>
+              <OpportunityRows
+                rows={opportunities}
+                sectionKey="all"
+                expandedGuests={expandedGuests}
+                onToggleGuest={toggleGuest}
+                onStatus={setActionStatus}
+                onOpenOpportunity={(action) => setSelectedOpportunityId(action.id)}
+              />
             ) : (
               <tr>
                 <td className="guest-empty" colSpan={9}>
@@ -237,6 +366,9 @@ export function OpportunitiesPage() {
         </table>
       </section>
       {open ? <OpportunityDrawer onClose={() => setOpen(false)} onAdd={addOpportunity} /> : null}
+      {selectedOpportunity ? (
+        <OpportunityDetailModal action={selectedOpportunity} onClose={() => setSelectedOpportunityId(null)} />
+      ) : null}
     </div>
   );
 }
@@ -348,7 +480,7 @@ function OpportunityDrawer({
           >
             <option value="">Select</option>
             <option value="upselling">Upselling</option>
-            <option value="guest-experience">Guest Experience</option>
+            <option value="guest-experience">Special amenities</option>
             <option value="loyalty">Loyalty</option>
           </select>
         </label>
@@ -371,7 +503,7 @@ function OpportunityDrawer({
               Type
               <select
                 className="status-select"
-                aria-label="Guest experience type"
+                aria-label="Special amenities type"
                 value={experienceId}
                 onChange={(event) => setExperienceId(event.target.value)}
               >

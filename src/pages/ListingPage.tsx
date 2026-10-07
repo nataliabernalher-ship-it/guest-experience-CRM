@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   compareActions,
@@ -17,10 +17,9 @@ import {
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
+import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
-
-const completedTitle = "Sold, Signed up, Notified";
 
 const severityFilters: { id: "all" | Severity; label: string }[] = [
   { id: "all", label: "All" },
@@ -40,14 +39,6 @@ function positiveLabel(category: Category): string {
   return "Solved";
 }
 
-function sectionTitle(action: ShiftAction): string {
-  if (action.status === "rejected") return "Rejected";
-  if (action.status === "notified") return "Notified";
-  if (action.status === "solved") return "Solved";
-  if (action.status === "confirmed") return "Confirmed with guest";
-  return positiveLabel(action.category);
-}
-
 function initials(name: string): string {
   return name
     .split(" ")
@@ -62,9 +53,58 @@ interface Row {
   action: ShiftAction;
 }
 
-function openRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
+type ListingItem =
+  | { kind: "single"; guest: Guest; action: ShiftAction }
+  | { kind: "group"; guest: Guest; actions: ShiftAction[] };
+
+function groupListingRows(rows: Row[]): ListingItem[] {
+  const items: ListingItem[] = [];
+  const seen = new Set<string>();
+
+  for (const row of rows) {
+    if (row.action.category === "recovery") {
+      items.push({ kind: "single", guest: row.guest, action: row.action });
+      continue;
+    }
+    if (seen.has(row.guest.id)) continue;
+    seen.add(row.guest.id);
+    const actions = rows
+      .filter((item) => item.guest.id === row.guest.id && item.action.category !== "recovery")
+      .map((item) => item.action);
+    if (actions.length <= 1) {
+      items.push({ kind: "single", guest: row.guest, action: actions[0] ?? row.action });
+    } else {
+      items.push({ kind: "group", guest: row.guest, actions });
+    }
+  }
+
+  return items;
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={open ? "guest-chevron is-open" : "guest-chevron"}
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      aria-hidden="true"
+    >
+      <path
+        d="M3.5 5.25 7 8.75l3.5-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function opportunityRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
   return actionsForListing(listingId, actions)
-    .filter((action) => action.status === "pending")
+    .filter((action) => action.category !== "recovery")
     .map((action) => ({ guest: guestById(action.guestId), action }));
 }
 
@@ -88,12 +128,6 @@ function stayIncidentRows(listingId: ListingId, actions: ShiftAction[], status: 
     .sort((a, b) => compareActions(a.action, b.action));
 }
 
-function settledRows(listingId: ListingId, actions: ShiftAction[], status: ActionStatus): Row[] {
-  return actionsForListing(listingId, actions)
-    .filter((action) => action.status === status)
-    .map((action) => ({ guest: guestById(action.guestId), action }));
-}
-
 function OutcomeMark({ rejected }: { rejected: boolean }) {
   return (
     <span className={rejected ? "mark mark-rejected" : "mark mark-done"} role="img" aria-label={rejected ? "Rejected" : "Done"}>
@@ -112,114 +146,77 @@ function OutcomeMark({ rejected }: { rejected: boolean }) {
   );
 }
 
-function MarkStatus({
+function RecoveryMarkStatus({
   action,
   onStatus,
 }: {
   action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
-  if (action.category === "recovery") {
-    return (
-      <select
-        className="status-select"
-        aria-label="Mark the status"
-        value={action.status}
-        onChange={(event) => {
-          const next = event.target.value;
-          if (next === "pending" || next === "notified" || next === "solved" || next === "confirmed") onStatus(action.id, next);
-        }}
-      >
-        <option value="pending">Pending</option>
-        <option value="notified">Notified</option>
-        <option value="solved">Solved</option>
-        <option value="confirmed">Confirmed with guest</option>
-      </select>
-    );
-  }
-
-  if (action.category === "guest-experience") {
-    return (
-      <select
-        className="status-select"
-        aria-label="Mark the status"
-        value="pending"
-        onChange={(event) => {
-          if (event.target.value === "done") onStatus(action.id, "done");
-        }}
-      >
-        <option value="pending">Pending</option>
-        <option value="done">Notified</option>
-      </select>
-    );
-  }
-
   return (
     <select
       className="status-select"
       aria-label="Mark the status"
-      defaultValue=""
+      value={action.status}
       onChange={(event) => {
         const next = event.target.value;
-        if (next === "done" || next === "rejected") onStatus(action.id, next);
+        if (next === "pending" || next === "notified" || next === "solved" || next === "confirmed") onStatus(action.id, next);
       }}
     >
-      <option value="" disabled>
-        Select
-      </option>
-      <option value="done">{positiveLabel(action.category)}</option>
-      <option value="rejected">Rejected</option>
+      <option value="pending">Pending</option>
+      <option value="notified">Notified</option>
+      <option value="solved">Solved</option>
+      <option value="confirmed">Confirmed with guest</option>
     </select>
   );
 }
 
-function ListingRows({
-  rows,
-  isRecovery,
-  focus,
-  settled,
+function OpportunityOutcomeButtons({
+  action,
   onStatus,
-  onOpenIncident,
 }: {
-  rows: Row[];
-  isRecovery: boolean;
-  focus: string | null;
-  settled?: boolean;
+  action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
-  onOpenIncident: (action: ShiftAction) => void;
 }) {
-  return rows.map(({ guest, action }) => (
-    <tr
-      key={action.id}
-      id={`action-${action.id}`}
-      className={[
-        settled ? "is-settled" : null,
-        focus === action.id ? "is-focused" : null,
-        action.category === "recovery" ? "is-incident-row" : null,
-      ]
-        .filter(Boolean)
-        .join(" ") || undefined}
-      onClick={
-        action.category === "recovery"
-          ? () => {
-              onOpenIncident(action);
-            }
-          : undefined
-      }
-    >
-      <td>
-        <Link
-          to={`/guests/${guest.id}`}
-          className="guest-cell guest-link"
-          onClick={(event) => event.stopPropagation()}
+  const positive = positiveLabel(action.category);
+  const isDone = action.status === "done";
+  const isRejected = action.status === "rejected";
+
+  return (
+    <div className="outcome-buttons" role="group" aria-label="Guest response">
+      <button
+        type="button"
+        className={isDone ? "outcome-btn is-positive is-selected" : "outcome-btn is-positive"}
+        aria-pressed={isDone}
+        onClick={() => onStatus(action.id, isDone ? "pending" : "done")}
+      >
+        {positive}
+      </button>
+      {action.category === "guest-experience" ? null : (
+        <button
+          type="button"
+          className={isRejected ? "outcome-btn is-negative is-selected" : "outcome-btn is-negative"}
+          aria-pressed={isRejected}
+          onClick={() => onStatus(action.id, isRejected ? "pending" : "rejected")}
         >
-          <span className="avatar" aria-hidden="true">
-            {initials(guest.name)}
-          </span>
-          <span className="cell-strong">{guest.name}</span>
-        </Link>
-      </td>
-      <td>{guest.room}</td>
+          Rejected
+        </button>
+      )}
+    </div>
+  );
+}
+
+function OpportunityActionCells({
+  action,
+  isRecovery,
+  onStatus,
+}: {
+  action: ShiftAction;
+  isRecovery: boolean;
+  onStatus: (id: string, status: ActionStatus) => void;
+}) {
+  return (
+    <>
       <td className="cell-strong">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
@@ -233,21 +230,151 @@ function ListingRows({
       )}
       {isRecovery ? <td>{action.severity ? label(action.severity) : "—"}</td> : null}
       <td onClick={(event) => event.stopPropagation()}>
-        {action.category === "recovery" || !settled ? (
-          <MarkStatus action={action} onStatus={onStatus} />
+        {action.category === "recovery" ? (
+          <RecoveryMarkStatus action={action} onStatus={onStatus} />
         ) : (
-          <span className="settled-label">{sectionTitle(action)}</span>
+          <OpportunityOutcomeButtons action={action} onStatus={onStatus} />
         )}
       </td>
       <td className="cell-mark">
-        {action.status === "confirmed" || (settled && action.status === "rejected") ? (
-          <OutcomeMark rejected={action.status === "rejected"} />
-        ) : settled && action.status === "done" ? (
+        {action.category === "recovery" && action.status === "confirmed" ? (
+          <OutcomeMark rejected={false} />
+        ) : action.category !== "recovery" && action.status === "rejected" ? (
+          <OutcomeMark rejected />
+        ) : action.category !== "recovery" && action.status === "done" ? (
           <OutcomeMark rejected={false} />
         ) : null}
       </td>
-    </tr>
-  ));
+    </>
+  );
+}
+
+function ListingRows({
+  rows,
+  isRecovery,
+  focus,
+  settled,
+  sectionKey,
+  expandedGuests,
+  onToggleGuest,
+  onStatus,
+  onOpenIncident,
+  onOpenOpportunity,
+}: {
+  rows: Row[];
+  isRecovery: boolean;
+  focus: string | null;
+  settled?: boolean;
+  sectionKey: string;
+  expandedGuests: Set<string>;
+  onToggleGuest: (guestId: string) => void;
+  onStatus: (id: string, status: ActionStatus) => void;
+  onOpenIncident: (action: ShiftAction) => void;
+  onOpenOpportunity: (action: ShiftAction) => void;
+}) {
+  const items = groupListingRows(rows);
+
+  return items.map((item) => {
+    if (item.kind === "single") {
+      const { guest, action } = item;
+      return (
+        <tr
+          key={action.id}
+          id={`action-${action.id}`}
+          className={[
+            settled ? "is-settled" : null,
+            focus === action.id ? "is-focused" : null,
+            action.category === "recovery" ? "is-incident-row" : "is-opportunity-row",
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined}
+          onClick={() => {
+            if (action.category === "recovery") onOpenIncident(action);
+            else onOpenOpportunity(action);
+          }}
+        >
+          <td>
+            <span className="guest-cell">
+              <span className="avatar" aria-hidden="true">
+                {initials(guest.name)}
+              </span>
+              <span className="cell-strong">{guest.name}</span>
+            </span>
+          </td>
+          <td>{guest.room}</td>
+          <OpportunityActionCells action={action} isRecovery={isRecovery} onStatus={onStatus} />
+        </tr>
+      );
+    }
+
+    const { guest, actions } = item;
+    const [first, ...rest] = actions;
+    const expandKey = `${sectionKey}:${guest.id}`;
+    const open = expandedGuests.has(expandKey);
+    const focused = actions.some((action) => action.id === focus);
+
+    return (
+      <Fragment key={`${sectionKey}-group-${guest.id}`}>
+        <tr
+          id={`action-${first.id}`}
+          className={[
+            "is-opportunity-group",
+            "is-opportunity-row",
+            settled ? "is-settled" : null,
+            focus === first.id || focused ? "is-focused" : null,
+            open ? "is-open" : null,
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined}
+          onClick={() => onOpenOpportunity(first)}
+        >
+          <td>
+            <span className="guest-cell">
+              <span className="avatar" aria-hidden="true">
+                {initials(guest.name)}
+              </span>
+              <span className="cell-strong">{guest.name}</span>
+              <button
+                type="button"
+                className="guest-accordion-toggle"
+                aria-expanded={open}
+                aria-label={open ? `Hide opportunities for ${guest.name}` : `Show opportunities for ${guest.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleGuest(expandKey);
+                }}
+              >
+                <ChevronIcon open={open} />
+              </button>
+            </span>
+          </td>
+          <td>{guest.room}</td>
+          <OpportunityActionCells action={first} isRecovery={isRecovery} onStatus={onStatus} />
+        </tr>
+        {open
+          ? rest.map((action) => (
+              <tr
+                key={action.id}
+                id={`action-${action.id}`}
+                className={[
+                  "is-opportunity-child",
+                  "is-opportunity-row",
+                  settled ? "is-settled" : null,
+                  focus === action.id ? "is-focused" : null,
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined}
+                onClick={() => onOpenOpportunity(action)}
+              >
+                <td />
+                <td>{guest.room}</td>
+                <OpportunityActionCells action={action} isRecovery={isRecovery} onStatus={onStatus} />
+              </tr>
+            ))
+          : null}
+      </Fragment>
+    );
+  });
 }
 
 function ListingCard({
@@ -257,6 +384,7 @@ function ListingCard({
   focus,
   onStatus,
   onOpenIncident,
+  onOpenOpportunity,
   tools,
 }: {
   pending: Row[];
@@ -265,10 +393,43 @@ function ListingCard({
   focus: string | null;
   onStatus: (id: string, status: ActionStatus) => void;
   onOpenIncident: (action: ShiftAction) => void;
+  onOpenOpportunity: (action: ShiftAction) => void;
   tools?: ReactNode;
 }) {
+  const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
   const columnCount = isRecovery ? 8 : 7;
   const hasRows = pending.length + groups.reduce((total, group) => total + group.rows.length, 0) > 0;
+
+  useEffect(() => {
+    if (!focus) return;
+    const allRows = [...pending, ...groups.flatMap((group) => group.rows)];
+    const focused = allRows.find((row) => row.action.id === focus && row.action.category !== "recovery");
+    if (!focused) return;
+    const siblings = allRows.filter(
+      (row) => row.guest.id === focused.guest.id && row.action.category !== "recovery",
+    );
+    if (siblings.length < 2) return;
+    const pendingHas = pending.some((row) => row.action.id === focus);
+    const section = pendingHas
+      ? "pending"
+      : (groups.find((group) => group.rows.some((row) => row.action.id === focus))?.title ?? "pending");
+    const key = `${section}:${focused.guest.id}`;
+    setExpandedGuests((current) => {
+      if (current.has(key)) return current;
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }, [focus, pending, groups]);
+
+  function toggleGuest(key: string) {
+    setExpandedGuests((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   return (
     <section className="table-card" data-testid="listing-open">
@@ -302,8 +463,12 @@ function ListingCard({
               rows={pending}
               isRecovery={isRecovery}
               focus={focus}
+              sectionKey="pending"
+              expandedGuests={expandedGuests}
+              onToggleGuest={toggleGuest}
               onStatus={onStatus}
               onOpenIncident={onOpenIncident}
+              onOpenOpportunity={onOpenOpportunity}
             />
             {groups.map((group) =>
               group.rows.length > 0 ? (
@@ -316,8 +481,12 @@ function ListingCard({
                     isRecovery={isRecovery}
                     focus={focus}
                     settled
+                    sectionKey={group.title}
+                    expandedGuests={expandedGuests}
+                    onToggleGuest={toggleGuest}
                     onStatus={onStatus}
                     onOpenIncident={onOpenIncident}
+                    onOpenOpportunity={onOpenOpportunity}
                   />
                 </Fragment>
               ) : null,
@@ -451,12 +620,13 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
   const pending = isRecovery
     ? recoveryRows(actions, "pending", severity)
-    : [...openRows(listingId, actions), ...stayIncidentRows(listingId, actions, "pending")].sort((a, b) =>
+    : [...opportunityRows(listingId, actions), ...stayIncidentRows(listingId, actions, "pending")].sort((a, b) =>
         compareActions(a.action, b.action),
       );
   const groups = isRecovery
@@ -465,8 +635,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         { title: "Solved", rows: recoveryRows(actions, "solved", severity) },
       ]
     : [
-        { title: completedTitle, rows: settledRows(listingId, actions, "done") },
-        { title: "Rejected", rows: settledRows(listingId, actions, "rejected") },
         { title: "Notified", rows: stayIncidentRows(listingId, actions, "notified") },
         { title: "Solved", rows: stayIncidentRows(listingId, actions, "solved") },
       ];
@@ -474,13 +642,19 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
     selectedIncidentId == null
       ? null
       : actions.find((action) => action.id === selectedIncidentId && action.category === "recovery") ?? null;
+  const selectedOpportunity =
+    selectedOpportunityId == null
+      ? null
+      : actions.find((action) => action.id === selectedOpportunityId && action.category !== "recovery") ?? null;
 
   useEffect(() => {
     document.title = `${listing.title} · Guest Experience`;
     if (!focus) return;
     document.getElementById(`action-${focus}`)?.scrollIntoView({ block: "center" });
-    const focused = actions.find((action) => action.id === focus && action.category === "recovery");
-    if (focused) setSelectedIncidentId(focused.id);
+    const focused = actions.find((action) => action.id === focus);
+    if (!focused) return;
+    if (focused.category === "recovery") setSelectedIncidentId(focused.id);
+    else setSelectedOpportunityId(focused.id);
   }, [focus, listing.title, actions]);
 
   return (
@@ -513,6 +687,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         isRecovery={isRecovery}
         focus={focus}
         onStatus={setActionStatus}
+        onOpenOpportunity={(action) => setSelectedOpportunityId(action.id)}
         onOpenIncident={(action) => setSelectedIncidentId(action.id)}
         tools={
           isRecovery ? (
@@ -543,6 +718,9 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
       ) : null}
       {selectedIncident ? (
         <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
+      ) : null}
+      {selectedOpportunity ? (
+        <OpportunityDetailModal action={selectedOpportunity} onClose={() => setSelectedOpportunityId(null)} />
       ) : null}
     </div>
   );

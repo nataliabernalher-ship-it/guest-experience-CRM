@@ -48,10 +48,10 @@ export function Shell() {
           <p className="sidebar-user">Clara Mendes</p>
           <div className="nav-rule" role="separator" />
           <NavLink
-            to="/configuration"
+            to="/automations"
             className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
           >
-            Configuration
+            Automations
           </NavLink>
           <button type="button" className="sidebar-logout">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">

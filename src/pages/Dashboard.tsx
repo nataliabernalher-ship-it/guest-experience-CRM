@@ -15,6 +15,7 @@ import {
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
+import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
@@ -78,6 +79,7 @@ export function Dashboard() {
 
   const { actions } = useShift();
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const recoveryCount = countForListing("recovery", actions);
   const checkInGuests = guests.filter(
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
@@ -93,49 +95,83 @@ export function Dashboard() {
     selectedIncidentId == null
       ? null
       : actions.find((action) => action.id === selectedIncidentId && action.category === "recovery") ?? null;
+  const selectedOpportunity =
+    selectedOpportunityId == null
+      ? null
+      : actions.find((action) => action.id === selectedOpportunityId && action.category !== "recovery") ?? null;
 
   return (
     <div className="page" data-testid="dashboard">
-      <header className="page-header is-split">
-        <div>
-          <p className="eyebrow">Today&apos;s shift</p>
+      <header className="page-header is-dashboard">
+        <div className="dashboard-greeting">
           <h1>{greeting(new Date())}</h1>
         </div>
         <ShiftCorner showShift />
+        <section className="results is-header" aria-label="Milestones achieved in the last 7 days">
+          <h2>Milestones achieved in the last 7 days</h2>
+          <div className="results-metrics">
+            <div className="result" data-testid="metric-revenue">
+              <span className="result-figure">
+                <TrendArrow direction={last7Days.upsellingRevenue.direction} />
+                <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
+              </span>
+              <span className="result-label">Upselling revenue</span>
+            </div>
+            <div className="result" data-testid="metric-loyalty">
+              <span className="result-figure">
+                <TrendArrow direction={last7Days.loyaltySignUps.direction} />
+                <span className="result-value">{last7Days.loyaltySignUps.value}</span>
+              </span>
+              <span className="result-label">Loyalty sign-ups</span>
+            </div>
+            <div className="result" data-testid="metric-pampered">
+              <span className="result-figure">
+                <TrendArrow direction={last7Days.guestsPampered.direction} />
+                <span className="result-value">{last7Days.guestsPampered.value}</span>
+              </span>
+              <span className="result-label">Guests pampered</span>
+            </div>
+          </div>
+        </section>
       </header>
 
-      <section className="context" aria-label="Shift context">
-        {stayListings.map((id) => {
-          const listing = listings[id];
-          const moment = listing.moment!;
-          const reservations = reservationCount(moment);
-          const guests = guestHeadcount(moment);
-          return (
-            <Link
-              key={id}
-              to={listing.path}
-              className="context-card"
-              data-testid={`context-${id}`}
-            >
-              <span className="context-total">
+      <section className="context is-unified" aria-labelledby="shift-actions-heading">
+        <header className="context-head">
+          <h2 id="shift-actions-heading">Today&apos;s shift actions</h2>
+        </header>
+        <div className="context-metrics">
+          {stayListings.map((id) => {
+            const listing = listings[id];
+            const moment = listing.moment!;
+            const reservations = reservationCount(moment);
+            const people = guestHeadcount(moment);
+            return (
+              <Link
+                key={id}
+                to={listing.path}
+                className="context-metric"
+                data-testid={`context-${id}`}
+              >
                 <span className="context-count">{reservations}</span>
                 <span className="context-label">{listing.title}</span>
                 <span className="context-people">
-                  {guests} {guests === 1 ? "guest" : "guests"}
+                  {people} {people === 1 ? "guest" : "guests"}
                 </span>
-              </span>
-            </Link>
-          );
-        })}
-        <Link to={listings.recovery.path} className="context-card is-recovery" data-testid="context-recovery">
-          <span className="context-total">
+              </Link>
+            );
+          })}
+          <Link
+            to={listings.recovery.path}
+            className="context-metric is-recovery"
+            data-testid="context-recovery"
+          >
             <span className="context-count">{recoveryCount}</span>
             <span className="context-label">{listings.recovery.title}</span>
             <span className="context-people">
               {recoveryCount === 1 ? "1 incident" : `${recoveryCount} incidents`}
             </span>
-          </span>
-        </Link>
+          </Link>
+        </div>
       </section>
 
       <div className="board">
@@ -148,7 +184,13 @@ export function Dashboard() {
               const opportunity = opportunityForGuest(guest.id, actions);
               return (
                 <li key={guest.id}>
-                  <Link to={`/guests/${guest.id}`} className="vip-row is-checkin">
+                  <button
+                    type="button"
+                    className="vip-row is-checkin is-actionable"
+                    onClick={() => {
+                      if (opportunity) setSelectedOpportunityId(opportunity.id);
+                    }}
+                  >
                     <span className="vip-copy">
                       <span className="vip-name">{guest.name}</span>
                       <span className="vip-meta">{stayLine(guest)}</span>
@@ -159,12 +201,12 @@ export function Dashboard() {
                     ) : (
                       <span className="guest-none">–</span>
                     )}
-                  </Link>
+                  </button>
                 </li>
               );
             })}
           </ul>
-          <div className="checkins-foot">
+          <div className="board-foot">
             <Link to={listings["check-ins"].path} className="view-all">
               View all
             </Link>
@@ -175,7 +217,6 @@ export function Dashboard() {
           <section className="panel" aria-labelledby="priority-heading">
             <div className="panel-head">
               <h2 id="priority-heading">Incidents that need to be resolved</h2>
-              <p>Follow up on these incidents.</p>
             </div>
             <ol className="priority board-scroll" data-testid="priority-list">
               {incidents.map((action) => {
@@ -208,38 +249,19 @@ export function Dashboard() {
                 );
               })}
             </ol>
-          </section>
-
-          <section className="results" aria-label="Milestones achieved in the last 7 days">
-            <header className="results-head">
-              <h2>Milestones achieved in the last 7 days</h2>
-            </header>
-            <div className="result" data-testid="metric-revenue">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.upsellingRevenue.direction} />
-                <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
-              </span>
-              <span className="result-label">Upselling revenue</span>
-            </div>
-            <div className="result" data-testid="metric-loyalty">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.loyaltySignUps.direction} />
-                <span className="result-value">{last7Days.loyaltySignUps.value}</span>
-              </span>
-              <span className="result-label">Loyalty sign-ups</span>
-            </div>
-            <div className="result" data-testid="metric-pampered">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.guestsPampered.direction} />
-                <span className="result-value">{last7Days.guestsPampered.value}</span>
-              </span>
-              <span className="result-label">Guests pampered</span>
+            <div className="board-foot">
+              <Link to={listings.recovery.path} className="view-all">
+                View all
+              </Link>
             </div>
           </section>
         </div>
       </div>
       {selectedIncident ? (
         <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
+      ) : null}
+      {selectedOpportunity ? (
+        <OpportunityDetailModal action={selectedOpportunity} onClose={() => setSelectedOpportunityId(null)} />
       ) : null}
     </div>
   );
