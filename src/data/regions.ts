@@ -100,6 +100,43 @@ const originToSubregion: Record<string, WorldSubregionId> = {
   Manchester: "northern-europe",
 };
 
+const originToCountry: Record<string, string> = {
+  Madrid: "Spain",
+  Lagos: "Nigeria",
+  London: "United Kingdom",
+  Budapest: "Hungary",
+  Cairo: "Egypt",
+  Milan: "Italy",
+  Hamburg: "Germany",
+  Kyoto: "Japan",
+  Krakow: "Poland",
+  Stockholm: "Sweden",
+  Lyon: "France",
+  Oslo: "Norway",
+  Valencia: "Spain",
+  Dubai: "United Arab Emirates",
+  Mumbai: "India",
+  Zurich: "Switzerland",
+  Casablanca: "Morocco",
+  Gothenburg: "Sweden",
+  Singapore: "Singapore",
+  Vienna: "Austria",
+  Lisbon: "Portugal",
+  Munich: "Germany",
+  Beirut: "Lebanon",
+  Toronto: "Canada",
+  Rome: "Italy",
+  Accra: "Ghana",
+  Prague: "Czechia",
+  Santiago: "Chile",
+  Copenhagen: "Denmark",
+  Dublin: "Ireland",
+  Paris: "France",
+  Sofia: "Bulgaria",
+  Tunis: "Tunisia",
+  Manchester: "United Kingdom",
+};
+
 export function subregionById(id: WorldSubregionId): WorldSubregion {
   const found = worldSubregions.find((item) => item.id === id);
   if (!found) throw new Error(`Unknown world subregion ${id}`);
@@ -112,6 +149,10 @@ export function continentLabel(id: WorldContinentId): string {
 
 export function regionFromOrigin(origin: string): WorldSubregionId {
   return originToSubregion[origin] ?? "western-europe";
+}
+
+export function countryFromOrigin(origin: string): string {
+  return originToCountry[origin] ?? "Unknown";
 }
 
 export function formatGuestRegion(subregionId: WorldSubregionId): string {

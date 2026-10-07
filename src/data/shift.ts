@@ -1,4 +1,4 @@
-import { regionFromOrigin, type WorldSubregionId } from "./regions";
+import { countryFromOrigin, regionFromOrigin, type WorldSubregionId } from "./regions";
 
 export type ListingId = "check-ins" | "check-outs" | "in-house" | "recovery";
 
@@ -16,10 +16,51 @@ export interface Companion {
   guestId?: string;
 }
 
+export type TravelCompanionship = "couple" | "friends" | "family" | "alone";
+
+export const travelCompanionshipLabels: Record<TravelCompanionship, string> = {
+  couple: "Travels as a couple",
+  friends: "Travels with friends",
+  family: "Travels with family",
+  alone: "Travels alone",
+};
+
+export type BookingSource = "direct" | "ota";
+
+export const bookingSourceLabels: Record<BookingSource, string> = {
+  direct: "Direct booking",
+  ota: "OTA booking",
+};
+
+export type BoardType = "all-inclusive" | "half-board" | "breakfast-only";
+
+export const boardTypeLabels: Record<BoardType, string> = {
+  "all-inclusive": "All inclusive",
+  "half-board": "Half board",
+  "breakfast-only": "Breakfast only",
+};
+
+const boardTypeCycle: BoardType[] = ["breakfast-only", "half-board", "all-inclusive"];
+
 export interface PastStay {
   roomType: string;
   from: string;
   to: string;
+  bookingSource: BookingSource;
+  boardType: BoardType;
+}
+
+type StaySeed = Omit<PastStay, "bookingSource" | "boardType"> & {
+  bookingSource?: BookingSource;
+  boardType?: BoardType;
+};
+
+function withStayDefaults(stay: StaySeed, index: number): PastStay {
+  return {
+    ...stay,
+    bookingSource: stay.bookingSource ?? (index % 2 === 0 ? "direct" : "ota"),
+    boardType: stay.boardType ?? boardTypeCycle[index % boardTypeCycle.length],
+  };
 }
 
 export interface GuestNote {
@@ -28,11 +69,149 @@ export interface GuestNote {
   date: string;
 }
 
+const receptionNoteSeeds = [
+  "Prefers a quiet room away from the lift.",
+  "Asked for extra towels at check-in.",
+  "Likes a newspaper left outside in the morning.",
+  "Travels light; no need for a luggage trolley.",
+  "Requested a late wake-up call.",
+  "Enjoys the garden terrace in the afternoon.",
+  "Prefers contact by WhatsApp for room requests.",
+  "Allergic to feather pillows — foam provided.",
+];
+
+export function ensureReceptionNotes(
+  guest: { id: string; arrival: string; notes?: GuestNote[] },
+): GuestNote[] {
+  const notes = guest.notes ?? [];
+  if (notes.some((note) => note.author === "Reception")) return notes;
+
+  const index = guest.id.charCodeAt(0) % receptionNoteSeeds.length;
+  return [
+    ...notes,
+    {
+      text: receptionNoteSeeds[index],
+      author: "Reception",
+      date: guest.arrival,
+    },
+  ];
+}
+
+export type OpportunityOutcome = "done" | "rejected";
+
+export type OpportunityCategory = Exclude<Category, "recovery">;
+
 export interface PastRecord {
   id: string;
   kind: "incident" | "opportunity";
   label: string;
   when: string;
+  /** Opportunity type (upselling, loyalty, special amenities). */
+  category?: OpportunityCategory;
+  /** Whether the opportunity was carried out. */
+  outcome?: OpportunityOutcome;
+}
+
+const opportunityCategoryCycle: OpportunityCategory[] = [
+  "upselling",
+  "loyalty",
+  "guest-experience",
+];
+
+const opportunitySeedLabels: Record<OpportunityCategory, string[]> = {
+  upselling: ["Room upgrade", "Spa treatment", "Late check-out", "Restaurant reservation"],
+  loyalty: ["Loyalty enrolment", "Loyalty renewal", "Points top-up"],
+  "guest-experience": ["Birthday amenity", "Welcome amenity", "Anniversary amenity"],
+};
+
+export function ensurePastOpportunities(
+  guestId: string,
+  past: PastRecord[],
+): PastRecord[] {
+  const normalized = past.map((record) => {
+    if (record.kind !== "opportunity") return record;
+    const index = record.id.charCodeAt(0);
+    return {
+      ...record,
+      category: record.category ?? opportunityCategoryCycle[index % opportunityCategoryCycle.length],
+      outcome: record.outcome ?? (index % 2 === 0 ? "done" : "rejected"),
+    };
+  });
+
+  if (normalized.some((record) => record.kind === "opportunity")) return normalized;
+
+  const index = guestId.charCodeAt(0);
+  const category = opportunityCategoryCycle[index % opportunityCategoryCycle.length];
+  const labels = opportunitySeedLabels[category];
+  return [
+    ...normalized,
+    {
+      id: `${guestId}-past-opportunity`,
+      kind: "opportunity",
+      label: labels[index % labels.length],
+      when: index % 2 === 0 ? "Mar 2026" : "Nov 2025",
+      category,
+      outcome: index % 2 === 0 ? "done" : "rejected",
+    },
+  ];
+}
+
+export interface GuestPreferences {
+  roomType: string;
+  bedType: string;
+  pillowType: string;
+  dining: string;
+}
+
+const bedTypeCycle = ["King", "Twin", "Queen"] as const;
+const pillowTypeCycle = ["Soft", "Firm", "Hypoallergenic"] as const;
+const diningCycle = ["Vegetarian", "No shellfish", "Gluten-free", "Dairy-free"] as const;
+
+export function defaultPreferences(guest: {
+  id: string;
+  stays: PastStay[];
+  preferences?: Partial<GuestPreferences>;
+}): GuestPreferences {
+  const index = guest.id.charCodeAt(0);
+  return {
+    roomType: guest.stays[0]?.roomType ?? "Superior double",
+    bedType: bedTypeCycle[index % bedTypeCycle.length],
+    pillowType: pillowTypeCycle[index % pillowTypeCycle.length],
+    dining: diningCycle[index % diningCycle.length],
+    ...guest.preferences,
+  };
+}
+
+export interface GuestSpend {
+  /** Room / stay charges. */
+  stay: number;
+  /** Ancillary spend (spa, F&B extras, etc.). */
+  extras: number;
+}
+
+export const spendCategoryLabels: Record<keyof GuestSpend, string> = {
+  stay: "Stay",
+  extras: "Extras",
+};
+
+export function defaultSpend(guest: {
+  id: string;
+  stays: PastStay[];
+  spend?: Partial<GuestSpend>;
+}): GuestSpend {
+  const index = guest.id.charCodeAt(0);
+  const stayNights = Math.max(1, guest.stays.length * 2 + (index % 3));
+  const stay = guest.spend?.stay ?? 160 * stayNights + (index % 5) * 40;
+  const extras = guest.spend?.extras ?? Math.round(stay * (0.18 + (index % 4) * 0.04));
+  return { stay, extras };
+}
+
+export function formatSpend(amount: number): string {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
 export interface Guest {
@@ -49,15 +228,29 @@ export interface Guest {
   departure: string;
   partySize: number;
   origin: string;
+  /** Country where the guest lives. */
+  country: string;
   /** World subregion where the guest lives. */
   region: WorldSubregionId;
   birthDate: string;
   profession: string;
   hobbies: string;
   companions: Companion[];
+  /** How the guest is travelling on this stay. */
+  companionship: TravelCompanionship;
+  preferences: GuestPreferences;
+  /** Lifetime spend breakdown across stays. */
+  spend: GuestSpend;
   stays: PastStay[];
   notes: GuestNote[];
   past: PastRecord[];
+}
+
+export function companionshipFromParty(partySize: number, companions: Companion[]): TravelCompanionship {
+  if (partySize <= 1 && companions.length === 0) return "alone";
+  if (partySize === 2 || companions.length === 1) return "couple";
+  if (partySize >= 4 || companions.length >= 3) return "family";
+  return "friends";
 }
 
 export interface ShiftAction {
@@ -181,25 +374,47 @@ export const guests: Guest[] = (
     birthDate: "14 March 1984",
     profession: "Architect",
     hobbies: "Contemporary art, cycling",
+    companionship: "family",
     companions: [
       { name: "Marta Lind", guestId: "marta" },
       { name: "Anna Martín" },
     ],
+    preferences: {
+      roomType: "Deluxe king",
+      bedType: "King",
+      pillowType: "Soft",
+      dining: "Oat milk / dairy-free breakfast",
+    },
+    spend: { stay: 2840, extras: 620 },
     stays: [
-      { roomType: "Deluxe king", from: "30 Sep 2026", to: "4 Oct 2026" },
-      { roomType: "Junior suite", from: "2 May 2026", to: "6 May 2026" },
-      { roomType: "Deluxe king", from: "18 Nov 2025", to: "21 Nov 2025" },
-      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025" },
-      { roomType: "Deluxe king", from: "3 Feb 2025", to: "7 Feb 2025" },
+      { roomType: "Deluxe king", from: "30 Sep 2026", to: "4 Oct 2026", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Junior suite", from: "2 May 2026", to: "6 May 2026", bookingSource: "direct", boardType: "breakfast-only" },
+      { roomType: "Deluxe king", from: "18 Nov 2025", to: "21 Nov 2025", bookingSource: "ota", boardType: "all-inclusive" },
+      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Deluxe king", from: "3 Feb 2025", to: "7 Feb 2025", bookingSource: "ota", boardType: "breakfast-only" },
     ],
     notes: [
       { text: "Prefers a high floor and a quiet room.", author: "Reception", date: "2 May 2026" },
       { text: "Asked for oat milk at breakfast last stay.", author: "Reception", date: "18 Nov 2025" },
     ],
     past: [
-      { id: "laura-past-spa", kind: "opportunity", label: "Spa afternoon", when: "May 2026" },
+      {
+        id: "laura-past-spa",
+        kind: "opportunity",
+        label: "Spa afternoon",
+        when: "May 2026",
+        category: "upselling",
+        outcome: "done",
+      },
       { id: "laura-past-pillow", kind: "incident", label: "Extra pillows", when: "Nov 2025" },
-      { id: "laura-past-late", kind: "opportunity", label: "Late check-out", when: "Aug 2025" },
+      {
+        id: "laura-past-late",
+        kind: "opportunity",
+        label: "Late check-out",
+        when: "Aug 2025",
+        category: "upselling",
+        outcome: "rejected",
+      },
     ],
   },
   {
@@ -218,7 +433,7 @@ export const guests: Guest[] = (
     profession: "Product manager",
     hobbies: "Photography",
     companions: [],
-    stays: [{ roomType: "Superior double", from: "30 Sep 2026", to: "2 Oct 2026" }],
+    stays: [{ roomType: "Superior double", from: "30 Sep 2026", to: "2 Oct 2026", bookingSource: "ota", boardType: "breakfast-only" }],
     notes: [{ text: "Prefers a late breakfast and a quiet table.", author: "Reception", date: "29 Sep 2026" }],
     past: [],
   },
@@ -238,8 +453,14 @@ export const guests: Guest[] = (
     profession: "Journalist",
     hobbies: "Jazz, long walks",
     companions: [{ name: "David Adeyemi" }],
-    stays: [{ roomType: "Superior twin", from: "30 Sep 2026", to: "5 Oct 2026" }],
-    notes: [],
+    stays: [{ roomType: "Superior twin", from: "30 Sep 2026", to: "5 Oct 2026", bookingSource: "direct", boardType: "half-board" }],
+    notes: [
+      {
+        text: "Travelling with his brother; twin beds confirmed.",
+        author: "Reception",
+        date: "30 Sep 2026",
+      },
+    ],
     past: [],
   },
   {
@@ -259,15 +480,22 @@ export const guests: Guest[] = (
     hobbies: "Wine, design fairs",
     companions: [{ name: "Andras Varga" }],
     stays: [
-      { roomType: "Deluxe king", from: "26 Sep 2026", to: "30 Sep 2026" },
-      { roomType: "Deluxe king", from: "11 Apr 2026", to: "14 Apr 2026" },
-      { roomType: "Junior suite", from: "20 Oct 2025", to: "24 Oct 2025" },
-      { roomType: "Garden room", from: "2 Jun 2025", to: "6 Jun 2025" },
+      { roomType: "Deluxe king", from: "26 Sep 2026", to: "30 Sep 2026", bookingSource: "direct", boardType: "all-inclusive" },
+      { roomType: "Deluxe king", from: "11 Apr 2026", to: "14 Apr 2026", bookingSource: "ota", boardType: "breakfast-only" },
+      { roomType: "Junior suite", from: "20 Oct 2025", to: "24 Oct 2025", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Garden room", from: "2 Jun 2025", to: "6 Jun 2025", bookingSource: "ota", boardType: "all-inclusive" },
     ],
     notes: [{ text: "Does not use the minibar.", author: "Reception", date: "11 Apr 2026" }],
     past: [
       { id: "elena-past-noise", kind: "incident", label: "Noise from the corridor", when: "Apr 2026" },
-      { id: "elena-past-upgrade", kind: "opportunity", label: "Suite upgrade", when: "Oct 2025" },
+      {
+        id: "elena-past-upgrade",
+        kind: "opportunity",
+        label: "Suite upgrade",
+        when: "Oct 2025",
+        category: "upselling",
+        outcome: "done",
+      },
     ],
   },
   {
@@ -286,7 +514,7 @@ export const guests: Guest[] = (
     profession: "Physician",
     hobbies: "Swimming",
     companions: [],
-    stays: [{ roomType: "Superior double", from: "27 Sep 2026", to: "30 Sep 2026" }],
+    stays: [{ roomType: "Superior double", from: "27 Sep 2026", to: "30 Sep 2026", bookingSource: "ota", boardType: "half-board" }],
     notes: [{ text: "Likes the pool first thing in the morning.", author: "Reception", date: "28 Sep 2026" }],
     past: [],
   },
@@ -307,9 +535,9 @@ export const guests: Guest[] = (
     hobbies: "Tennis, cooking",
     companions: [{ name: "Luca Ricci" }],
     stays: [
-      { roomType: "Junior suite", from: "28 Sep 2026", to: "3 Oct 2026" },
-      { roomType: "Junior suite", from: "14 Jan 2026", to: "18 Jan 2026" },
-      { roomType: "Deluxe king", from: "7 Sep 2025", to: "11 Sep 2025" },
+      { roomType: "Junior suite", from: "28 Sep 2026", to: "3 Oct 2026", bookingSource: "direct", boardType: "breakfast-only" },
+      { roomType: "Junior suite", from: "14 Jan 2026", to: "18 Jan 2026", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Deluxe king", from: "7 Sep 2025", to: "11 Sep 2025", bookingSource: "ota", boardType: "all-inclusive" },
     ],
     notes: [
       { text: "Greets the team by name.", author: "Reception", date: "28 Sep 2026" },
@@ -317,7 +545,14 @@ export const guests: Guest[] = (
     ],
     past: [
       { id: "sofia-past-ac", kind: "incident", label: "Air conditioning too warm", when: "Jan 2026" },
-      { id: "sofia-past-dinner", kind: "opportunity", label: "Restaurant reservation", when: "Sep 2025" },
+      {
+        id: "sofia-past-dinner",
+        kind: "opportunity",
+        label: "Restaurant reservation",
+        when: "Sep 2025",
+        category: "upselling",
+        outcome: "done",
+      },
     ],
   },
   {
@@ -336,8 +571,14 @@ export const guests: Guest[] = (
     profession: "Engineer",
     hobbies: "Running",
     companions: [],
-    stays: [{ roomType: "Superior double", from: "29 Sep 2026", to: "2 Oct 2026" }],
-    notes: [],
+    stays: [{ roomType: "Superior double", from: "29 Sep 2026", to: "2 Oct 2026", bookingSource: "direct", boardType: "breakfast-only" }],
+    notes: [
+      {
+        text: "Goes for a run before breakfast; early corridor access noted.",
+        author: "Reception",
+        date: "29 Sep 2026",
+      },
+    ],
     past: [],
   },
   {
@@ -357,12 +598,12 @@ export const guests: Guest[] = (
     hobbies: "Calligraphy, tea",
     companions: [{ name: "Yuki Sato" }],
     stays: [
-      { roomType: "Deluxe king", from: "27 Sep 2026", to: "4 Oct 2026" },
-      { roomType: "Deluxe king", from: "4 Mar 2026", to: "10 Mar 2026" },
-      { roomType: "Junior suite", from: "16 Nov 2025", to: "20 Nov 2025" },
-      { roomType: "Deluxe king", from: "8 Jul 2025", to: "13 Jul 2025" },
-      { roomType: "Garden room", from: "22 Feb 2025", to: "26 Feb 2025" },
-      { roomType: "Deluxe king", from: "3 Oct 2024", to: "8 Oct 2024" },
+      { roomType: "Deluxe king", from: "27 Sep 2026", to: "4 Oct 2026", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Deluxe king", from: "4 Mar 2026", to: "10 Mar 2026", bookingSource: "direct", boardType: "breakfast-only" },
+      { roomType: "Junior suite", from: "16 Nov 2025", to: "20 Nov 2025", bookingSource: "ota", boardType: "all-inclusive" },
+      { roomType: "Deluxe king", from: "8 Jul 2025", to: "13 Jul 2025", bookingSource: "direct", boardType: "half-board" },
+      { roomType: "Garden room", from: "22 Feb 2025", to: "26 Feb 2025", bookingSource: "ota", boardType: "breakfast-only" },
+      { roomType: "Deluxe king", from: "3 Oct 2024", to: "8 Oct 2024", bookingSource: "direct", boardType: "all-inclusive" },
     ],
     notes: [
       { text: "Takes tea in the room after dinner.", author: "Reception", date: "27 Sep 2026" },
@@ -370,10 +611,31 @@ export const guests: Guest[] = (
     ],
     past: [
       { id: "kenji-past-water", kind: "incident", label: "Hot water slow to arrive", when: "Mar 2026" },
-      { id: "kenji-past-loyalty", kind: "opportunity", label: "Loyalty renewal", when: "Nov 2025" },
+      {
+        id: "kenji-past-loyalty",
+        kind: "opportunity",
+        label: "Loyalty renewal",
+        when: "Nov 2025",
+        category: "loyalty",
+        outcome: "done",
+      },
       { id: "kenji-past-pillow", kind: "incident", label: "Firm pillow request", when: "Jul 2025" },
-      { id: "kenji-past-spa", kind: "opportunity", label: "Spa for two", when: "Feb 2025" },
-      { id: "kenji-past-cake", kind: "opportunity", label: "Birthday cake", when: "Oct 2024" },
+      {
+        id: "kenji-past-spa",
+        kind: "opportunity",
+        label: "Spa for two",
+        when: "Feb 2025",
+        category: "upselling",
+        outcome: "rejected",
+      },
+      {
+        id: "kenji-past-cake",
+        kind: "opportunity",
+        label: "Birthday cake",
+        when: "Oct 2024",
+        category: "guest-experience",
+        outcome: "done",
+      },
     ],
   },
   {
@@ -393,8 +655,8 @@ export const guests: Guest[] = (
     hobbies: "Cinema",
     companions: [{ name: "Piotr Kowalski" }],
     stays: [
-      { roomType: "Superior double", from: "28 Sep 2026", to: "1 Oct 2026" },
-      { roomType: "Superior double", from: "12 Dec 2025", to: "15 Dec 2025" },
+      { roomType: "Superior double", from: "28 Sep 2026", to: "1 Oct 2026", bookingSource: "ota", boardType: "half-board" },
+      { roomType: "Superior double", from: "12 Dec 2025", to: "15 Dec 2025", bookingSource: "direct", boardType: "breakfast-only" },
     ],
     notes: [{ text: "Reads in the lounge in the evening.", author: "Reception", date: "28 Sep 2026" }],
     past: [{ id: "nina-past-safe", kind: "incident", label: "Room safe would not open", when: "Dec 2025" }],
@@ -416,21 +678,59 @@ export const guests: Guest[] = (
     hobbies: "Ceramics, sailing",
     companions: [{ name: "Laura Martín", guestId: "laura" }],
     stays: [
-      { roomType: "Deluxe king", from: "29 Sep 2026", to: "4 Oct 2026" },
-      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025" },
+      { roomType: "Deluxe king", from: "29 Sep 2026", to: "4 Oct 2026", bookingSource: "direct", boardType: "all-inclusive" },
+      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025", bookingSource: "ota", boardType: "half-board" },
     ],
     notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
-    past: [{ id: "marta-past-room", kind: "opportunity", label: "Adjoining rooms", when: "Aug 2025" }],
+    past: [
+      {
+        id: "marta-past-room",
+        kind: "opportunity",
+        label: "Adjoining rooms",
+        when: "Aug 2025",
+        category: "guest-experience",
+        outcome: "done",
+      },
+    ],
   },
-  ] as Array<Omit<Guest, "region"> & { region?: WorldSubregionId }>
-).map((guest) => ({
-  ...guest,
-  region: guest.region ?? regionFromOrigin(guest.origin),
-}));
+  ] as Array<
+    Omit<Guest, "region" | "country" | "companionship" | "stays" | "preferences" | "spend"> & {
+      region?: WorldSubregionId;
+      country?: string;
+      companionship?: TravelCompanionship;
+      preferences?: Partial<GuestPreferences>;
+      spend?: Partial<GuestSpend>;
+      stays: StaySeed[];
+    }
+  >
+).map((guest) => {
+  const stays = guest.stays.map(withStayDefaults);
+  return {
+    ...guest,
+    country: guest.country ?? countryFromOrigin(guest.origin),
+    region: guest.region ?? regionFromOrigin(guest.origin),
+    companionship:
+      guest.companionship ?? companionshipFromParty(guest.partySize, guest.companions),
+    stays,
+    preferences: defaultPreferences({ id: guest.id, stays, preferences: guest.preferences }),
+    spend: defaultSpend({ id: guest.id, stays, spend: guest.spend }),
+    past: ensurePastOpportunities(guest.id, guest.past ?? []),
+    notes: ensureReceptionNotes(guest),
+  };
+});
 
 function seedGuest(
   guest: Pick<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin"> &
-    Partial<Omit<Guest, "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin">>,
+    Partial<
+      Omit<
+        Guest,
+        "id" | "name" | "room" | "moment" | "arrival" | "departure" | "origin" | "stays" | "preferences" | "spend"
+      >
+    > & {
+      stays?: StaySeed[];
+      preferences?: Partial<GuestPreferences>;
+      spend?: Partial<GuestSpend>;
+    },
 ): Guest {
   const merged = {
     previousStays: 0,
@@ -443,12 +743,33 @@ function seedGuest(
     companions: [],
     notes: [],
     past: [],
-    stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }],
+    stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }] as StaySeed[],
     ...guest,
   };
+  const stays = merged.stays.map((stay, index) =>
+    withStayDefaults(
+      {
+        ...stay,
+        bookingSource:
+          stay.bookingSource ??
+          ((merged.id.charCodeAt(0) + index) % 2 === 0 ? "direct" : "ota"),
+        boardType:
+          stay.boardType ?? boardTypeCycle[(merged.id.charCodeAt(0) + index) % boardTypeCycle.length],
+      },
+      index,
+    ),
+  );
   return {
     ...merged,
+    country: guest.country ?? countryFromOrigin(merged.origin),
     region: guest.region ?? regionFromOrigin(merged.origin),
+    companionship:
+      guest.companionship ?? companionshipFromParty(merged.partySize, merged.companions),
+    stays,
+    preferences: defaultPreferences({ id: merged.id, stays, preferences: guest.preferences }),
+    spend: defaultSpend({ id: merged.id, stays, spend: guest.spend }),
+    past: ensurePastOpportunities(merged.id, merged.past ?? []),
+    notes: ensureReceptionNotes(merged),
   };
 }
 
@@ -471,6 +792,9 @@ guests.push(
     arrival: "30 Sep 2026",
     departure: "2 Oct 2026",
     origin: "Oslo",
+    partySize: 3,
+    companionship: "friends",
+    companions: [{ name: "Lars Berg" }, { name: "Nora Vik" }],
   }),
   seedGuest({
     id: "ines",

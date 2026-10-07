@@ -4,13 +4,86 @@ import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
 import { formatGuestRegion } from "../data/regions";
 import {
+  boardTypeLabels,
+  bookingSourceLabels,
   categoryLabels,
+  formatSpend,
   guests,
+  spendCategoryLabels,
+  travelCompanionshipLabels,
+  type GuestSpend,
   type GuestStayFilter,
   type PastStay,
   type ShiftAction,
 } from "../data/shift";
 import { useShift } from "../state/ShiftState";
+
+const spendColors: Record<keyof GuestSpend, string> = {
+  stay: "#F47920",
+  extras: "#3D6B5A",
+};
+
+const spendOrder: Array<keyof GuestSpend> = ["stay", "extras"];
+
+function SpendDonut({ spend }: { spend: GuestSpend }) {
+  const total = spend.stay + spend.extras;
+  const size = 112;
+  const stroke = 16;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  return (
+    <div className="spend-chart">
+      <div className="spend-donut" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="rgba(21, 21, 21, 0.06)"
+            strokeWidth={stroke}
+          />
+          {spendOrder.map((key) => {
+            const value = spend[key];
+            const length = total > 0 ? (value / total) * circumference : 0;
+            const segment = (
+              <circle
+                key={key}
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={spendColors[key]}
+                strokeWidth={stroke}
+                strokeDasharray={`${length} ${circumference - length}`}
+                strokeDashoffset={-offset}
+                strokeLinecap="butt"
+                transform={`rotate(-90 ${size / 2} ${size / 2})`}
+              />
+            );
+            offset += length;
+            return segment;
+          })}
+        </svg>
+        <div className="spend-donut-center">
+          <strong>{formatSpend(total)}</strong>
+          <span>Total</span>
+        </div>
+      </div>
+      <ul className="spend-legend">
+        {spendOrder.map((key) => (
+          <li key={key}>
+            <span className="spend-swatch" style={{ background: spendColors[key] }} />
+            <span className="spend-legend-label">{spendCategoryLabels[key]}</span>
+            <span className="spend-legend-value">{formatSpend(spend[key])}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function selectedFilter(value: string | null): GuestStayFilter {
   if (value === "arriving" || value === "leaving" || value === "in-house") return value;
@@ -109,7 +182,14 @@ export function GuestProfile() {
       id: action.id,
       label: action.label,
       detail: categoryLabels[action.category],
-      state: isOpen(action) ? "Open" : "Closed",
+      state:
+        action.status === "rejected"
+          ? "Rejected"
+          : action.status === "done" || action.status === "confirmed"
+            ? "Done"
+            : isOpen(action)
+              ? "Open"
+              : "Done",
       when: "This stay",
     }));
   const pastOpportunities = guest.past
@@ -117,8 +197,8 @@ export function GuestProfile() {
     .map((item) => ({
       id: item.id,
       label: item.label,
-      detail: "Opportunity",
-      state: "Closed",
+      detail: categoryLabels[item.category ?? "guest-experience"],
+      state: item.outcome === "rejected" ? "Rejected" : "Done",
       when: item.when,
     }));
   const opportunities = [...liveOpportunities, ...pastOpportunities];
@@ -134,17 +214,21 @@ export function GuestProfile() {
       </header>
       <div className="profile-board">
         <div className="profile-grid">
-          <section className="profile-quadrant" aria-label="Personal details">
+          <section className="profile-quadrant is-demographics" aria-label="Personal details">
             <div className="profile-person">
               <span className="avatar profile-avatar" aria-hidden="true">
                 {initials(guest.name)}
               </span>
               <h1>{guest.name}</h1>
             </div>
-            <dl className="profile-facts-list profile-scroll">
+            <dl className="profile-facts-list">
               <div>
                 <dt>Origin</dt>
                 <dd>{guest.origin}</dd>
+              </div>
+              <div>
+                <dt>Country</dt>
+                <dd>{guest.country}</dd>
               </div>
               <div>
                 <dt>Region</dt>
@@ -162,31 +246,14 @@ export function GuestProfile() {
                 <dt>Hobbies</dt>
                 <dd>{guest.hobbies}</dd>
               </div>
-              <div>
+              <div className="is-wide">
                 <dt>Companions</dt>
-                <dd>
-                  {guest.companions.length === 0 ? (
-                    "None"
-                  ) : (
-                    guest.companions.map((companion, index) => (
-                      <span key={companion.name}>
-                        {index > 0 ? ", " : null}
-                        {companion.guestId ? (
-                          <Link to={`/guests/${companion.guestId}${backQuery.size ? `?${backQuery}` : ""}`}>
-                            {companion.name}
-                          </Link>
-                        ) : (
-                          companion.name
-                        )}
-                      </span>
-                    ))
-                  )}
-                </dd>
+                <dd>{travelCompanionshipLabels[guest.companionship]}</dd>
               </div>
             </dl>
           </section>
 
-          <section className="profile-quadrant" aria-label="Stay history">
+          <section className="profile-quadrant is-stay" aria-label="Stay history">
             <header className="profile-quadrant-head">
               <h2>Stay history</h2>
               <span className="profile-quadrant-meta">
@@ -196,10 +263,15 @@ export function GuestProfile() {
             <div className="profile-scroll">
               <ul className="profile-records">
                 {guest.stays.map((stay) => (
-                  <li key={`${stay.from}-${stay.roomType}`}>
-                    <span className="cell-strong">{stay.roomType}</span>
+                  <li key={`${stay.from}-${stay.roomType}`} className="profile-stay-row">
+                    <div className="profile-stay-main">
+                      <span className="cell-strong">{stay.roomType}</span>
+                      <span className="cell-strong profile-stay-board">
+                        {boardTypeLabels[stay.boardType]}
+                      </span>
+                    </div>
                     <span className="priority-meta">
-                      {stay.from} – {stay.to}
+                      {stay.from} – {stay.to} · {bookingSourceLabels[stay.bookingSource]}
                     </span>
                   </li>
                 ))}
@@ -207,7 +279,31 @@ export function GuestProfile() {
             </div>
           </section>
 
-          <section className="profile-quadrant" aria-label="Incidents">
+          <section className="profile-quadrant is-preferences" aria-label="Preferences">
+            <header className="profile-quadrant-head">
+              <h2>Preferences</h2>
+            </header>
+            <dl className="profile-facts-list is-stacked">
+              <div>
+                <dt>Room type</dt>
+                <dd>{guest.preferences.roomType}</dd>
+              </div>
+              <div>
+                <dt>Bed type</dt>
+                <dd>{guest.preferences.bedType}</dd>
+              </div>
+              <div>
+                <dt>Pillow type</dt>
+                <dd>{guest.preferences.pillowType}</dd>
+              </div>
+              <div>
+                <dt>Dining</dt>
+                <dd>{guest.preferences.dining}</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section className="profile-quadrant is-incidents" aria-label="Incidents">
             <header className="profile-quadrant-head">
               <h2>Incidents</h2>
               <button
@@ -238,7 +334,7 @@ export function GuestProfile() {
             </div>
           </section>
 
-          <section className="profile-quadrant" aria-label="Opportunities">
+          <section className="profile-quadrant is-opportunities" aria-label="Opportunities">
             <header className="profile-quadrant-head">
               <h2>Opportunities</h2>
               <button
@@ -254,14 +350,16 @@ export function GuestProfile() {
               {opportunities.length === 0 ? (
                 <p className="profile-empty">None on file.</p>
               ) : (
-                <ul className="profile-records">
+                <ul className="profile-records is-opp-list">
                   {opportunities.map((record) => (
-                    <li key={record.id}>
+                    <li key={record.id} className="profile-opp-item">
+                      <div className="profile-opp-main">
+                        <span className="cell-strong">{record.detail}</span>
+                        <span className="priority-meta">
+                          {record.label} · {record.when}
+                        </span>
+                      </div>
                       <span className="profile-record-state">{record.state}</span>
-                      <span className="cell-strong">{record.label}</span>
-                      <span className="priority-meta">
-                        {record.detail} · {record.when}
-                      </span>
                     </li>
                   ))}
                 </ul>
@@ -269,44 +367,53 @@ export function GuestProfile() {
             </div>
           </section>
 
+          <section className="profile-quadrant is-spend" aria-label="Spend">
+            <header className="profile-quadrant-head">
+              <h2>Spend</h2>
+            </header>
+            <SpendDonut spend={guest.spend} />
+          </section>
+
           <section className="profile-quadrant is-notes" aria-label="Notes">
             <h2>Notes</h2>
-            <div className="profile-scroll">
-              {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
-                <p className="profile-empty">None on file.</p>
-              ) : (
-                <ul className="profile-records note-list">
-                  {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (
-                    <li key={`${note.date}-${note.text}`}>
-                      <span className="cell-strong">{note.text}</span>
-                      <span className="priority-meta">
-                        {note.author} · {note.date}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+            <div className="notes-body">
+              <div className="profile-scroll notes-list-pane">
+                {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
+                  <p className="profile-empty">None on file.</p>
+                ) : (
+                  <ul className="profile-records note-list">
+                    {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (
+                      <li key={`${note.date}-${note.text}`}>
+                        <span className="cell-strong">{note.text}</span>
+                        <span className="priority-meta">
+                          {note.author} · {note.date}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <form
+                className="note-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  addGuestNote(guest.id, draft);
+                  setDraft("");
+                }}
+              >
+                <textarea
+                  className="note-input"
+                  aria-label="Write a note"
+                  placeholder="Write a note about this guest"
+                  rows={4}
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                />
+                <button type="submit" className="add-incident" disabled={!draft.trim()}>
+                  Add note
+                </button>
+              </form>
             </div>
-            <form
-              className="note-form"
-              onSubmit={(event) => {
-                event.preventDefault();
-                addGuestNote(guest.id, draft);
-                setDraft("");
-              }}
-            >
-              <textarea
-                className="note-input"
-                aria-label="Write a note"
-                placeholder="Write a note about this guest"
-                rows={2}
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-              />
-              <button type="submit" className="add-incident" disabled={!draft.trim()}>
-                Add note
-              </button>
-            </form>
           </section>
         </div>
       </div>
