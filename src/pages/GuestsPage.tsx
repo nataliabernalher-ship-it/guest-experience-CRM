@@ -66,46 +66,29 @@ function stayRange(arrival: string, departure: string): string {
   return `${shortStayDate(arrival)} – ${shortStayDate(departure)}`;
 }
 
-function LightbulbIcon() {
+function VipStar() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
       <path
-        d="M8 1.75a3.6 3.6 0 0 0-2.2 6.45c.3.24.45.5.5.85v.7h3.4v-.7c.05-.35.2-.61.5-.85A3.6 3.6 0 0 0 8 1.75Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinejoin="round"
+        d="M9 1.6 11.1 6.2l5 .4-3.8 3.2 1.2 4.8L9 12.2l-4.5 2.4 1.2-4.8L1.9 6.6l5-.4Z"
+        fill="currentColor"
       />
-      <path d="M6.6 12.35h2.8M7 13.6h2" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function BandageIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      <rect
-        x="2.4"
-        y="5.6"
-        width="11.2"
-        height="4.8"
-        rx="2.2"
-        transform="rotate(-35 8 8)"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.3"
-      />
-      <circle cx="8" cy="8" r="0.85" fill="currentColor" />
-      <circle cx="6.55" cy="9.1" r="0.55" fill="currentColor" />
-      <circle cx="9.45" cy="6.9" r="0.55" fill="currentColor" />
     </svg>
   );
 }
 
 function GuestMarks({ guest }: { guest: Guest }) {
-  if (guest.vip) return <span className="guest-badge is-vip">VIP</span>;
+  if (guest.vip) return <VipStar />;
   if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
-  return <span className="guest-none">–</span>;
+  return null;
+}
+
+function LoyaltyMark() {
+  return (
+    <svg className="guest-loyalty-mark" width="18" height="18" viewBox="0 0 20 20" aria-label="Loyalty member" role="img">
+      <path d="M10 2.6 15.8 9.5 10 16.4 4.2 9.5Z" fill="currentColor" />
+    </svg>
+  );
 }
 
 export function GuestsPage() {
@@ -245,10 +228,21 @@ export function GuestsPage() {
                     <GuestMarks guest={guest} />
                   </td>
                   <td className={member ? "loyalty-member" : "loyalty-out"}>
-                    {member ? "Member" : "Not enrolled"}
+                    {member ? <LoyaltyMark /> : null}
                   </td>
                   <td className="cell-view">
                     <div className="guest-row-actions">
+                      <button
+                        type="button"
+                        className="guest-quick-add"
+                        aria-label={`Add incident for ${guest.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIncidentGuestId(guest.id);
+                        }}
+                      >
+                        + Incident
+                      </button>
                       <button
                         type="button"
                         className="guest-quick-add"
@@ -258,20 +252,7 @@ export function GuestsPage() {
                           setOpportunityGuestId(guest.id);
                         }}
                       >
-                        <LightbulbIcon />
-                        <span aria-hidden="true">+</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="guest-quick-add"
-                        aria-label={`Open incident for ${guest.name}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setIncidentGuestId(guest.id);
-                        }}
-                      >
-                        <BandageIcon />
-                        <span aria-hidden="true">+</span>
+                        + Opportunity
                       </button>
                     </div>
                   </td>

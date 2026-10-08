@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatShiftTime, shiftDateLabel } from "../data/shift";
+import { shiftDay } from "../data/shift";
 
 function shiftName(now: Date): string {
   const hour = now.getHours();
@@ -8,23 +8,25 @@ function shiftName(now: Date): string {
   return "Night shift";
 }
 
-type ShiftCornerProps = {
-  showShift?: boolean;
-};
+const weekdayLabel = new Intl.DateTimeFormat("en-GB", { weekday: "long" }).format(shiftDay);
+const dateLabel = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+}).format(shiftDay);
 
-export function ShiftCorner({ showShift = false }: ShiftCornerProps) {
+export function ShiftCorner() {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000);
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
   return (
     <p className="shift-corner">
-      <span>{shiftDateLabel}</span>
-      <span>{formatShiftTime(now)}</span>
-      {showShift ? <span>{shiftName(now)}</span> : null}
+      <span>{dateLabel}</span>
+      <span>{weekdayLabel}</span>
+      <span>{shiftName(now)}</span>
     </p>
   );
 }

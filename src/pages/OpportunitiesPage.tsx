@@ -294,7 +294,6 @@ export function OpportunitiesPage() {
     <div className="page" data-testid="opportunities">
       <header className="page-header">
         <h1>Opportunities</h1>
-        <p className="lede">These are the opportunities that still need to be actioned.</p>
       </header>
       <section className="table-card">
         <div className="listing-tools">

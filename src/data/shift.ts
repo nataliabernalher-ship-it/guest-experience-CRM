@@ -316,6 +316,16 @@ export function incidentHistoryNote(status: ActionStatus): string {
 
 export const last7Days = {
   upsellingRevenue: { value: 840, direction: "up" },
+  /** Daily upselling revenue for the last 7 days ending on shiftDay. */
+  upsellingByDay: [
+    { label: "24", value: 90 },
+    { label: "25", value: 110 },
+    { label: "26", value: 95 },
+    { label: "27", value: 140 },
+    { label: "28", value: 120 },
+    { label: "29", value: 155 },
+    { label: "30", value: 130 },
+  ],
   loyaltySignUps: { value: 6, direction: "down" },
   guestsPampered: { value: 11, direction: "up" },
 } as const;

@@ -10,7 +10,6 @@ export function LaterPage({ title }: { title: string }) {
           </Link>
         </p>
         <h1>{title}</h1>
-        <p className="lede">This area is not part of the current step.</p>
       </header>
     </div>
   );

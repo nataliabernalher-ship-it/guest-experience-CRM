@@ -6,16 +6,17 @@ import {
   guestHeadcount,
   guests,
   type Guest,
+  isPending,
   last7Days,
   listings,
   money,
   reservationCount,
+  type Category,
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
-import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
 const SHIFT_START_HOUR = 7;
@@ -60,10 +61,21 @@ function stayLine(guest: Guest): string {
   return `Room ${guest.room} · Arriving today · ${stays}`;
 }
 
+function VipStar() {
+  return (
+    <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
+      <path
+        d="M9 1.6 11.1 6.2l5 .4-3.8 3.2 1.2 4.8L9 12.2l-4.5 2.4 1.2-4.8L1.9 6.6l5-.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
 function GuestMark({ guest }: { guest: Guest }) {
-  if (guest.vip) return <span className="guest-badge is-vip">VIP</span>;
+  if (guest.vip) return <VipStar />;
   if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
-  return <span className="guest-none">–</span>;
+  return null;
 }
 
 function checkInActionsForGuest(guestId: string, source: ShiftAction[]): ShiftAction[] {
@@ -99,6 +111,103 @@ function TrendArrow({ direction }: { direction: "up" | "down" }) {
   );
 }
 
+function UpsellingTrendChart({
+  points,
+}: {
+  points: readonly { label: string; value: number }[];
+}) {
+  const width = 280;
+  const height = 56;
+  const padTop = 3;
+  const padBottom = 1;
+  const plotBottom = height - padBottom;
+  const plotHeight = Math.max(plotBottom - padTop, 1);
+  const max = Math.max(...points.map((point) => point.value), 1);
+  const last = Math.max(points.length - 1, 1);
+  const coords = points.map((point, index) => {
+    const x = (index / last) * width;
+    const y = plotBottom - (point.value / max) * plotHeight;
+    return { x, y, ...point };
+  });
+  const first = coords[0];
+  const end = coords[coords.length - 1];
+  const line = coords
+    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+  const area =
+    first && end
+      ? `${line} L${width} ${height} L0 ${height} Z`
+      : "";
+
+  return (
+    <div className="upselling-trend-plot">
+      <svg
+        className="upselling-trend-chart"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label="Upselling revenue over the last 7 days"
+      >
+        <path className="upselling-trend-area" d={area} />
+        <path className="upselling-trend-line" d={line} />
+        {coords.map((point) => (
+          <circle key={point.label} className="upselling-trend-dot" cx={point.x} cy={point.y} r="2.5" />
+        ))}
+      </svg>
+      <div className="upselling-trend-labels" aria-hidden="true">
+        {points.map((point, index) => (
+          <span
+            key={point.label}
+            className={index === 0 ? "is-start" : index === points.length - 1 ? "is-end" : undefined}
+          >
+            {point.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function InsightIcon({ category }: { category: Exclude<Category, "recovery"> }) {
+  if (category === "upselling") {
+    return (
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          d="M10 2.2 11.5 7.6 17.2 9.2 11.5 10.8 10 16.2 8.5 10.8 2.8 9.2 8.5 7.6Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  if (category === "loyalty") {
+    return (
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <path
+          d="M10 2.6 15.8 9.5 10 16.4 4.2 9.5Z"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M10 16.4S3.8 12.2 3.8 8.2A3.2 3.2 0 0 1 10 6.8a3.2 3.2 0 0 1 6.2 1.4c0 4-6.2 8.2-6.2 8.2Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function Dashboard() {
   const [now, setNow] = useState(() => new Date());
 
@@ -123,6 +232,14 @@ export function Dashboard() {
   const checkInGuestCount = guestHeadcount("check-in");
   const inHouseGuests = guestHeadcount("in-house");
   const progressPercent = nowToPercent(now);
+  const pendingOpportunities = actions.filter(
+    (action) => action.category !== "recovery" && isPending(action),
+  );
+  const insightCounts = {
+    upselling: pendingOpportunities.filter((action) => action.category === "upselling").length,
+    guestExperience: pendingOpportunities.filter((action) => action.category === "guest-experience").length,
+    loyalty: pendingOpportunities.filter((action) => action.category === "loyalty").length,
+  };
   const incidents = actions
     .filter(
       (action) =>
@@ -145,201 +262,235 @@ export function Dashboard() {
         <div className="dashboard-greeting">
           <h1>{greeting(new Date())}</h1>
         </div>
-        <ShiftCorner showShift />
       </header>
 
-      <div className="dashboard-top">
-        <section className="context is-unified" aria-labelledby="shift-actions-heading">
-          <header className="context-head">
-            <h2 id="shift-actions-heading">Today&apos;s shift</h2>
-          </header>
-          <div className="shift-timeline" data-testid="shift-timeline">
-            <div className="shift-timeline-track">
-              <div className="shift-timeline-bands">
-                <Link
-                  to={listings["check-outs"].path}
-                  className="shift-band is-check-out"
-                  style={bandStyle(7, 12)}
-                  data-testid="context-check-outs"
-                >
-                  <span className="shift-band-copy">
-                    <span className="shift-band-title">Check-out</span>
-                    <span className="shift-band-meta">
-                      {checkOutReservations} check-outs / {checkOutGuests}{" "}
-                      {checkOutGuests === 1 ? "guest" : "guests"}
-                    </span>
-                  </span>
-                </Link>
-                <Link
-                  to={listings["check-ins"].path}
-                  className="shift-band is-check-in"
-                  style={bandStyle(14, 0)}
-                  data-testid="context-check-ins"
-                >
-                  <span className="shift-band-copy">
-                    <span className="shift-band-title">Check-in</span>
-                    <span className="shift-band-meta">
-                      {checkInReservations} check-ins / {checkInGuestCount}{" "}
-                      {checkInGuestCount === 1 ? "guest" : "guests"}
-                    </span>
-                  </span>
-                </Link>
-                <Link
-                  to={listings["in-house"].path}
-                  className="shift-band is-in-house"
-                  style={bandStyle(7, 0)}
-                  data-testid="context-in-house"
-                >
-                  <span className="shift-band-copy">
-                    <span className="shift-band-title">All day · In house</span>
-                    <span className="shift-band-meta">
-                      {inHouseGuests} {inHouseGuests === 1 ? "guest" : "guests"}
-                    </span>
-                  </span>
-                </Link>
-              </div>
-              <div
-                className="shift-timeline-progress"
-                style={{ width: `${progressPercent}%` }}
-                aria-hidden="true"
-              />
-              <div
-                className="shift-timeline-remaining"
-                style={{
-                  left: `${progressPercent}%`,
-                  width: `${Math.max(0, 100 - progressPercent)}%`,
-                }}
-                aria-hidden="true"
-              />
-              <div
-                className="shift-timeline-now"
-                style={{ left: `${progressPercent}%` }}
-                aria-label={`Current time ${hourLabel(now.getHours())}`}
-              />
-              <div className="shift-timeline-hours" aria-hidden="true">
-                {TIMELINE_HOURS.map((hour) => (
-                  <span
-                    key={hour}
-                    className="shift-timeline-hour"
-                    style={{ left: `${hourToPercent(hour)}%` }}
+      <div className="dashboard-body">
+        <div className="dashboard-left">
+          <section className="context is-unified" aria-labelledby="shift-actions-heading">
+            <header className="context-head">
+              <h2 id="shift-actions-heading">Today&apos;s shift</h2>
+            </header>
+            <div className="shift-timeline" data-testid="shift-timeline">
+              <div className="shift-timeline-track">
+                <div className="shift-timeline-bands">
+                  <Link
+                    to={listings["check-outs"].path}
+                    className="shift-band is-check-out"
+                    style={bandStyle(7, 12)}
+                    data-testid="context-check-outs"
                   >
-                    {hourLabel(hour)}
-                  </span>
-                ))}
+                    <span className="shift-band-copy">
+                      <span className="shift-band-title">Check-out</span>
+                      <span className="shift-band-meta">
+                        {checkOutReservations} check-outs / {checkOutGuests}{" "}
+                        {checkOutGuests === 1 ? "guest" : "guests"}
+                      </span>
+                    </span>
+                  </Link>
+                  <Link
+                    to={listings["check-ins"].path}
+                    className="shift-band is-check-in"
+                    style={bandStyle(14, 0)}
+                    data-testid="context-check-ins"
+                  >
+                    <span className="shift-band-copy">
+                      <span className="shift-band-title">Check-in</span>
+                      <span className="shift-band-meta">
+                        {checkInReservations} check-ins / {checkInGuestCount}{" "}
+                        {checkInGuestCount === 1 ? "guest" : "guests"}
+                      </span>
+                    </span>
+                  </Link>
+                  <Link
+                    to={listings["in-house"].path}
+                    className="shift-band is-in-house"
+                    style={bandStyle(7, 0)}
+                    data-testid="context-in-house"
+                  >
+                    <span className="shift-band-copy">
+                      <span className="shift-band-title">All day · In house</span>
+                      <span className="shift-band-meta">
+                        {inHouseGuests} {inHouseGuests === 1 ? "guest" : "guests"}
+                      </span>
+                    </span>
+                  </Link>
+                </div>
+                <div
+                  className="shift-timeline-progress"
+                  style={{ width: `${progressPercent}%` }}
+                  aria-hidden="true"
+                />
+                <div
+                  className="shift-timeline-remaining"
+                  style={{
+                    left: `${progressPercent}%`,
+                    width: `${Math.max(0, 100 - progressPercent)}%`,
+                  }}
+                  aria-hidden="true"
+                />
+                <div
+                  className="shift-timeline-now"
+                  style={{ left: `${progressPercent}%` }}
+                  aria-label={`Current time ${hourLabel(now.getHours())}`}
+                />
+                <div className="shift-timeline-hours" aria-hidden="true">
+                  {TIMELINE_HOURS.map((hour) => (
+                    <span
+                      key={hour}
+                      className="shift-timeline-hour"
+                      style={{ left: `${hourToPercent(hour)}%` }}
+                    >
+                      {hourLabel(hour)}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="results is-aside" aria-label="Milestones achieved in the last 7 days">
-          <h2>Milestones achieved in the last 7 days</h2>
-          <div className="results-metrics">
-            <div className="result" data-testid="metric-revenue">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.upsellingRevenue.direction} />
-                <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
-              </span>
-              <span className="result-label">Upselling revenue</span>
+          <section className="insight-of-day" aria-labelledby="insight-heading" data-testid="insight-of-day">
+            <header className="insight-of-day-head">
+              <h2 id="insight-heading">Insight of the day</h2>
+            </header>
+            <div className="insight-metrics">
+              <div className="insight-metric" data-testid="insight-upselling">
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <InsightIcon category="upselling" />
+                </span>
+                <span className="insight-metric-label">Upselling</span>
+                <span className="insight-metric-value">{insightCounts.upselling}</span>
+              </div>
+              <div className="insight-metric" data-testid="insight-amenities">
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <InsightIcon category="guest-experience" />
+                </span>
+                <span className="insight-metric-label">Special amenities</span>
+                <span className="insight-metric-value">{insightCounts.guestExperience}</span>
+              </div>
+              <div className="insight-metric" data-testid="insight-loyalties">
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <InsightIcon category="loyalty" />
+                </span>
+                <span className="insight-metric-label">Loyalties</span>
+                <span className="insight-metric-value">{insightCounts.loyalty}</span>
+              </div>
             </div>
-            <div className="result" data-testid="metric-loyalty">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.loyaltySignUps.direction} />
-                <span className="result-value">{last7Days.loyaltySignUps.value}</span>
-              </span>
-              <span className="result-label">Loyalty sign-ups</span>
-            </div>
-            <div className="result" data-testid="metric-pampered">
-              <span className="result-figure">
-                <TrendArrow direction={last7Days.guestsPampered.direction} />
-                <span className="result-value">{last7Days.guestsPampered.value}</span>
-              </span>
-              <span className="result-label">Guests pampered</span>
-            </div>
-          </div>
-        </section>
-      </div>
+          </section>
 
-      <div className="board">
-        <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
-          <header className="table-card-head">
-            <h2 id="checkins-heading">Today check-in with actions</h2>
-          </header>
-          <ul className="vip-list board-scroll">
-            {checkInGuests.map((guest) => {
-              const opportunity = opportunityForGuest(guest.id, actions);
-              return (
-                <li key={guest.id}>
-                  <button
-                    type="button"
-                    className="vip-row is-checkin is-actionable"
-                    onClick={() => {
-                      if (opportunity) setSelectedOpportunityId(opportunity.id);
-                    }}
-                  >
-                    <span className="vip-copy">
-                      <span className="vip-name">{guest.name}</span>
-                      <span className="vip-meta">{stayLine(guest)}</span>
-                    </span>
-                    <GuestMark guest={guest} />
-                    {opportunity ? (
-                      <CategoryPill category={opportunity.category} />
-                    ) : (
-                      <span className="guest-none">–</span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="board-foot">
-            <Link to={listings["check-ins"].path} className="view-all">
-              View all
-            </Link>
-          </div>
-        </section>
-
-        <div className="board-side">
-          <section className="panel" aria-labelledby="priority-heading">
-            <div className="panel-head">
-              <h2 id="priority-heading">Incidents that need to be resolved</h2>
+          <section className="results is-aside" aria-label="Milestones achieved">
+            <h2>Milestones achieved</h2>
+            <div className="milestones-body">
+              <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
+                <UpsellingTrendChart points={last7Days.upsellingByDay} />
+              </div>
+              <div className="results-metrics">
+                <div className="result" data-testid="metric-loyalty">
+                  <span className="result-figure">
+                    <TrendArrow direction={last7Days.loyaltySignUps.direction} />
+                    <span className="result-value">{last7Days.loyaltySignUps.value}</span>
+                  </span>
+                  <span className="result-label">Loyalty sign-ups</span>
+                </div>
+                <div className="result" data-testid="metric-pampered">
+                  <span className="result-figure">
+                    <TrendArrow direction={last7Days.guestsPampered.direction} />
+                    <span className="result-value">{last7Days.guestsPampered.value}</span>
+                  </span>
+                  <span className="result-label">Guests pampered</span>
+                </div>
+              </div>
+              <div className="upselling-trend-total" data-testid="upselling-total">
+                <span className="upselling-trend-total-label">Upselling total</span>
+                <span className="upselling-trend-total-value">
+                  {money.format(last7Days.upsellingRevenue.value)}
+                </span>
+              </div>
             </div>
-            <ol className="priority board-scroll" data-testid="priority-list">
-              {incidents.map((action) => {
-                const guest = guestById(action.guestId);
+          </section>
+        </div>
+
+        <div className="board">
+          <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
+            <header className="table-card-head">
+              <h2 id="checkins-heading">Today check-in with actions</h2>
+            </header>
+            <ul className="vip-list board-scroll">
+              {checkInGuests.map((guest) => {
+                const opportunity = opportunityForGuest(guest.id, actions);
                 return (
-                  <li key={action.id}>
+                  <li key={guest.id}>
                     <button
                       type="button"
-                      className="priority-row"
-                      data-testid="priority-action"
-                      data-severity={action.severity ?? "none"}
-                      onClick={() => setSelectedIncidentId(action.id)}
+                      className="vip-row is-checkin is-actionable"
+                      onClick={() => {
+                        if (opportunity) setSelectedOpportunityId(opportunity.id);
+                      }}
                     >
-                      <span className={`severity severity-${action.severity ?? "none"}`}>
-                        {action.severity}
+                      <span className="vip-copy">
+                        <span className="vip-name">{guest.name}</span>
+                        <span className="vip-meta">{stayLine(guest)}</span>
                       </span>
-                      <span className="priority-copy">
-                        <span className="priority-label">{action.label}</span>
-                        <span className="priority-meta">
-                          {guest.name}
-                          {" · Room "}
-                          {guest.room}
-                        </span>
-                      </span>
-                      <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
-                        {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
-                      </span>
+                      <GuestMark guest={guest} />
+                      {opportunity ? (
+                        <CategoryPill category={opportunity.category} />
+                      ) : (
+                        <span className="guest-none">–</span>
+                      )}
                     </button>
                   </li>
                 );
               })}
-            </ol>
+            </ul>
             <div className="board-foot">
-              <Link to={listings.recovery.path} className="view-all">
+              <Link to={listings["check-ins"].path} className="view-all">
                 View all
               </Link>
             </div>
           </section>
+
+          <div className="board-side">
+            <section className="panel" aria-labelledby="priority-heading">
+              <div className="panel-head">
+                <h2 id="priority-heading">Incidents that need to be resolved</h2>
+              </div>
+              <ol className="priority board-scroll" data-testid="priority-list">
+                {incidents.map((action) => {
+                  const guest = guestById(action.guestId);
+                  return (
+                    <li key={action.id}>
+                      <button
+                        type="button"
+                        className="priority-row"
+                        data-testid="priority-action"
+                        data-severity={action.severity ?? "none"}
+                        onClick={() => setSelectedIncidentId(action.id)}
+                      >
+                        <span className={`severity severity-${action.severity ?? "none"}`}>
+                          {action.severity}
+                        </span>
+                        <span className="priority-copy">
+                          <span className="priority-label">{action.label}</span>
+                          <span className="priority-meta">
+                            {guest.name}
+                            {" · Room "}
+                            {guest.room}
+                          </span>
+                        </span>
+                        <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
+                          {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+              <div className="board-foot">
+                <Link to={listings.recovery.path} className="view-all">
+                  View all
+                </Link>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
       {selectedIncident ? (

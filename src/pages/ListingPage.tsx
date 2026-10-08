@@ -21,7 +21,6 @@ import { CategoryPill } from "../components/CategoryPill";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { OpportunityDrawer } from "../components/OpportunityDrawer";
-import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
 const severityFilters: { id: "all" | Severity; label: string }[] = [
@@ -679,26 +678,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
       <header className="page-header">
-        {isOpportunityListing ? (
-          <div className="page-title-row">
-            <h1>Opportunities</h1>
-            <ShiftCorner />
-          </div>
-        ) : (
-          <h1>{listing.title}</h1>
-        )}
-        {listingId === "check-ins" ? (
-          <p className="lede">These check-ins have the following opportunities to action.</p>
-        ) : null}
-        {listingId === "in-house" ? (
-          <p className="lede">These actions are still pending. Locate the guest.</p>
-        ) : null}
-        {listingId === "check-outs" ? (
-          <p className="lede">Before the guest leaves, take these actions.</p>
-        ) : null}
-        {listingId === "recovery" ? (
-          <p className="lede">Open incidents that need to be resolved.</p>
-        ) : null}
+        <h1>{isOpportunityListing ? "Opportunities" : listing.title}</h1>
       </header>
       {isOpportunityListing ? (
         <div className="listing-moment-tabs" role="tablist" aria-label="Stay moment">

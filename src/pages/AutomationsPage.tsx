@@ -242,7 +242,6 @@ export function AutomationsPage() {
     <div className="page" data-testid="automations">
       <header className="page-header">
         <h1>Automations</h1>
-        <p className="lede">Create rules that turn guest data into actions for your team.</p>
       </header>
 
       <div className="automations-toolbar">
