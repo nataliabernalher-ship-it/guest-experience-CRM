@@ -1,12 +1,7 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 const navGroups = [
   [{ to: "/", label: "Dashboard", end: true }],
-  [
-    { to: "/check-ins", label: "Check-ins", end: true },
-    { to: "/in-house", label: "In-house", end: true },
-    { to: "/check-outs", label: "Check-outs", end: true },
-  ],
   [
     { to: "/opportunities", label: "Opportunities", end: false },
     { to: "/recovery", label: "Recovery", end: false },
@@ -17,7 +12,15 @@ const navGroups = [
   ],
 ];
 
+function linkIsActive(to: string, end: boolean, pathname: string): boolean {
+  if (to === "/opportunities") return pathname === "/opportunities" || pathname.startsWith("/opportunities/");
+  if (end) return pathname === to;
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
 export function Shell() {
+  const { pathname } = useLocation();
+
   return (
     <div className="app">
       <aside className="sidebar">
@@ -31,25 +34,23 @@ export function Shell() {
           </span>
         </div>
         <nav className="nav" aria-label="Primary">
-          {navGroups.map((group, index) => {
-            const items = group.filter((item) => item.to !== "/opportunities");
-            if (items.length === 0) return null;
-            return (
-              <div key={items[0].to} className="nav-group">
-                {index > 0 ? <div className="nav-rule" role="separator" /> : null}
-                {items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.end}
-                    className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
-                  >
-                    {item.label}
-                  </NavLink>
-                ))}
-              </div>
-            );
-          })}
+          {navGroups.map((group, index) => (
+            <div key={group[0].to} className="nav-group">
+              {index > 0 ? <div className="nav-rule" role="separator" /> : null}
+              {group.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to === "/opportunities" ? "/opportunities/check-ins" : item.to}
+                  end={item.end}
+                  className={() =>
+                    linkIsActive(item.to, item.end, pathname) ? "nav-link is-active" : "nav-link"
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          ))}
         </nav>
         <div className="sidebar-foot">
           <p className="sidebar-user">Clara Mendes</p>

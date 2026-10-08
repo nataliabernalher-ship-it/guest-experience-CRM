@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { useSearchParams } from "react-router-dom";
+import { NavLink, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   compareActions,
@@ -8,6 +8,7 @@ import {
   guests,
   listings,
   money,
+  opportunityMomentTabs,
   type ActionStatus,
   type Category,
   type Guest,
@@ -641,22 +642,24 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
       ? null
       : actions.find((action) => action.id === selectedOpportunityId && action.category !== "recovery") ?? null;
 
+  const isOpportunityListing = listingId !== "recovery";
+
   useEffect(() => {
-    document.title = `${listing.title} · Guest Experience`;
+    document.title = `${isOpportunityListing ? "Opportunities" : listing.title} · Guest Experience`;
     if (!focus) return;
     document.getElementById(`action-${focus}`)?.scrollIntoView({ block: "center" });
     const focused = actions.find((action) => action.id === focus);
     if (!focused) return;
     if (focused.category === "recovery") setSelectedIncidentId(focused.id);
     else setSelectedOpportunityId(focused.id);
-  }, [focus, listing.title, actions]);
+  }, [focus, listing.title, actions, isOpportunityListing]);
 
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
       <header className="page-header">
-        {listingId === "check-ins" || listingId === "in-house" || listingId === "check-outs" ? (
+        {isOpportunityListing ? (
           <div className="page-title-row">
-            <h1>{listing.title}</h1>
+            <h1>Opportunities</h1>
             <ShiftCorner />
           </div>
         ) : (
@@ -675,6 +678,21 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
           <p className="lede">Open incidents that need to be resolved.</p>
         ) : null}
       </header>
+      {isOpportunityListing ? (
+        <div className="listing-moment-tabs" role="tablist" aria-label="Stay moment">
+          {opportunityMomentTabs.map((item) => (
+            <NavLink
+              key={item.id}
+              to={listings[item.id].path}
+              role="tab"
+              aria-selected={listingId === item.id}
+              className={listingId === item.id ? "listing-moment-tab is-active" : "listing-moment-tab"}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
+      ) : null}
       <ListingCard
         pending={pending}
         groups={groups}

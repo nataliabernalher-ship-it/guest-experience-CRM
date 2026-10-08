@@ -323,21 +323,21 @@ export const last7Days = {
 export const listings: Record<ListingId, Listing> = {
   "check-ins": {
     id: "check-ins",
-    path: "/check-ins",
+    path: "/opportunities/check-ins",
     title: "Check-ins",
     unit: "arrivals",
     moment: "check-in",
   },
   "check-outs": {
     id: "check-outs",
-    path: "/check-outs",
+    path: "/opportunities/check-outs",
     title: "Check-outs",
     unit: "departures",
     moment: "check-out",
   },
   "in-house": {
     id: "in-house",
-    path: "/in-house",
+    path: "/opportunities/in-house",
     title: "In-house",
     unit: "in house",
     moment: "in-house",
@@ -349,6 +349,12 @@ export const listings: Record<ListingId, Listing> = {
     unit: "incidents",
   },
 };
+
+export const opportunityMomentTabs: Array<{ id: Exclude<ListingId, "recovery">; label: string }> = [
+  { id: "check-ins", label: "Check-ins" },
+  { id: "in-house", label: "In-house" },
+  { id: "check-outs", label: "Check-outs" },
+];
 
 export const categoryLabels: Record<Category, string> = {
   upselling: "Upselling",

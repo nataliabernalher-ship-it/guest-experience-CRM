@@ -2167,6 +2167,56 @@ a.vip-name.guest-link:hover,
   padding: 12px 16px 28px;
 }
 
+.listing-moment-tabs {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  margin: 4px 0 14px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid rgba(21, 21, 21, 0.08);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+.listing-moment-tab {
+  display: inline-flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: 4px;
+  padding: 12px 16px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.listing-moment-tab:hover {
+  border-color: rgba(21, 21, 21, 0.22);
+  background: #fafafa;
+}
+
+.listing-moment-tab.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.listing-moment-tab.is-active:hover {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
 .incident-form {
   display: flex;
   flex: 1;
