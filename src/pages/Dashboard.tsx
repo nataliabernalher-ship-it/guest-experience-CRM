@@ -18,13 +18,41 @@ import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
-const stayListings = ["check-ins", "in-house", "check-outs"] as const;
+const SHIFT_START_HOUR = 7;
+const SHIFT_END_HOUR = 24; // 00:00
+const TIMELINE_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0] as const;
 
 function greeting(now: Date): string {
   const hour = now.getHours();
   if (hour < 12) return "Good morning";
   if (hour < 18) return "Good afternoon";
   return "Good evening";
+}
+
+function hourLabel(hour: number): string {
+  return String(hour).padStart(2, "0");
+}
+
+/** Maps a clock hour (0–23) onto the 07→00 shift axis as 0–100%. */
+function hourToPercent(hour: number): number {
+  const point = hour === 0 ? SHIFT_END_HOUR : hour;
+  const span = SHIFT_END_HOUR - SHIFT_START_HOUR;
+  return Math.min(100, Math.max(0, ((point - SHIFT_START_HOUR) / span) * 100));
+}
+
+function nowToPercent(now: Date): number {
+  const hours = now.getHours() + now.getMinutes() / 60;
+  if (hours < SHIFT_START_HOUR) return 0;
+  return Math.min(100, ((hours - SHIFT_START_HOUR) / (SHIFT_END_HOUR - SHIFT_START_HOUR)) * 100);
+}
+
+function bandStyle(fromHour: number, toHour: number): { left: string; width: string } {
+  const left = hourToPercent(fromHour);
+  const right = hourToPercent(toHour === 0 ? 0 : toHour);
+  return {
+    left: `${left}%`,
+    width: `${Math.max(0, right - left)}%`,
+  };
 }
 
 function stayLine(guest: Guest): string {
@@ -72,8 +100,15 @@ function TrendArrow({ direction }: { direction: "up" | "down" }) {
 }
 
 export function Dashboard() {
+  const [now, setNow] = useState(() => new Date());
+
   useEffect(() => {
     document.title = "Guest Experience";
+  }, []);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(id);
   }, []);
 
   const { actions } = useShift();
@@ -82,6 +117,12 @@ export function Dashboard() {
   const checkInGuests = guests.filter(
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
   );
+  const checkOutReservations = reservationCount("check-out");
+  const checkOutGuests = guestHeadcount("check-out");
+  const checkInReservations = reservationCount("check-in");
+  const checkInGuestCount = guestHeadcount("check-in");
+  const inHouseGuests = guestHeadcount("in-house");
+  const progressPercent = nowToPercent(now);
   const incidents = actions
     .filter(
       (action) =>
@@ -110,29 +151,83 @@ export function Dashboard() {
       <div className="dashboard-top">
         <section className="context is-unified" aria-labelledby="shift-actions-heading">
           <header className="context-head">
-            <h2 id="shift-actions-heading">Today&apos;s shift actions</h2>
+            <h2 id="shift-actions-heading">Today&apos;s shift</h2>
           </header>
-          <div className="context-metrics">
-            {stayListings.map((id) => {
-              const listing = listings[id];
-              const moment = listing.moment!;
-              const reservations = reservationCount(moment);
-              const people = guestHeadcount(moment);
-              return (
+          <div className="shift-timeline" data-testid="shift-timeline">
+            <div className="shift-timeline-track">
+              <div className="shift-timeline-bands">
                 <Link
-                  key={id}
-                  to={listing.path}
-                  className="context-metric"
-                  data-testid={`context-${id}`}
+                  to={listings["check-outs"].path}
+                  className="shift-band is-check-out"
+                  style={bandStyle(7, 12)}
+                  data-testid="context-check-outs"
                 >
-                  <span className="context-count">{reservations}</span>
-                  <span className="context-label">{listing.title}</span>
-                  <span className="context-people">
-                    {people} {people === 1 ? "guest" : "guests"}
+                  <span className="shift-band-copy">
+                    <span className="shift-band-title">Check-out</span>
+                    <span className="shift-band-meta">
+                      {checkOutReservations} check-outs / {checkOutGuests}{" "}
+                      {checkOutGuests === 1 ? "guest" : "guests"}
+                    </span>
                   </span>
                 </Link>
-              );
-            })}
+                <Link
+                  to={listings["check-ins"].path}
+                  className="shift-band is-check-in"
+                  style={bandStyle(14, 0)}
+                  data-testid="context-check-ins"
+                >
+                  <span className="shift-band-copy">
+                    <span className="shift-band-title">Check-in</span>
+                    <span className="shift-band-meta">
+                      {checkInReservations} check-ins / {checkInGuestCount}{" "}
+                      {checkInGuestCount === 1 ? "guest" : "guests"}
+                    </span>
+                  </span>
+                </Link>
+                <Link
+                  to={listings["in-house"].path}
+                  className="shift-band is-in-house"
+                  style={bandStyle(7, 0)}
+                  data-testid="context-in-house"
+                >
+                  <span className="shift-band-copy">
+                    <span className="shift-band-title">All day · In house</span>
+                    <span className="shift-band-meta">
+                      {inHouseGuests} {inHouseGuests === 1 ? "guest" : "guests"}
+                    </span>
+                  </span>
+                </Link>
+              </div>
+              <div
+                className="shift-timeline-progress"
+                style={{ width: `${progressPercent}%` }}
+                aria-hidden="true"
+              />
+              <div
+                className="shift-timeline-remaining"
+                style={{
+                  left: `${progressPercent}%`,
+                  width: `${Math.max(0, 100 - progressPercent)}%`,
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="shift-timeline-now"
+                style={{ left: `${progressPercent}%` }}
+                aria-label={`Current time ${hourLabel(now.getHours())}`}
+              />
+              <div className="shift-timeline-hours" aria-hidden="true">
+                {TIMELINE_HOURS.map((hour) => (
+                  <span
+                    key={hour}
+                    className="shift-timeline-hour"
+                    style={{ left: `${hourToPercent(hour)}%` }}
+                  >
+                    {hourLabel(hour)}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
