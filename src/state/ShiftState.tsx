@@ -37,6 +37,14 @@ interface ShiftStateValue {
 
 const ShiftContext = createContext<ShiftStateValue | null>(null);
 
+function createActionId(prefix: "incident" | "opportunity"): string {
+  const random =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${random}`;
+}
+
 export function ShiftProvider({ children }: { children: ReactNode }) {
   const [actions, setActions] = useState<ShiftAction[]>(seed);
   const [notesByGuest, setNotesByGuest] = useState<Record<string, GuestNote[]>>({});
@@ -99,7 +107,7 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
         const detail = description?.trim() || text;
         setActions((current) => [
           {
-            id: `incident-${crypto.randomUUID()}`,
+            id: createActionId("incident"),
             guestId,
             category: "recovery",
             label: text,
@@ -122,7 +130,7 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
         const detail = description?.trim();
         setActions((current) => [
           {
-            id: `opportunity-${crypto.randomUUID()}`,
+            id: createActionId("opportunity"),
             guestId,
             category,
             label: text,

@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useState, type ReactNode } from "react";
-import { NavLink, useSearchParams } from "react-router-dom";
+import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   compareActions,
   formatIncidentWhen,
   guestById,
   guests,
+  listingForMoment,
   listings,
   money,
   opportunityMomentTabs,
@@ -19,6 +20,7 @@ import {
 import { CategoryPill } from "../components/CategoryPill";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
+import { OpportunityDrawer } from "../components/OpportunityDrawer";
 import { ShiftCorner } from "../components/ShiftCorner";
 import { useShift } from "../state/ShiftState";
 
@@ -76,13 +78,15 @@ function groupListingRows(rows: Row[]): ListingItem[] {
     }
     if (seen.has(row.guest.id)) continue;
     seen.add(row.guest.id);
-    const actions = rows
+    const grouped = rows
       .filter((item) => item.guest.id === row.guest.id && item.action.category !== "recovery")
       .map((item) => item.action);
-    if (actions.length <= 1) {
-      items.push({ kind: "single", guest: row.guest, action: actions[0] ?? row.action });
+    if (grouped.length === 0) {
+      items.push({ kind: "single", guest: row.guest, action: row.action });
+    } else if (grouped.length === 1) {
+      items.push({ kind: "single", guest: row.guest, action: grouped[0] });
     } else {
-      items.push({ kind: "group", guest: row.guest, actions });
+      items.push({ kind: "group", guest: row.guest, actions: grouped });
     }
   }
 
@@ -617,16 +621,34 @@ function IncidentDrawer({
 }
 
 export function ListingPage({ listingId }: { listingId: ListingId }) {
-  const { actions, setActionStatus, addIncident } = useShift();
+  const navigate = useNavigate();
+  const { actions, setActionStatus, addIncident, addOpportunity } = useShift();
   const [params] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
   const [category, setCategory] = useState<(typeof categoryFilters)[number]["id"]>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
+
+  function handleAddOpportunity(opportunity: {
+    guestId: string;
+    category: Exclude<Category, "recovery">;
+    label: string;
+    value?: number;
+    description?: string;
+  }) {
+    addOpportunity(opportunity);
+    setOpportunityDrawerOpen(false);
+    setCategory("all");
+    const target = listingForMoment(guestById(opportunity.guestId).moment);
+    if (target !== listingId) {
+      navigate(listings[target].path);
+    }
+  }
   const pending = isRecovery
     ? recoveryRows(actions, severity)
     : opportunityRows(listingId, actions)
@@ -738,12 +760,18 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                   </button>
                 ))}
               </div>
+              <button type="button" className="add-incident" onClick={() => setOpportunityDrawerOpen(true)}>
+                Add opportunity
+              </button>
             </div>
           )
         }
       />
       {isRecovery && drawerOpen ? (
         <IncidentDrawer onClose={() => setDrawerOpen(false)} onAdd={addIncident} />
+      ) : null}
+      {isOpportunityListing && opportunityDrawerOpen ? (
+        <OpportunityDrawer onClose={() => setOpportunityDrawerOpen(false)} onAdd={handleAddOpportunity} />
       ) : null}
       {selectedIncident ? (
         <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
