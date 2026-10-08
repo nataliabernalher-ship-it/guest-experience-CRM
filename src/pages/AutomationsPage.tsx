@@ -1,7 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   actionsByCategory,
-  automationCategoryLabel,
   defaultOperatorForField,
   defaultValueForField,
   defaultValuePerPerson,
@@ -315,7 +314,6 @@ export function AutomationsPage() {
 
       {drawerMode !== "closed" ? (
         <AutomationBuilderModal
-          mode={drawerMode}
           draft={draft}
           title={drawerMode === "edit" ? (editing?.name ?? "Edit automation") : "Create automation"}
           ready={ready}
@@ -329,7 +327,6 @@ export function AutomationsPage() {
 }
 
 function AutomationBuilderModal({
-  mode,
   draft,
   title,
   ready,
@@ -337,7 +334,6 @@ function AutomationBuilderModal({
   onClose,
   onSave,
 }: {
-  mode: "create" | "edit";
   draft: Draft;
   title: string;
   ready: boolean;
@@ -393,10 +389,7 @@ function AutomationBuilderModal({
       <button type="button" className="modal-backdrop" aria-label="Close" onClick={onClose} />
       <div className="automation-modal" role="dialog" aria-modal="true" aria-labelledby="automation-builder-title">
         <header className="automation-modal-head">
-          <div>
-            <p className="eyebrow">{mode === "edit" ? "Edit" : "New"}</p>
-            <h2 id="automation-builder-title">{title}</h2>
-          </div>
+          <h2 id="automation-builder-title">{title}</h2>
           <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
               <path
@@ -411,20 +404,20 @@ function AutomationBuilderModal({
         </header>
 
         <div className="automation-modal-body">
-          <div className="automation-modal-main">
-            <label className="drawer-field">
-              Automation name
-              <input
-                className="incident-input"
-                aria-label="Automation name"
-                placeholder="e.g. Loyalty signup"
-                value={draft.name}
-                onChange={(event) => onChange({ ...draft, name: event.target.value })}
-              />
-            </label>
+          <label className="drawer-field automation-modal-name">
+            Automation name
+            <input
+              className="incident-input"
+              aria-label="Automation name"
+              placeholder="e.g. Loyalty signup"
+              value={draft.name}
+              onChange={(event) => onChange({ ...draft, name: event.target.value })}
+            />
+          </label>
 
+          <div className="automation-modal-row">
             <section className="rule-section" aria-labelledby="when-heading">
-              <h3 id="when-heading">WHEN</h3>
+              <h3 id="when-heading">1. WHEN</h3>
               <p className="rule-prompt">When should this automation run?</p>
               <div className="condition-list">
                 {draft.conditions.map((condition, index) => (
@@ -537,7 +530,7 @@ function AutomationBuilderModal({
             </section>
 
             <section className="rule-section" aria-labelledby="then-heading">
-              <h3 id="then-heading">THEN</h3>
+              <h3 id="then-heading">2. THEN</h3>
               <p className="rule-prompt">What should reception do?</p>
               <div className="then-grid">
                 <label className="drawer-field">
@@ -591,9 +584,11 @@ function AutomationBuilderModal({
                 This creates an opportunity for reception to act on — it does not contact the guest.
               </p>
             </section>
+          </div>
 
+          <div className="automation-modal-row">
             <section className="rule-section" aria-labelledby="timing-heading">
-              <h3 id="timing-heading">TIMING</h3>
+              <h3 id="timing-heading">3. TIMING</h3>
               <p className="rule-prompt">When should reception act?</p>
               <label className="drawer-field">
                 Timing
@@ -615,7 +610,7 @@ function AutomationBuilderModal({
             </section>
 
             <section className="rule-section" aria-labelledby="details-heading">
-              <h3 id="details-heading">DETAILS / DESCRIPTION</h3>
+              <h3 id="details-heading">4. DETAILS</h3>
               <p className="rule-prompt">Add details or a description for this automation</p>
               <label className="drawer-field">
                 Details
@@ -623,7 +618,7 @@ function AutomationBuilderModal({
                   className="incident-input is-area"
                   aria-label="Details or description"
                   placeholder="Write details or a description"
-                  rows={4}
+                  rows={2}
                   value={draft.description}
                   onChange={(event) => onChange({ ...draft, description: event.target.value })}
                 />
@@ -631,33 +626,36 @@ function AutomationBuilderModal({
             </section>
           </div>
 
-          <aside className="automation-modal-side" aria-label="Rule summary">
-            <section className="rule-summary is-sticky">
-              <h3>Rule summary</h3>
-              <div className="rule-summary-body">
-                <p className="rule-summary-label">WHEN</p>
-                {whenLines.map((line, index) => (
-                  <p key={`${line}-${index}`} className="rule-summary-line">
-                    {index > 0 ? <span className="condition-and">AND</span> : null}
-                    {line}
-                  </p>
-                ))}
-                <p className="rule-summary-label">THEN</p>
-                <p className="rule-summary-line">{thenLine}</p>
-                <p className="rule-summary-label">AT</p>
-                <p className="rule-summary-line">{atLine}</p>
-                {draft.description.trim() ? (
-                  <>
-                    <p className="rule-summary-label">DETAILS</p>
-                    <p className="rule-summary-line is-soft">{draft.description.trim()}</p>
-                  </>
-                ) : null}
+          <section className="rule-summary automation-modal-summary" aria-label="Rule summary">
+            <h3>Rule summary</h3>
+            <div className="rule-summary-body is-horizontal">
+              <div className="rule-summary-block">
+                <span className="rule-summary-label">WHEN</span>
+                <p className="rule-summary-line">
+                  {whenLines.map((line, index) => (
+                    <span key={`${line}-${index}`}>
+                      {index > 0 ? <span className="condition-and"> AND </span> : null}
+                      {line}
+                    </span>
+                  ))}
+                </p>
               </div>
-              <p className="rule-summary-hint">
-                {automationCategoryLabel(draft.category)} opportunity · guest data match · reception acts
-              </p>
-            </section>
-          </aside>
+              <div className="rule-summary-block">
+                <span className="rule-summary-label">THEN</span>
+                <p className="rule-summary-line">{thenLine}</p>
+              </div>
+              <div className="rule-summary-block">
+                <span className="rule-summary-label">AT</span>
+                <p className="rule-summary-line">{atLine}</p>
+              </div>
+              {draft.description.trim() ? (
+                <div className="rule-summary-block">
+                  <span className="rule-summary-label">DETAILS</span>
+                  <p className="rule-summary-line is-soft">{draft.description.trim()}</p>
+                </div>
+              ) : null}
+            </div>
+          </section>
         </div>
 
         <div className="automation-modal-actions">
