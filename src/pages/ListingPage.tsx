@@ -28,12 +28,11 @@ const severityFilters: { id: "all" | Severity; label: string }[] = [
   { id: "low", label: "Low" },
 ];
 
-const categoryFilters: { id: "all" | Category; label: string }[] = [
+const categoryFilters: { id: "all" | Exclude<Category, "recovery">; label: string }[] = [
   { id: "all", label: "All" },
   { id: "upselling", label: "Upselling" },
   { id: "guest-experience", label: "Special amenities" },
   { id: "loyalty", label: "Loyalty" },
-  { id: "recovery", label: "Recovery" },
 ];
 
 function label(value: string): string {
@@ -120,7 +119,7 @@ function matchesSeverity(action: ShiftAction, severity: "all" | Severity): boole
   return severity === "all" || action.severity === severity;
 }
 
-function matchesCategory(action: ShiftAction, category: "all" | Category): boolean {
+function matchesCategory(action: ShiftAction, category: "all" | Exclude<Category, "recovery">): boolean {
   return category === "all" || action.category === category;
 }
 
@@ -128,16 +127,6 @@ function recoveryRows(actions: ShiftAction[], severity: "all" | Severity): Row[]
   return actionsForListing("recovery", actions)
     .filter((action) => matchesSeverity(action, severity))
     .map((action) => ({ guest: guestById(action.guestId), action }));
-}
-
-function stayIncidentRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
-  const moment = listings[listingId].moment;
-  if (!moment) return [];
-  return actions
-    .filter((action) => action.category === "recovery")
-    .map((action) => ({ guest: guestById(action.guestId), action }))
-    .filter((row) => row.guest.moment === moment)
-    .sort((a, b) => compareActions(a.action, b.action));
 }
 
 function OutcomeMark({ rejected }: { rejected: boolean }) {
@@ -639,7 +628,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const listing = listings[listingId];
   const pending = isRecovery
     ? recoveryRows(actions, severity)
-    : [...opportunityRows(listingId, actions), ...stayIncidentRows(listingId, actions)]
+    : opportunityRows(listingId, actions)
         .filter(({ action }) => matchesCategory(action, category))
         .sort((a, b) => compareActions(a.action, b.action));
   const groups: { title: string; rows: Row[] }[] = [];

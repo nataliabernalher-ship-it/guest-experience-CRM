@@ -32,21 +32,17 @@ export function Shell() {
         </div>
         <nav className="nav" aria-label="Primary">
           {navGroups.map((group, index) => {
-            const hidden = group[0].to === "/opportunities";
+            const items = group.filter((item) => item.to !== "/opportunities");
+            if (items.length === 0) return null;
             return (
-              <div
-                key={group[0].to}
-                className={hidden ? "nav-group is-hidden" : "nav-group"}
-                aria-hidden={hidden || undefined}
-              >
-                {!hidden && index > 0 ? <div className="nav-rule" role="separator" /> : null}
-                {group.map((item) => (
+              <div key={items[0].to} className="nav-group">
+                {index > 0 ? <div className="nav-rule" role="separator" /> : null}
+                {items.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     end={item.end}
                     className={({ isActive }) => (isActive ? "nav-link is-active" : "nav-link")}
-                    tabIndex={hidden ? -1 : undefined}
                   >
                     {item.label}
                   </NavLink>
