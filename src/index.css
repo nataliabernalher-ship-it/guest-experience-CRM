@@ -294,14 +294,14 @@ h2 {
 
 .dashboard-body {
   display: grid;
-  grid-template-columns: minmax(300px, 0.95fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(280px, 0.88fr) minmax(0, 1.35fr);
   gap: 18px;
   align-items: stretch;
   flex: 1;
   min-height: 0;
   margin-top: 16px;
   margin-bottom: 4px;
-  padding: 0 10px 18px;
+  padding: 0 14px 18px;
   box-sizing: border-box;
 }
 
@@ -312,13 +312,16 @@ h2 {
   min-width: 0;
   min-height: 0;
   height: 100%;
+  padding-left: 8px;
+  padding-right: 4px;
+  box-sizing: border-box;
 }
 
 .dashboard-left .context,
 .dashboard-left .insight-of-day,
 .dashboard-left .results.is-aside {
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-left .context {
@@ -570,18 +573,38 @@ h2 {
   border-radius: 12px;
   background: var(--box-recess);
   box-shadow: var(--box-inset);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.dashboard-left .results.is-aside .result.is-upselling {
-  border: 0;
+.dashboard-left .results.is-aside .result.is-upselling.is-selected {
+  background: rgba(138, 90, 30, 0.12);
+  color: #8a5a1e;
+  box-shadow: var(--box-inset-soft);
 }
 
-.dashboard-left .results.is-aside .result.is-loyalty {
-  border: 0;
+.dashboard-left .results.is-aside .result.is-loyalty.is-selected {
+  background: rgba(47, 95, 138, 0.12);
+  color: #2f5f8a;
+  box-shadow: var(--box-inset-soft);
 }
 
-.dashboard-left .results.is-aside .result.is-pampered {
-  border: 0;
+.dashboard-left .results.is-aside .result.is-pampered.is-selected {
+  background: rgba(47, 107, 79, 0.12);
+  color: #2f6b4f;
+  box-shadow: var(--box-inset-soft);
+}
+
+.dashboard-left .results.is-aside .result.is-selected .result-value,
+.dashboard-left .results.is-aside .result.is-selected .trend-arrow {
+  color: inherit;
+}
+
+.dashboard-left .results.is-aside .result.is-selected .result-label {
+  color: inherit;
+  opacity: 0.85;
 }
 
 .dashboard-left .results.is-aside .result-figure {

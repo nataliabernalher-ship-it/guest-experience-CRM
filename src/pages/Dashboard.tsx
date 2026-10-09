@@ -126,11 +126,14 @@ function TrendArrow({ direction }: { direction: "up" | "down" }) {
   );
 }
 
-const TREND_COLORS = {
+type MilestoneMetric = "upselling" | "loyalty" | "pampered";
+
+/** Solid hue matching category tag colors (text / tag fill base). */
+const TREND_COLORS: Record<MilestoneMetric, string> = {
   upselling: "#8a5a1e",
   loyalty: "#2f5f8a",
-  "guest-experience": "#2f6b4f",
-} as const;
+  pampered: "#2f6b4f",
+};
 
 type TrendDot = { key: string; x: number; y: number; left: string; top: string };
 
@@ -166,28 +169,22 @@ function seriesPath(
 
 function MilestonesTrendChart({
   labels,
-  upselling,
-  loyalty,
-  pampered,
+  values,
+  metric,
+  label,
 }: {
   labels: readonly string[];
-  upselling: readonly number[];
-  loyalty: readonly number[];
-  pampered: readonly number[];
+  values: readonly number[];
+  metric: MilestoneMetric;
+  label: string;
 }) {
   const width = 280;
   const height = 96;
   const padX = 8;
   const padTop = 8;
   const padBottom = 8;
-  const series = [
-    { id: "upselling", color: TREND_COLORS.upselling, values: upselling },
-    { id: "loyalty", color: TREND_COLORS.loyalty, values: loyalty },
-    { id: "guest-experience", color: TREND_COLORS["guest-experience"], values: pampered },
-  ].map((item) => ({
-    ...item,
-    ...seriesPath(item.values, width, height, padX, padTop, padBottom),
-  }));
+  const color = TREND_COLORS[metric];
+  const series = seriesPath(values, width, height, padX, padTop, padBottom);
 
   return (
     <div className="upselling-trend-plot">
@@ -197,40 +194,31 @@ function MilestonesTrendChart({
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="none"
           role="img"
-          aria-label="Upselling, loyalty and guests pampered over the last 7 days"
+          aria-label={`${label} over the last 7 days`}
         >
-          {series.map((item) => (
-            <path
-              key={item.id}
-              className="upselling-trend-line"
-              style={{ stroke: item.color }}
-              d={item.line}
-            />
-          ))}
+          <path className="upselling-trend-line" style={{ stroke: color }} d={series.line} />
         </svg>
         <div className="upselling-trend-dots" aria-hidden="true">
-          {series.flatMap((item) =>
-            item.dots.map((point) => (
-              <span
-                key={`${item.id}-${point.key}`}
-                className="upselling-trend-dot"
-                style={{
-                  left: point.left,
-                  top: point.top,
-                  borderColor: item.color,
-                }}
-              />
-            )),
-          )}
+          {series.dots.map((point) => (
+            <span
+              key={point.key}
+              className="upselling-trend-dot"
+              style={{
+                left: point.left,
+                top: point.top,
+                borderColor: color,
+              }}
+            />
+          ))}
         </div>
       </div>
       <div className="upselling-trend-labels" aria-hidden="true">
-        {labels.map((label, index) => (
+        {labels.map((day, index) => (
           <span
-            key={label}
+            key={day}
             className={index === 0 ? "is-start" : index === labels.length - 1 ? "is-end" : undefined}
           >
-            {label}
+            {day}
           </span>
         ))}
       </div>
@@ -295,6 +283,7 @@ export function Dashboard() {
   const { status, retry } = useViewLoad("dashboard");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  const [milestoneMetric, setMilestoneMetric] = useState<MilestoneMetric>("upselling");
   const checkInGuests = guests.filter(
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
   );
@@ -455,33 +444,76 @@ export function Dashboard() {
               <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
                 <MilestonesTrendChart
                   labels={last7Days.upsellingByDay.map((point) => point.label)}
-                  upselling={last7Days.upsellingByDay.map((point) => point.value)}
-                  loyalty={last7Days.loyaltyByDay.map((point) => point.value)}
-                  pampered={last7Days.guestsPamperedByDay.map((point) => point.value)}
+                  metric={milestoneMetric}
+                  label={
+                    milestoneMetric === "upselling"
+                      ? "Upselling"
+                      : milestoneMetric === "loyalty"
+                        ? "Loyalty sign-ups"
+                        : "Guests pampered"
+                  }
+                  values={
+                    milestoneMetric === "upselling"
+                      ? last7Days.upsellingByDay.map((point) => point.value)
+                      : milestoneMetric === "loyalty"
+                        ? last7Days.loyaltyByDay.map((point) => point.value)
+                        : last7Days.guestsPamperedByDay.map((point) => point.value)
+                  }
                 />
               </div>
-              <div className="results-metrics">
-                <div className="result is-upselling" data-testid="upselling-total">
+              <div className="results-metrics" role="tablist" aria-label="Milestone metric">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={milestoneMetric === "upselling"}
+                  className={
+                    milestoneMetric === "upselling"
+                      ? "result is-upselling is-selected"
+                      : "result is-upselling"
+                  }
+                  data-testid="upselling-total"
+                  onClick={() => setMilestoneMetric("upselling")}
+                >
                   <span className="result-figure">
                     <TrendArrow direction={last7Days.upsellingRevenue.direction} />
                     <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
                   </span>
                   <span className="result-label">Upselling total</span>
-                </div>
-                <div className="result is-loyalty" data-testid="metric-loyalty">
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={milestoneMetric === "loyalty"}
+                  className={
+                    milestoneMetric === "loyalty" ? "result is-loyalty is-selected" : "result is-loyalty"
+                  }
+                  data-testid="metric-loyalty"
+                  onClick={() => setMilestoneMetric("loyalty")}
+                >
                   <span className="result-figure">
                     <TrendArrow direction={last7Days.loyaltySignUps.direction} />
                     <span className="result-value">{last7Days.loyaltySignUps.value}</span>
                   </span>
                   <span className="result-label">Loyalty sign-ups</span>
-                </div>
-                <div className="result is-pampered" data-testid="metric-pampered">
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={milestoneMetric === "pampered"}
+                  className={
+                    milestoneMetric === "pampered"
+                      ? "result is-pampered is-selected"
+                      : "result is-pampered"
+                  }
+                  data-testid="metric-pampered"
+                  onClick={() => setMilestoneMetric("pampered")}
+                >
                   <span className="result-figure">
                     <TrendArrow direction={last7Days.guestsPampered.direction} />
                     <span className="result-value">{last7Days.guestsPampered.value}</span>
                   </span>
                   <span className="result-label">Guests pampered</span>
-                </div>
+                </button>
               </div>
             </div>
           </section>
