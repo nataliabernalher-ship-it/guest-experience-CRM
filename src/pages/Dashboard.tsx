@@ -230,7 +230,6 @@ export function Dashboard() {
   const checkOutGuests = guestHeadcount("check-out");
   const checkInReservations = reservationCount("check-in");
   const checkInGuestCount = guestHeadcount("check-in");
-  const inHouseGuests = guestHeadcount("in-house");
   const progressPercent = nowToPercent(now);
   const pendingOpportunities = actions.filter(
     (action) => action.category !== "recovery" && isPending(action),
@@ -298,19 +297,6 @@ export function Dashboard() {
                       <span className="shift-band-meta">
                         {checkInReservations} check-ins / {checkInGuestCount}{" "}
                         {checkInGuestCount === 1 ? "guest" : "guests"}
-                      </span>
-                    </span>
-                  </Link>
-                  <Link
-                    to={listings["in-house"].path}
-                    className="shift-band is-in-house"
-                    style={bandStyle(7, 0)}
-                    data-testid="context-in-house"
-                  >
-                    <span className="shift-band-copy">
-                      <span className="shift-band-title">All day · In house</span>
-                      <span className="shift-band-meta">
-                        {inHouseGuests} {inHouseGuests === 1 ? "guest" : "guests"}
                       </span>
                     </span>
                   </Link>

@@ -304,7 +304,7 @@ h2 {
 
 .dashboard-left .context .shift-timeline-track {
   height: 100%;
-  min-height: 118px;
+  min-height: 88px;
 }
 
 .insight-of-day {
@@ -943,7 +943,7 @@ h2 {
 
 .shift-timeline-track {
   position: relative;
-  min-height: 118px;
+  min-height: 88px;
   margin: 0 2px 4px;
   padding: 4px;
   border-radius: 12px;
@@ -955,7 +955,7 @@ h2 {
 
 .shift-timeline-bands {
   position: absolute;
-  inset: 4px 4px 20px;
+  inset: 8px 4px 22px;
   z-index: 3;
 }
 
@@ -991,24 +991,11 @@ h2 {
   background: var(--accent);
 }
 
-.shift-band.is-check-out {
-  top: 8px;
-  z-index: 3;
-}
-
+.shift-band.is-check-out,
 .shift-band.is-check-in {
-  top: 8px;
+  top: 0;
+  bottom: 0;
   z-index: 3;
-}
-
-.shift-band.is-in-house {
-  top: auto;
-  bottom: 4px;
-  z-index: 4;
-}
-
-.shift-band.is-in-house::after {
-  background: rgba(21, 21, 21, 0.2);
 }
 
 .shift-band-title {
