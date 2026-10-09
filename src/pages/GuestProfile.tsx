@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { formatGuestRegion } from "../data/regions";
 import {
   boardTypeLabels,
@@ -16,6 +17,7 @@ import {
   type PastStay,
   type ShiftAction,
 } from "../data/shift";
+import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
 const spendColors: Record<keyof GuestSpend, string> = {
@@ -130,6 +132,7 @@ export function GuestProfile() {
   const backTo = backQuery.size ? `/guests?${backQuery}` : "/guests";
   const { actions, notesByGuest, addGuestNote, addIncident, addOpportunity } = useShift();
   const guest = guests.find((item) => item.id === guestId);
+  const { status, retry } = useViewLoad(`guest-${guestId ?? "missing"}`);
 
   const [draft, setDraft] = useState("");
   const [incidentOpen, setIncidentOpen] = useState(false);
@@ -142,6 +145,54 @@ export function GuestProfile() {
     setOpportunityOpen(false);
   }, [guest]);
 
+  if (status === "loading") {
+    return (
+      <div className="page guest-file" data-testid="guest-profile">
+        <header className="page-header">
+          <Link to={backTo} className="listing-back">
+            <BackArrow />
+            Back to guest profiles
+          </Link>
+        </header>
+        <div className="page-view-state">
+          <LoadingState
+            title="Loading guest profile"
+            description="We’re opening this guest’s details, stay history, and open actions."
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <div className="page guest-file" data-testid="guest-profile">
+        <header className="page-header">
+          <Link to={backTo} className="listing-back">
+            <BackArrow />
+            Back to guest profiles
+          </Link>
+        </header>
+        <div className="page-view-state">
+          <ErrorState
+            title="Couldn’t open this guest"
+            description="The profile didn’t load. Try again, or go back to the guest list."
+            action={
+              <>
+                <button type="button" className="add-incident" onClick={retry}>
+                  Try again
+                </button>
+                <Link to={backTo} className="view-all">
+                  Back to guest profiles
+                </Link>
+              </>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!guest) {
     return (
       <div className="page guest-file" data-testid="guest-profile">
@@ -150,8 +201,18 @@ export function GuestProfile() {
             <BackArrow />
             Back to guest profiles
           </Link>
-          <h1>Guest not found</h1>
         </header>
+        <div className="page-view-state">
+          <ErrorState
+            title="Guest not found"
+            description="This guest id isn’t in the current list. Go back and choose another profile, or check the link."
+            action={
+              <Link to={backTo} className="view-all">
+                Back to guest profiles
+              </Link>
+            }
+          />
+        </div>
       </div>
     );
   }
@@ -317,7 +378,10 @@ export function GuestProfile() {
             </header>
             <div className="profile-scroll">
               {incidents.length === 0 ? (
-                <p className="profile-empty">None on file.</p>
+                <EmptyState
+                  title="No incidents on file"
+                  description="Nothing recorded for this guest yet. Use + to open a new incident."
+                />
               ) : (
                 <ul className="profile-records">
                   {incidents.map((record) => (
@@ -348,7 +412,10 @@ export function GuestProfile() {
             </header>
             <div className="profile-scroll">
               {opportunities.length === 0 ? (
-                <p className="profile-empty">None on file.</p>
+                <EmptyState
+                  title="No opportunities on file"
+                  description="No upselling, amenity or loyalty actions yet. Use + to add one."
+                />
               ) : (
                 <ul className="profile-records is-opp-list">
                   {opportunities.map((record) => (
@@ -379,7 +446,10 @@ export function GuestProfile() {
             <div className="notes-body">
               <div className="profile-scroll notes-list-pane">
                 {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
-                  <p className="profile-empty">None on file.</p>
+                  <EmptyState
+                    title="No notes yet"
+                    description="Add a note below so the next shift knows what matters for this guest."
+                  />
                 ) : (
                   <ul className="profile-records note-list">
                     {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (

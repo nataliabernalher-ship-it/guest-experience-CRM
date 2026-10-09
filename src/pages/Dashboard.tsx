@@ -15,8 +15,10 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
+import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
 const SHIFT_START_HOUR = 7;
@@ -221,6 +223,7 @@ export function Dashboard() {
   }, []);
 
   const { actions } = useShift();
+  const { status, retry } = useViewLoad("dashboard");
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const checkInGuests = guests.filter(
@@ -400,33 +403,65 @@ export function Dashboard() {
             <header className="table-card-head">
               <h2 id="checkins-heading">Today check-in with actions</h2>
             </header>
-            <ul className="vip-list board-scroll">
-              {checkInGuests.map((guest) => {
-                const opportunity = opportunityForGuest(guest.id, actions);
-                return (
-                  <li key={guest.id}>
-                    <button
-                      type="button"
-                      className="vip-row is-checkin is-actionable"
-                      onClick={() => {
-                        if (opportunity) setSelectedOpportunityId(opportunity.id);
-                      }}
-                    >
-                      <span className="vip-copy">
-                        <span className="vip-name">{guest.name}</span>
-                        <span className="vip-meta">{stayLine(guest)}</span>
-                      </span>
-                      <GuestMark guest={guest} />
-                      {opportunity ? (
-                        <CategoryPill category={opportunity.category} />
-                      ) : (
-                        <span className="guest-none">–</span>
-                      )}
+            {status === "loading" ? (
+              <LoadingState
+                title="Loading check-ins"
+                description="We’re gathering today’s arrivals that still need an action."
+              />
+            ) : status === "error" ? (
+              <ErrorState
+                title="Couldn’t load check-ins"
+                description="Something went wrong while loading arrivals. Try again, or open the full check-in list."
+                action={
+                  <>
+                    <button type="button" className="add-incident" onClick={retry}>
+                      Try again
                     </button>
-                  </li>
-                );
-              })}
-            </ul>
+                    <Link to={listings["check-ins"].path} className="view-all">
+                      View all check-ins
+                    </Link>
+                  </>
+                }
+              />
+            ) : checkInGuests.length === 0 ? (
+              <EmptyState
+                title="No check-ins need action"
+                description="There are no arriving guests with pending opportunities right now. You can still browse the full check-in list."
+                action={
+                  <Link to={listings["check-ins"].path} className="view-all">
+                    View all check-ins
+                  </Link>
+                }
+              />
+            ) : (
+              <ul className="vip-list board-scroll">
+                {checkInGuests.map((guest) => {
+                  const opportunity = opportunityForGuest(guest.id, actions);
+                  return (
+                    <li key={guest.id}>
+                      <button
+                        type="button"
+                        className="vip-row is-checkin is-actionable"
+                        onClick={() => {
+                          if (opportunity) setSelectedOpportunityId(opportunity.id);
+                        }}
+                      >
+                        <span className="vip-copy">
+                          <span className="vip-name">{guest.name}</span>
+                          <span className="vip-meta">{stayLine(guest)}</span>
+                        </span>
+                        <GuestMark guest={guest} />
+                        {opportunity ? (
+                          <CategoryPill category={opportunity.category} />
+                        ) : (
+                          <span className="guest-none">–</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
             <div className="board-foot">
               <Link to={listings["check-ins"].path} className="view-all">
                 View all
@@ -439,37 +474,77 @@ export function Dashboard() {
               <div className="panel-head">
                 <h2 id="priority-heading">Incidents that need to be resolved</h2>
               </div>
-              <ol className="priority board-scroll" data-testid="priority-list">
-                {incidents.map((action) => {
-                  const guest = guestById(action.guestId);
-                  return (
-                    <li key={action.id}>
-                      <button
-                        type="button"
-                        className="priority-row"
-                        data-testid="priority-action"
-                        data-severity={action.severity ?? "none"}
-                        onClick={() => setSelectedIncidentId(action.id)}
-                      >
-                        <span className={`severity severity-${action.severity ?? "none"}`}>
-                          {action.severity}
-                        </span>
-                        <span className="priority-copy">
-                          <span className="priority-label">{action.label}</span>
-                          <span className="priority-meta">
-                            {guest.name}
-                            {" · Room "}
-                            {guest.room}
-                          </span>
-                        </span>
-                        <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
-                          {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
-                        </span>
+              {status === "loading" ? (
+                <LoadingState
+                  title="Loading incidents"
+                  description="We’re collecting open incidents that still need follow-up."
+                />
+              ) : status === "error" ? (
+                <ErrorState
+                  title="Couldn’t load incidents"
+                  description="The priority list didn’t load. Try again, or open Recovery to continue."
+                  action={
+                    <>
+                      <button type="button" className="add-incident" onClick={retry}>
+                        Try again
                       </button>
-                    </li>
-                  );
-                })}
-              </ol>
+                      <Link to={listings.recovery.path} className="view-all">
+                        Open Recovery
+                      </Link>
+                    </>
+                  }
+                />
+              ) : incidents.length === 0 ? (
+                <EmptyState
+                  title="No open incidents"
+                  description="Nothing urgent is waiting right now. Open Recovery if you need to review closed cases or add a new incident."
+                  action={
+                    <Link to={listings.recovery.path} className="view-all">
+                      Open Recovery
+                    </Link>
+                  }
+                />
+              ) : (
+                <ol className="priority board-scroll" data-testid="priority-list">
+                  {incidents.map((action) => {
+                    let guestName = "Unknown guest";
+                    let guestRoom = "—";
+                    try {
+                      const guest = guestById(action.guestId);
+                      guestName = guest.name;
+                      guestRoom = guest.room;
+                    } catch {
+                      /* keep fallback labels */
+                    }
+                    return (
+                      <li key={action.id}>
+                        <button
+                          type="button"
+                          className="priority-row"
+                          data-testid="priority-action"
+                          data-severity={action.severity ?? "none"}
+                          onClick={() => setSelectedIncidentId(action.id)}
+                        >
+                          <span className={`severity severity-${action.severity ?? "none"}`}>
+                            {action.severity}
+                          </span>
+                          <span className="priority-copy">
+                            <span className="priority-label">{action.label}</span>
+                            <span className="priority-meta">
+                              {guestName}
+                              {" · Room "}
+                              {guestRoom}
+                            </span>
+                          </span>
+                          <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
+                            {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
               <div className="board-foot">
                 <Link to={listings.recovery.path} className="view-all">
                   View all

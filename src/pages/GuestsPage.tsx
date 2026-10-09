@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import {
   guestById,
   guestsForFilter,
@@ -11,6 +12,7 @@ import {
   type Guest,
   type GuestStayFilter,
 } from "../data/shift";
+import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
 const filters: { id: GuestStayFilter; label: string }[] = [
@@ -100,6 +102,7 @@ export function GuestsPage() {
   const filter = selectedFilter(params.get("stay"));
   const query = params.get("q") ?? "";
   const needle = query.trim().toLowerCase();
+  const { status, retry } = useViewLoad(`guests-${filter}-${needle}`);
   const rows = guestsForFilter(filter).filter((guest) => {
     if (!needle) return true;
     return guest.name.toLowerCase().includes(needle) || guest.room.includes(needle);
@@ -110,10 +113,15 @@ export function GuestsPage() {
   const profileSuffix = profileQuery.size ? `?${profileQuery}` : "";
   const opportunityGuest = opportunityGuestId ? guestById(opportunityGuestId) : null;
   const incidentGuest = incidentGuestId ? guestById(incidentGuestId) : null;
+  const hasActiveFilters = filter !== "all" || needle.length > 0;
 
   useEffect(() => {
     document.title = "Guest Profiles · Guest Experience";
   }, []);
+
+  function clearFilters() {
+    setParams({}, { replace: true });
+  }
 
   return (
     <div className="page" data-testid="guests-list">
@@ -161,6 +169,45 @@ export function GuestsPage() {
             />
           </label>
         </div>
+        {status === "loading" ? (
+          <LoadingState
+            title="Loading guest profiles"
+            description="We’re loading the guest list for the selected stay filter."
+          />
+        ) : status === "error" ? (
+          <ErrorState
+            title="Couldn’t load guests"
+            description="The guest list didn’t load. Try again, or clear filters and reload."
+            action={
+              <>
+                <button type="button" className="add-incident" onClick={retry}>
+                  Try again
+                </button>
+                {hasActiveFilters ? (
+                  <button type="button" className="guest-tag" onClick={clearFilters}>
+                    Clear filters
+                  </button>
+                ) : null}
+              </>
+            }
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title={hasActiveFilters ? "No guests match these filters" : "No guests yet"}
+            description={
+              hasActiveFilters
+                ? "Try another stay filter or clear the search to see more profiles."
+                : "When guests are in house, they will appear here so you can open their profile or add actions."
+            }
+            action={
+              hasActiveFilters ? (
+                <button type="button" className="add-incident" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              ) : undefined
+            }
+          />
+        ) : (
         <table className="listing-table is-guests">
           <colgroup>
             <col className="col-guest" />
@@ -187,13 +234,6 @@ export function GuestsPage() {
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td className="guest-empty" colSpan={9}>
-                  No guests.
-                </td>
-              </tr>
-            ) : null}
             {rows.map((guest) => {
               const href = `/guests/${guest.id}${profileSuffix}`;
               const member = isLoyaltyMember(guest, actions);
@@ -261,6 +301,7 @@ export function GuestsPage() {
             })}
           </tbody>
         </table>
+        )}
       </section>
       {opportunityGuest ? (
         <GuestOpportunityDrawer

@@ -18,9 +18,11 @@ import {
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { OpportunityDrawer } from "../components/OpportunityDrawer";
+import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
 const severityFilters: { id: "all" | Severity; label: string }[] = [
@@ -401,6 +403,8 @@ function ListingCard({
   onOpenOpportunity: (action: ShiftAction) => void;
   tools?: ReactNode;
 }) {
+  const [params] = useSearchParams();
+  const { status, retry } = useViewLoad(`${isRecovery ? "recovery" : "opportunities"}-${params.toString()}`);
   const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
   const columnCount = isRecovery ? 8 : 7;
   const hasRows = pending.length + groups.reduce((total, group) => total + group.rows.length, 0) > 0;
@@ -439,7 +443,26 @@ function ListingCard({
   return (
     <section className="table-card" data-testid="listing-open">
       {tools}
-      {hasRows ? (
+      {status === "loading" ? (
+        <LoadingState
+          title={isRecovery ? "Loading incidents" : "Loading opportunities"}
+          description={
+            isRecovery
+              ? "We’re fetching open incidents for this view. This usually takes a moment."
+              : "We’re fetching opportunities for this stay moment. This usually takes a moment."
+          }
+        />
+      ) : status === "error" ? (
+        <ErrorState
+          title={isRecovery ? "Couldn’t load incidents" : "Couldn’t load opportunities"}
+          description="The list didn’t load. Try again, or change the filters and reload."
+          action={
+            <button type="button" className="add-incident" onClick={retry}>
+              Try again
+            </button>
+          }
+        />
+      ) : hasRows ? (
         <table className={isRecovery ? "listing-table is-recovery" : "listing-table"}>
           <colgroup>
             <col className="col-guest" />
@@ -499,7 +522,21 @@ function ListingCard({
           </tbody>
         </table>
       ) : (
-        <p className="listing-empty">{isRecovery ? "No incidents." : "No pending actions."}</p>
+        <EmptyState
+          title={isRecovery ? "No incidents to show" : "No opportunities to show"}
+          description={
+            isRecovery
+              ? "There are no incidents for the current filters. Clear the severity filter or add a new incident from Recovery."
+              : "There are no opportunities for this moment and filter. Switch stay moment, clear filters, or add a new opportunity."
+          }
+          action={
+            isRecovery ? undefined : (
+              <NavLink to="/opportunities/check-ins" className="view-all">
+                Go to check-ins
+              </NavLink>
+            )
+          }
+        />
       )}
     </section>
   );

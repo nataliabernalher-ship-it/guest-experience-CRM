@@ -30,6 +30,8 @@ import {
 import { subregionsForContinent, worldContinents } from "../data/regions";
 import { money } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
+import { useViewLoad } from "../hooks/useViewLoad";
 import { createAutomationId, useAutomations } from "../state/AutomationsState";
 
 type Draft = {
@@ -151,6 +153,7 @@ export function AutomationsPage() {
     duplicate,
     remove: removeAutomation,
   } = useAutomations();
+  const { status, retry } = useViewLoad("automations");
   const [drawerMode, setDrawerMode] = useState<"closed" | "create" | "edit">("closed");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft>(() => {
@@ -253,8 +256,42 @@ export function AutomationsPage() {
         </button>
       </div>
 
-      {automations.length === 0 ? (
-        <p className="automations-empty">No automations yet.</p>
+      {status === "loading" ? (
+        <div className="page-view-state">
+          <LoadingState
+            title="Loading automations"
+            description="We’re loading your automation rules so reception can act on guest signals."
+          />
+        </div>
+      ) : status === "error" ? (
+        <div className="page-view-state">
+          <ErrorState
+            title="Couldn’t load automations"
+            description="The automation list didn’t load. Try again, or create a new rule while we recover."
+            action={
+              <>
+                <button type="button" className="add-incident" onClick={retry}>
+                  Try again
+                </button>
+                <button type="button" className="add-incident" onClick={openCreate}>
+                  + Create automation
+                </button>
+              </>
+            }
+          />
+        </div>
+      ) : automations.length === 0 ? (
+        <div className="page-view-state">
+          <EmptyState
+            title="No automations yet"
+            description="Create a rule to turn guest data into opportunities for reception. Start with one clear WHEN / THEN condition."
+            action={
+              <button type="button" className="add-incident" onClick={openCreate}>
+                + Create automation
+              </button>
+            }
+          />
+        </div>
       ) : (
         <ul className="automations-grid">
           {automations.map((automation) => (
