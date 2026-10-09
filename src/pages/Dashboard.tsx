@@ -59,6 +59,18 @@ function bandStyle(fromHour: number, toHour: number): { left: string; width: str
   };
 }
 
+/** How much of a band (from→to hours) has elapsed at `now`, as 0–100%. */
+function bandElapsedPercent(fromHour: number, toHour: number, now: Date): number {
+  const start = hourToPercent(fromHour);
+  const end = hourToPercent(toHour === 0 ? 0 : toHour);
+  const span = end - start;
+  if (span <= 0) return 0;
+  const current = nowToPercent(now);
+  if (current <= start) return 0;
+  if (current >= end) return 100;
+  return ((current - start) / span) * 100;
+}
+
 function stayLine(guest: Guest): string {
   const stays = guest.previousStays === 1 ? "1 stay" : `${guest.previousStays} stays`;
   return `Room ${guest.room} · Arriving today · ${stays}`;
@@ -345,6 +357,12 @@ export function Dashboard() {
                         {checkOutGuests === 1 ? "guest" : "guests"}
                       </span>
                     </span>
+                    <span className="shift-band-bar" aria-hidden="true">
+                      <span
+                        className="shift-band-bar-fill"
+                        style={{ width: `${bandElapsedPercent(7, 12, now)}%` }}
+                      />
+                    </span>
                   </Link>
                   <Link
                     to={listings["check-ins"].path}
@@ -359,21 +377,14 @@ export function Dashboard() {
                         {checkInGuestCount === 1 ? "guest" : "guests"}
                       </span>
                     </span>
+                    <span className="shift-band-bar" aria-hidden="true">
+                      <span
+                        className="shift-band-bar-fill"
+                        style={{ width: `${bandElapsedPercent(14, 0, now)}%` }}
+                      />
+                    </span>
                   </Link>
                 </div>
-                <div
-                  className="shift-timeline-progress"
-                  style={{ width: `${progressPercent}%` }}
-                  aria-hidden="true"
-                />
-                <div
-                  className="shift-timeline-remaining"
-                  style={{
-                    left: `${progressPercent}%`,
-                    width: `${Math.max(0, 100 - progressPercent)}%`,
-                  }}
-                  aria-hidden="true"
-                />
                 <div
                   className="shift-timeline-now"
                   style={{ left: `${progressPercent}%` }}

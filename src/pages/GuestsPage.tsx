@@ -117,6 +117,7 @@ export function GuestsPage() {
   }
 
   return (
+    <>
     <div className="page" data-testid="guests-list">
       <header className="page-header">
         <h1>Guest Profiles</h1>
@@ -280,5 +281,7 @@ export function GuestsPage() {
         )}
       </section>
     </div>
+    <Outlet />
+    </>
   );
 }
