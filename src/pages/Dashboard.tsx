@@ -23,7 +23,8 @@ import { useShift } from "../state/ShiftState";
 
 const SHIFT_START_HOUR = 7;
 const SHIFT_END_HOUR = 24; // 00:00
-const TIMELINE_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 0] as const;
+/** Sparse axis labels for the shift timeline (07 → 00). */
+const TIMELINE_HOURS = [7, 12, 14, 18, 0] as const;
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -33,7 +34,7 @@ function greeting(now: Date): string {
 }
 
 function hourLabel(hour: number): string {
-  return String(hour).padStart(2, "0");
+  return `${String(hour).padStart(2, "0")}:00`;
 }
 
 /** Maps a clock hour (0–23) onto the 07→00 shift axis as 0–100%. */
@@ -320,7 +321,7 @@ export function Dashboard() {
                 <div
                   className="shift-timeline-now"
                   style={{ left: `${progressPercent}%` }}
-                  aria-label={`Current time ${hourLabel(now.getHours())}`}
+                  aria-label={`Current time ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`}
                 />
                 <div className="shift-timeline-hours" aria-hidden="true">
                   {TIMELINE_HOURS.map((hour) => (
@@ -329,6 +330,7 @@ export function Dashboard() {
                       className="shift-timeline-hour"
                       style={{ left: `${hourToPercent(hour)}%` }}
                     >
+                      <span className="shift-timeline-tick" />
                       {hourLabel(hour)}
                     </span>
                   ))}

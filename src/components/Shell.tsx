@@ -175,21 +175,23 @@ export function Shell() {
           </button>
         </div>
 
-        <nav id="primary-nav" className="top-nav" aria-label="Primary">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to === "/opportunities" ? "/opportunities/check-ins" : item.to}
-              end={item.end}
-              className={() =>
-                linkIsActive(item.to, item.end, pathname) ? "top-nav-link is-active" : "top-nav-link"
-              }
-            >
-              <span className="top-nav-icon">{item.icon}</span>
-              <span className="top-nav-label">{item.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+        <div className="topbar-center">
+          <nav id="primary-nav" className="top-nav" aria-label="Primary">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to === "/opportunities" ? "/opportunities/check-ins" : item.to}
+                end={item.end}
+                className={() =>
+                  linkIsActive(item.to, item.end, pathname) ? "top-nav-link is-active" : "top-nav-link"
+                }
+              >
+                <span className="top-nav-icon">{item.icon}</span>
+                <span className="top-nav-label">{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
         <div className="topbar-user">
           <div className="topbar-user-row">
@@ -199,8 +201,9 @@ export function Shell() {
               Log out
             </button>
           </div>
-          <ShiftCorner />
         </div>
+
+        <ShiftCorner />
       </header>
 
       {menuOpen ? (

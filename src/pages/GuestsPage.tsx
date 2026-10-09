@@ -1,10 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
-import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import {
-  guestById,
   guestsForFilter,
   isLoyaltyMember,
   peopleCount,
@@ -95,10 +92,8 @@ function LoyaltyMark() {
 
 export function GuestsPage() {
   const navigate = useNavigate();
-  const { actions, addIncident, addOpportunity } = useShift();
+  const { actions } = useShift();
   const [params, setParams] = useSearchParams();
-  const [opportunityGuestId, setOpportunityGuestId] = useState<string | null>(null);
-  const [incidentGuestId, setIncidentGuestId] = useState<string | null>(null);
   const filter = selectedFilter(params.get("stay"));
   const query = params.get("q") ?? "";
   const needle = query.trim().toLowerCase();
@@ -111,8 +106,6 @@ export function GuestsPage() {
   if (filter !== "all") profileQuery.set("stay", filter);
   if (query) profileQuery.set("q", query);
   const profileSuffix = profileQuery.size ? `?${profileQuery}` : "";
-  const opportunityGuest = opportunityGuestId ? guestById(opportunityGuestId) : null;
-  const incidentGuest = incidentGuestId ? guestById(incidentGuestId) : null;
   const hasActiveFilters = filter !== "all" || needle.length > 0;
 
   useEffect(() => {
@@ -271,30 +264,13 @@ export function GuestsPage() {
                     {member ? <LoyaltyMark /> : null}
                   </td>
                   <td className="cell-view">
-                    <div className="guest-row-actions">
-                      <button
-                        type="button"
-                        className="guest-quick-add"
-                        aria-label={`Add incident for ${guest.name}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setIncidentGuestId(guest.id);
-                        }}
-                      >
-                        + Incident
-                      </button>
-                      <button
-                        type="button"
-                        className="guest-quick-add"
-                        aria-label={`Add opportunity for ${guest.name}`}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setOpportunityGuestId(guest.id);
-                        }}
-                      >
-                        + Opportunity
-                      </button>
-                    </div>
+                    <Link
+                      to={href}
+                      className="guest-view-link"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      Ver
+                    </Link>
                   </td>
                 </tr>
               );
@@ -303,16 +279,6 @@ export function GuestsPage() {
         </table>
         )}
       </section>
-      {opportunityGuest ? (
-        <GuestOpportunityDrawer
-          guest={opportunityGuest}
-          onClose={() => setOpportunityGuestId(null)}
-          onAdd={addOpportunity}
-        />
-      ) : null}
-      {incidentGuest ? (
-        <GuestIncidentDrawer guest={incidentGuest} onClose={() => setIncidentGuestId(null)} onAdd={addIncident} />
-      ) : null}
     </div>
   );
 }
