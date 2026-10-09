@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ShiftCorner } from "./ShiftCorner";
 
@@ -108,20 +108,74 @@ function LogoutIcon() {
   );
 }
 
+function MenuIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M5 5l10 10M15 5 5 15"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function Shell() {
   const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [menuOpen]);
 
   return (
-    <div className="app">
+    <div className={menuOpen ? "app is-menu-open" : "app"}>
       <header className="topbar">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            G
-          </span>
-          <span className="brand-name">Guest Experience</span>
+        <div className="topbar-lead">
+          <div className="brand">
+            <span className="brand-mark" aria-hidden="true">
+              G
+            </span>
+            <span className="brand-name">Guest Experience</span>
+          </div>
+          <button
+            type="button"
+            className="topbar-menu-toggle"
+            aria-expanded={menuOpen}
+            aria-controls="primary-nav"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
         </div>
 
-        <nav className="top-nav" aria-label="Primary">
+        <nav id="primary-nav" className="top-nav" aria-label="Primary">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
@@ -148,6 +202,15 @@ export function Shell() {
           <ShiftCorner />
         </div>
       </header>
+
+      {menuOpen ? (
+        <button
+          type="button"
+          className="topbar-menu-backdrop"
+          aria-label="Close menu"
+          onClick={() => setMenuOpen(false)}
+        />
+      ) : null}
 
       <main className="main">
         <Outlet />

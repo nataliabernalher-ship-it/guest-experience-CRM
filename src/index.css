@@ -64,11 +64,24 @@ h2 {
   padding: 14px 24px 12px;
 }
 
+.topbar-lead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  justify-self: start;
+}
+
+.topbar-menu-toggle,
+.topbar-menu-backdrop {
+  display: none;
+}
+
 .brand {
   display: flex;
   gap: 10px;
   align-items: center;
-  justify-self: start;
   min-width: 0;
 }
 
@@ -540,22 +553,6 @@ h2 {
   line-height: 1.2;
 }
 
-@media (max-width: 1100px) {
-  .dashboard-body {
-    grid-template-columns: 1fr;
-    overflow: auto;
-  }
-
-  .top-nav-link {
-    min-width: 76px;
-    padding: 8px 10px 6px;
-  }
-
-  .top-nav-label {
-    font-size: 11px;
-  }
-}
-
 .board {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -736,7 +733,7 @@ h2 {
 
 .board .listing-table {
   border-collapse: separate;
-  border-spacing: 0;
+  border-spacing: 0 8px;
 }
 
 .board .listing-table thead th {
@@ -748,11 +745,14 @@ h2 {
 
 .board .table-card-head,
 .board .panel-head {
-  padding: 16px 16px 8px;
+  padding: 16px 8px 8px;
 }
 
 .board .listing-table th,
-.board .listing-table td,
+.board .listing-table td {
+  padding: 12px 14px;
+}
+
 .board .priority-row {
   padding: 12px 16px;
 }
@@ -1217,12 +1217,6 @@ a.context-metric.is-recovery:hover {
   cursor: pointer;
 }
 
-.listing-table tbody tr.is-incident-row:hover,
-.listing-table tbody tr.is-opportunity-row:hover,
-.listing-table tbody tr.is-opportunity-group:hover {
-  background: #f7f7f7;
-}
-
 .listing-table tbody tr.is-opportunity-group td {
   vertical-align: middle;
 }
@@ -1610,15 +1604,17 @@ a.context-metric.is-recovery:hover {
 
 .table-card {
   margin-top: 8px;
+  padding: 0 8px 8px;
   background: var(--surface-raised);
   border: 1px solid rgba(21, 21, 21, 0.08);
   border-radius: 12px;
   box-shadow: none;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .table-card-head {
-  padding: 22px 24px 8px;
+  padding: 22px 8px 8px;
 }
 
 .table-card-head h1,
@@ -1644,8 +1640,10 @@ a.context-metric.is-recovery:hover {
 
 .listing-table {
   width: 100%;
+  min-width: 0;
   table-layout: fixed;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 8px;
 }
 
 .listing-table col.col-guest { width: 21%; }
@@ -1821,28 +1819,51 @@ a.context-metric.is-recovery:hover {
 }
 
 .listing-table th {
-  padding: 16px 14px 12px;
+  padding: 12px 14px 4px;
   color: #9a9a9a;
   font-size: 13px;
   font-weight: 400;
   text-align: left;
+  background: transparent;
+  border: 0;
 }
 
 .listing-table td {
-  padding: 16px 14px;
-  border-top: 1px solid #f2f2f2;
+  padding: 14px;
+  border-top: 1px solid rgba(21, 21, 21, 0.08);
+  border-bottom: 1px solid rgba(21, 21, 21, 0.08);
+  background: #fff;
   font-size: 14px;
   vertical-align: middle;
+}
+
+.listing-table tbody tr td:first-child {
+  border-left: 1px solid rgba(21, 21, 21, 0.08);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.listing-table tbody tr td:last-child {
+  border-right: 1px solid rgba(21, 21, 21, 0.08);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.listing-table tbody tr:hover td,
+.listing-table tbody tr:focus-within td {
+  background: #fafafa;
 }
 
 .listing-table tbody tr.guest-row {
   cursor: pointer;
 }
 
-.listing-table tbody tr.guest-row:hover,
 .listing-table tbody tr.guest-row:focus-visible {
-  background: #f7f7f7;
   outline: none;
+}
+
+.listing-table tbody tr.guest-row:focus-visible td {
+  box-shadow: inset 0 0 0 1px rgba(21, 21, 21, 0.16);
 }
 
 .guest-row-actions {
@@ -1879,8 +1900,8 @@ a.context-metric.is-recovery:hover {
   background: rgba(21, 21, 21, 0.04);
 }
 
-.listing-table tbody tr.is-focused {
-  background: #f4f4f4;
+.listing-table tbody tr.is-focused td {
+  background: #f5f5f5;
 }
 
 .guest-cell {
@@ -1993,10 +2014,11 @@ a.vip-name.guest-link:hover,
 
 .guest-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 16px 28px;
+  gap: 12px;
+  padding: 16px 0 12px;
 }
 
 .guest-tags {
@@ -2010,8 +2032,9 @@ a.vip-name.guest-link:hover,
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 320px;
-  flex: none;
+  width: min(320px, 100%);
+  flex: 1 1 200px;
+  max-width: 320px;
   border: 1px solid rgba(21, 21, 21, 0.12);
   border-radius: 4px;
   padding: 7px 14px;
@@ -2584,16 +2607,261 @@ a.vip-name.guest-link:hover,
 
 .listing-empty {
   margin: 0;
-  padding: 8px 24px 22px;
+  padding: 8px 0 14px;
   color: var(--muted);
+}
+
+@media (max-width: 1100px) {
+  .app:has([data-testid="dashboard"]),
+  .app:has([data-testid="guest-profile"]) {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+  }
+
+  .main {
+    padding: 8px 20px 28px;
+  }
+
+  .main:has([data-testid="dashboard"]),
+  .main:has([data-testid="guest-profile"]) {
+    overflow: visible;
+  }
+
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 12px 16px;
+  }
+
+  .brand-name {
+    display: none;
+  }
+
+  .top-nav {
+    justify-self: stretch;
+    overflow-x: auto;
+  }
+
+  .top-nav-link {
+    min-width: 72px;
+    flex: 1 1 0;
+    padding: 8px 10px 6px;
+  }
+
+  .top-nav-label {
+    font-size: 11px;
+  }
+
+  .topbar-user .shift-corner {
+    display: none;
+  }
+
+  [data-testid="dashboard"] {
+    height: auto;
+    overflow: visible;
+  }
+
+  .dashboard-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    overflow: visible;
+  }
+
+  .dashboard-left {
+    gap: 16px;
+  }
+
+  .dashboard-left .context,
+  .dashboard-left .insight-of-day,
+  .dashboard-left .results.is-aside {
+    flex: none;
+  }
+
+  .dashboard-left .results.is-aside {
+    padding: 18px 16px 16px;
+  }
+
+  .dashboard-left .results.is-aside .milestones-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .dashboard-left .results.is-aside .upselling-trend-chart-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .board {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .board-side {
+    height: auto;
+  }
+
+  .board .panel,
+  .board .table-card,
+  .board > .table-card.is-checkins,
+  .board-side .table-card,
+  .board-side .panel {
+    height: auto;
+    flex: none;
+  }
+
+  .page-header h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 720px) {
+  .main {
+    padding: 8px 14px 24px;
+  }
+
+  .topbar {
+    position: relative;
+    z-index: 40;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    gap: 0;
+    padding: 10px 14px;
+    background: var(--page);
+  }
+
+  .topbar-lead {
+    width: 100%;
+    justify-self: stretch;
+  }
+
+  .brand-name {
+    display: inline;
+    font-size: 15px;
+  }
+
+  .topbar-menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(21, 21, 21, 0.12);
+    border-radius: 10px;
+    background: var(--surface-raised);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .topbar-menu-toggle:hover {
+    background: #fff;
+  }
+
+  .top-nav,
+  .topbar-user {
+    display: none;
+  }
+
+  .app.is-menu-open .top-nav,
+  .app.is-menu-open .topbar-user {
+    display: flex;
+  }
+
+  .app.is-menu-open .top-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+    overflow: visible;
+  }
+
+  .app.is-menu-open .top-nav-link {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    min-width: 0;
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+
+  .app.is-menu-open .top-nav-label {
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .app.is-menu-open .topbar-user {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(21, 21, 21, 0.08);
+  }
+
+  .app.is-menu-open .topbar-user-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .app.is-menu-open .topbar-user .shift-corner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .app.is-menu-open .topbar-user .shift-corner span + span {
+    padding-left: 8px;
+  }
+
+  .topbar-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    background: rgba(21, 21, 21, 0.28);
+    cursor: pointer;
+  }
+
+  .app.is-menu-open {
+    overflow: hidden;
+  }
+
+  .dashboard-body {
+    gap: 14px;
+  }
+
+  .dashboard-left {
+    gap: 14px;
+  }
+
+  .dashboard-left .results.is-aside .milestones-body {
+    grid-template-columns: 1fr;
+  }
+
+  .insight-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .board {
+    gap: 14px;
+  }
+
+  .page-header h1 {
+    font-size: 30px;
+  }
 }
 
 .listing-tools {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 16px 28px;
+  padding: 12px 0 12px;
 }
 
 .listing-moment-tabs {
@@ -2644,6 +2912,178 @@ a.vip-name.guest-link:hover,
   border-color: var(--accent);
   background: var(--accent);
   color: #fff;
+}
+
+@media (max-width: 900px) {
+  .table-card {
+    overflow-x: visible;
+  }
+
+  .listing-table {
+    min-width: 0;
+    border-spacing: 0 8px;
+  }
+
+  .listing-table colgroup,
+  .listing-table thead {
+    display: none;
+  }
+
+  .listing-table,
+  .listing-table tbody,
+  .listing-table tbody tr {
+    display: block;
+    width: 100%;
+  }
+
+  .listing-table tbody tr {
+    margin: 0 0 8px;
+    overflow: hidden;
+    border: 1px solid rgba(21, 21, 21, 0.08);
+    border-radius: 12px;
+    background: #fff;
+  }
+
+  .listing-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .listing-table tbody tr td {
+    display: grid;
+    grid-template-columns: minmax(96px, 38%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 0;
+    border-bottom: 1px solid rgba(21, 21, 21, 0.06);
+    border-radius: 0;
+    background: #fff;
+  }
+
+  .listing-table tbody tr td:first-child,
+  .listing-table tbody tr td:last-child {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+  }
+
+  .listing-table tbody tr td:last-child {
+    border-bottom: 0;
+  }
+
+  .listing-table tbody tr td::before {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.3;
+    padding-top: 2px;
+  }
+
+  .listing-table.is-guests tbody tr td:nth-child(1)::before { content: "Guest"; }
+  .listing-table.is-guests tbody tr td:nth-child(2)::before { content: "Stay"; }
+  .listing-table.is-guests tbody tr td:nth-child(3)::before { content: "Room"; }
+  .listing-table.is-guests tbody tr td:nth-child(4)::before { content: "People"; }
+  .listing-table.is-guests tbody tr td:nth-child(5)::before { content: "Origin"; }
+  .listing-table.is-guests tbody tr td:nth-child(6)::before { content: "Age"; }
+  .listing-table.is-guests tbody tr td:nth-child(7)::before { content: "VIP"; }
+  .listing-table.is-guests tbody tr td:nth-child(8)::before { content: "Loyalty"; }
+
+  .listing-table.is-opportunities tbody tr td:nth-child(1)::before { content: "Guest"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(2)::before { content: "Room"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(3)::before { content: "Opportunity"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(4)::before { content: "Category"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(5)::before { content: "People"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(6)::before { content: "Unit value"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(7)::before { content: "Total"; }
+  .listing-table.is-opportunities tbody tr td:nth-child(8)::before { content: "Status"; }
+
+  .listing-table.is-recovery tbody tr td:nth-child(1)::before { content: "Guest"; }
+  .listing-table.is-recovery tbody tr td:nth-child(2)::before { content: "Room"; }
+  .listing-table.is-recovery tbody tr td:nth-child(3)::before { content: "Action"; }
+  .listing-table.is-recovery tbody tr td:nth-child(4)::before { content: "Category"; }
+  .listing-table.is-recovery tbody tr td:nth-child(5)::before { content: "Created"; }
+  .listing-table.is-recovery tbody tr td:nth-child(6)::before { content: "Severity"; }
+  .listing-table.is-recovery tbody tr td:nth-child(7)::before { content: "Status"; }
+
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(1)::before { content: "Guest"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(2)::before { content: "Room"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(3)::before { content: "Action"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(4)::before { content: "Category"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(5)::before { content: "Value"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(6)::before { content: "Status"; }
+
+  .listing-table tbody tr td.cell-view,
+  .listing-table tbody tr td.cell-mark,
+  .listing-table.is-guests tbody tr td:nth-child(9),
+  .listing-table.is-opportunities tbody tr td:nth-child(9),
+  .listing-table.is-recovery tbody tr td:nth-child(8),
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(7) {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-table tbody tr td.cell-view::before,
+  .listing-table tbody tr td.cell-mark::before,
+  .listing-table.is-guests tbody tr td:nth-child(9)::before,
+  .listing-table.is-opportunities tbody tr td:nth-child(9)::before,
+  .listing-table.is-recovery tbody tr td:nth-child(8)::before,
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(7)::before {
+    display: none;
+  }
+
+  .listing-table tbody tr td.guest-empty {
+    display: block;
+  }
+
+  .listing-table tbody tr td.guest-empty::before {
+    content: none;
+    display: none;
+  }
+
+  .listing-table tbody tr.listing-group {
+    margin: 8px 0 4px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .listing-table tbody tr.listing-group th {
+    display: block;
+    padding: 10px 4px 2px;
+    border: 0;
+    background: transparent;
+  }
+
+  .listing-table tbody tr:hover td,
+  .listing-table tbody tr:focus-within td {
+    background: #fff;
+  }
+
+  .guest-cell {
+    white-space: normal;
+  }
+
+  .guest-row-actions {
+    flex-direction: column;
+  }
+
+  .guest-toolbar,
+  .listing-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .guest-search {
+    flex: none;
+    width: 100%;
+    max-width: none;
+  }
+
+  .listing-moment-tabs {
+    flex-direction: column;
+  }
 }
 
 .incident-form {
