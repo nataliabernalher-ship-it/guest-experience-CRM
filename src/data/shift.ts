@@ -315,7 +315,7 @@ export function incidentHistoryNote(status: ActionStatus): string {
 }
 
 export const last7Days = {
-  upsellingRevenue: { value: 840, direction: "up" },
+  upsellingRevenue: { value: 840, direction: "up" as const },
   /** Daily upselling revenue for the last 7 days ending on shiftDay. */
   upsellingByDay: [
     { label: "24", value: 90 },
@@ -326,8 +326,28 @@ export const last7Days = {
     { label: "29", value: 155 },
     { label: "30", value: 130 },
   ],
-  loyaltySignUps: { value: 6, direction: "down" },
-  guestsPampered: { value: 11, direction: "up" },
+  loyaltySignUps: { value: 6, direction: "down" as const },
+  /** Daily loyalty sign-ups for the last 7 days. */
+  loyaltyByDay: [
+    { label: "24", value: 0 },
+    { label: "25", value: 1 },
+    { label: "26", value: 1 },
+    { label: "27", value: 0 },
+    { label: "28", value: 2 },
+    { label: "29", value: 1 },
+    { label: "30", value: 1 },
+  ],
+  guestsPampered: { value: 11, direction: "up" as const },
+  /** Daily guests pampered for the last 7 days. */
+  guestsPamperedByDay: [
+    { label: "24", value: 1 },
+    { label: "25", value: 2 },
+    { label: "26", value: 1 },
+    { label: "27", value: 2 },
+    { label: "28", value: 1 },
+    { label: "29", value: 2 },
+    { label: "30", value: 2 },
+  ],
 } as const;
 
 export const listings: Record<ListingId, Listing> = {

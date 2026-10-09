@@ -114,33 +114,51 @@ function TrendArrow({ direction }: { direction: "up" | "down" }) {
   );
 }
 
-function UpsellingTrendChart({
-  points,
-}: {
-  points: readonly { label: string; value: number }[];
-}) {
-  const width = 280;
-  const height = 56;
-  const padTop = 3;
-  const padBottom = 1;
-  const plotBottom = height - padBottom;
-  const plotHeight = Math.max(plotBottom - padTop, 1);
-  const max = Math.max(...points.map((point) => point.value), 1);
-  const last = Math.max(points.length - 1, 1);
-  const coords = points.map((point, index) => {
-    const x = (index / last) * width;
-    const y = plotBottom - (point.value / max) * plotHeight;
-    return { x, y, ...point };
-  });
-  const first = coords[0];
-  const end = coords[coords.length - 1];
-  const line = coords
+const TREND_COLORS = {
+  upselling: "#8a5a1e",
+  loyalty: "#2f5f8a",
+  "guest-experience": "#2f6b4f",
+} as const;
+
+function seriesPath(
+  values: readonly number[],
+  width: number,
+  plotBottom: number,
+  plotHeight: number,
+): { line: string; dots: { x: number; y: number; key: string }[] } {
+  const max = Math.max(...values, 1);
+  const last = Math.max(values.length - 1, 1);
+  const dots = values.map((value, index) => ({
+    key: String(index),
+    x: (index / last) * width,
+    y: plotBottom - (value / max) * plotHeight,
+  }));
+  const line = dots
     .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
     .join(" ");
-  const area =
-    first && end
-      ? `${line} L${width} ${height} L0 ${height} Z`
-      : "";
+  return { line, dots };
+}
+
+function MilestonesTrendChart({
+  labels,
+  upselling,
+  loyalty,
+  pampered,
+}: {
+  labels: readonly string[];
+  upselling: readonly number[];
+  loyalty: readonly number[];
+  pampered: readonly number[];
+}) {
+  const width = 280;
+  const height = 96;
+  const padTop = 6;
+  const padBottom = 4;
+  const plotBottom = height - padBottom;
+  const plotHeight = Math.max(plotBottom - padTop, 1);
+  const upsellingSeries = seriesPath(upselling, width, plotBottom, plotHeight);
+  const loyaltySeries = seriesPath(loyalty, width, plotBottom, plotHeight);
+  const pamperedSeries = seriesPath(pampered, width, plotBottom, plotHeight);
 
   return (
     <div className="upselling-trend-plot">
@@ -149,21 +167,61 @@ function UpsellingTrendChart({
         viewBox={`0 0 ${width} ${height}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label="Upselling revenue over the last 7 days"
+        aria-label="Upselling, loyalty and guests pampered over the last 7 days"
       >
-        <path className="upselling-trend-area" d={area} />
-        <path className="upselling-trend-line" d={line} />
-        {coords.map((point) => (
-          <circle key={point.label} className="upselling-trend-dot" cx={point.x} cy={point.y} r="2.5" />
+        <path
+          className="upselling-trend-line"
+          style={{ stroke: TREND_COLORS.upselling }}
+          d={upsellingSeries.line}
+        />
+        <path
+          className="upselling-trend-line"
+          style={{ stroke: TREND_COLORS.loyalty }}
+          d={loyaltySeries.line}
+        />
+        <path
+          className="upselling-trend-line"
+          style={{ stroke: TREND_COLORS["guest-experience"] }}
+          d={pamperedSeries.line}
+        />
+        {upsellingSeries.dots.map((point) => (
+          <circle
+            key={`u-${point.key}`}
+            className="upselling-trend-dot"
+            style={{ stroke: TREND_COLORS.upselling }}
+            cx={point.x}
+            cy={point.y}
+            r="1.6"
+          />
+        ))}
+        {loyaltySeries.dots.map((point) => (
+          <circle
+            key={`l-${point.key}`}
+            className="upselling-trend-dot"
+            style={{ stroke: TREND_COLORS.loyalty }}
+            cx={point.x}
+            cy={point.y}
+            r="1.6"
+          />
+        ))}
+        {pamperedSeries.dots.map((point) => (
+          <circle
+            key={`p-${point.key}`}
+            className="upselling-trend-dot"
+            style={{ stroke: TREND_COLORS["guest-experience"] }}
+            cx={point.x}
+            cy={point.y}
+            r="1.6"
+          />
         ))}
       </svg>
       <div className="upselling-trend-labels" aria-hidden="true">
-        {points.map((point, index) => (
+        {labels.map((label, index) => (
           <span
-            key={point.label}
-            className={index === 0 ? "is-start" : index === points.length - 1 ? "is-end" : undefined}
+            key={label}
+            className={index === 0 ? "is-start" : index === labels.length - 1 ? "is-end" : undefined}
           >
-            {point.label}
+            {label}
           </span>
         ))}
       </div>
@@ -369,32 +427,41 @@ export function Dashboard() {
           </section>
 
           <section className="results is-aside" aria-label="Milestones achieved">
-            <h2>Milestones achieved</h2>
+            <header className="milestones-head">
+              <h2>Milestones achieved</h2>
+              <p className="milestones-period">Last 7 days</p>
+            </header>
             <div className="milestones-body">
               <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
-                <UpsellingTrendChart points={last7Days.upsellingByDay} />
+                <MilestonesTrendChart
+                  labels={last7Days.upsellingByDay.map((point) => point.label)}
+                  upselling={last7Days.upsellingByDay.map((point) => point.value)}
+                  loyalty={last7Days.loyaltyByDay.map((point) => point.value)}
+                  pampered={last7Days.guestsPamperedByDay.map((point) => point.value)}
+                />
               </div>
               <div className="results-metrics">
-                <div className="result" data-testid="metric-loyalty">
+                <div className="result is-upselling" data-testid="upselling-total">
+                  <span className="result-figure">
+                    <TrendArrow direction={last7Days.upsellingRevenue.direction} />
+                    <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
+                  </span>
+                  <span className="result-label">Upselling total</span>
+                </div>
+                <div className="result is-loyalty" data-testid="metric-loyalty">
                   <span className="result-figure">
                     <TrendArrow direction={last7Days.loyaltySignUps.direction} />
                     <span className="result-value">{last7Days.loyaltySignUps.value}</span>
                   </span>
                   <span className="result-label">Loyalty sign-ups</span>
                 </div>
-                <div className="result" data-testid="metric-pampered">
+                <div className="result is-pampered" data-testid="metric-pampered">
                   <span className="result-figure">
                     <TrendArrow direction={last7Days.guestsPampered.direction} />
                     <span className="result-value">{last7Days.guestsPampered.value}</span>
                   </span>
                   <span className="result-label">Guests pampered</span>
                 </div>
-              </div>
-              <div className="upselling-trend-total" data-testid="upselling-total">
-                <span className="upselling-trend-total-label">Upselling total</span>
-                <span className="upselling-trend-total-value">
-                  {money.format(last7Days.upsellingRevenue.value)}
-                </span>
               </div>
             </div>
           </section>
