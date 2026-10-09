@@ -728,6 +728,22 @@ h2 {
   box-shadow: var(--box-inset);
 }
 
+.board .view-all {
+  background: #151515;
+  box-shadow:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.35),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.board .view-all:hover {
+  background: #0f0f0f;
+  box-shadow:
+    inset 3px 3px 7px rgba(0, 0, 0, 0.4),
+    inset -2px -2px 5px rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
 .vip-copy {
   display: grid;
   flex: 1;
@@ -1629,8 +1645,8 @@ a.context-metric.is-recovery:hover {
   justify-content: center;
   padding: 7px 12px;
   border-radius: 8px;
-  background: var(--box-recess);
-  box-shadow: var(--box-inset-soft);
+  background: rgba(21, 21, 21, 0.06);
+  box-shadow: none;
   color: var(--ink);
   font-size: 12px;
   font-weight: 400;
@@ -1640,9 +1656,7 @@ a.context-metric.is-recovery:hover {
 
 .severity-urgent {
   background: var(--accent);
-  box-shadow:
-    inset 3px 3px 6px rgba(160, 60, 0, 0.28),
-    inset -2px -2px 5px rgba(255, 210, 160, 0.35);
+  box-shadow: none;
   color: white;
 }
 
