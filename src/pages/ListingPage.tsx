@@ -39,6 +39,17 @@ const categoryFilters: { id: "all" | Exclude<Category, "recovery">; label: strin
   { id: "loyalty", label: "Loyalty" },
 ];
 
+type OpportunityCategoryFilter = (typeof categoryFilters)[number]["id"];
+
+function selectedCategory(value: string | null): OpportunityCategoryFilter {
+  if (value === "upselling" || value === "guest-experience" || value === "loyalty") return value;
+  return "all";
+}
+
+function categoryQuery(category: OpportunityCategoryFilter): string {
+  return category === "all" ? "" : `?category=${category}`;
+}
+
 function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -659,9 +670,9 @@ function IncidentDrawer({
 export function ListingPage({ listingId }: { listingId: ListingId }) {
   const navigate = useNavigate();
   const { actions, setActionStatus, addIncident, addOpportunity } = useShift();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
-  const [category, setCategory] = useState<(typeof categoryFilters)[number]["id"]>("all");
+  const category = selectedCategory(params.get("category"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
@@ -669,6 +680,13 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const focus = params.get("action");
   const isRecovery = listingId === "recovery";
   const listing = listings[listingId];
+
+  function setCategory(next: OpportunityCategoryFilter) {
+    const nextParams = new URLSearchParams(params);
+    if (next === "all") nextParams.delete("category");
+    else nextParams.set("category", next);
+    setParams(nextParams, { replace: true });
+  }
 
   function handleAddOpportunity(opportunity: {
     guestId: string;
@@ -682,7 +700,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
     setCategory("all");
     const target = listingForMoment(guestById(opportunity.guestId).moment);
     if (target !== listingId) {
-      navigate(listings[target].path);
+      navigate(`${listings[target].path}${categoryQuery("all")}`);
     }
   }
   const pending = isRecovery
@@ -722,7 +740,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
           {opportunityMomentTabs.map((item) => (
             <NavLink
               key={item.id}
-              to={listings[item.id].path}
+              to={`${listings[item.id].path}${categoryQuery(category)}`}
               role="tab"
               aria-selected={listingId === item.id}
               className={listingId === item.id ? "listing-moment-tab is-active" : "listing-moment-tab"}

@@ -33,8 +33,9 @@ export function App() {
         <Route path="in-house" element={<Navigate to="/opportunities/in-house" replace />} />
         <Route path="check-outs" element={<Navigate to="/opportunities/check-outs" replace />} />
         <Route path="recovery" element={<ListingPage listingId="recovery" />} />
-        <Route path="guests/:guestId" element={<GuestProfile />} />
-        <Route path="guests" element={<GuestsPage />} />
+        <Route path="guests" element={<GuestsPage />}>
+          <Route path=":guestId" element={<GuestProfile />} />
+        </Route>
         <Route path="automations" element={<AutomationsPage />} />
         <Route path="configuration" element={<Navigate to="/automations" replace />} />
       </Route>

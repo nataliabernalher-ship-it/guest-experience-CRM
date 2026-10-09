@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
@@ -121,7 +121,51 @@ function totalStayDays(stays: PastStay[]): number {
   return stays.reduce((sum, stay) => sum + stayNights(stay), 0);
 }
 
+function GuestProfileModal({
+  backTo,
+  title,
+  onClose,
+  children,
+}: {
+  backTo: string;
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
+  return (
+    <div className="modal-root guest-profile-modal-root" data-testid="guest-profile">
+      <button type="button" className="modal-backdrop" aria-label="Close guest profile" onClick={onClose} />
+      <div className="guest-profile-modal" role="dialog" aria-modal="true" aria-label={title}>
+        <header className="guest-profile-modal-head">
+          <Link to={backTo} className="listing-back">
+            <BackArrow />
+            Back to guest profiles
+          </Link>
+          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
+            <CloseIcon />
+          </button>
+        </header>
+        <div className="guest-profile-modal-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 export function GuestProfile() {
+  const navigate = useNavigate();
   const { guestId } = useParams();
   const [params] = useSearchParams();
   const filter = selectedFilter(params.get("stay"));
@@ -130,6 +174,7 @@ export function GuestProfile() {
   if (filter !== "all") backQuery.set("stay", filter);
   if (query) backQuery.set("q", query);
   const backTo = backQuery.size ? `/guests?${backQuery}` : "/guests";
+  const close = useCallback(() => navigate(backTo), [navigate, backTo]);
   const { actions, notesByGuest, addGuestNote, addIncident, addOpportunity } = useShift();
   const guest = guests.find((item) => item.id === guestId);
   const { status, retry } = useViewLoad(`guest-${guestId ?? "missing"}`);
@@ -147,32 +192,20 @@ export function GuestProfile() {
 
   if (status === "loading") {
     return (
-      <div className="page guest-file" data-testid="guest-profile">
-        <header className="page-header">
-          <Link to={backTo} className="listing-back">
-            <BackArrow />
-            Back to guest profiles
-          </Link>
-        </header>
+      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
         <div className="page-view-state">
           <LoadingState
             title="Loading guest profile"
             description="We’re opening this guest’s details, stay history, and open actions."
           />
         </div>
-      </div>
+      </GuestProfileModal>
     );
   }
 
   if (status === "error") {
     return (
-      <div className="page guest-file" data-testid="guest-profile">
-        <header className="page-header">
-          <Link to={backTo} className="listing-back">
-            <BackArrow />
-            Back to guest profiles
-          </Link>
-        </header>
+      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
         <div className="page-view-state">
           <ErrorState
             title="Couldn’t open this guest"
@@ -189,19 +222,13 @@ export function GuestProfile() {
             }
           />
         </div>
-      </div>
+      </GuestProfileModal>
     );
   }
 
   if (!guest) {
     return (
-      <div className="page guest-file" data-testid="guest-profile">
-        <header className="page-header">
-          <Link to={backTo} className="listing-back">
-            <BackArrow />
-            Back to guest profiles
-          </Link>
-        </header>
+      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
         <div className="page-view-state">
           <ErrorState
             title="Guest not found"
@@ -213,7 +240,7 @@ export function GuestProfile() {
             }
           />
         </div>
-      </div>
+      </GuestProfileModal>
     );
   }
 
@@ -266,225 +293,221 @@ export function GuestProfile() {
   const stayDays = totalStayDays(guest.stays);
 
   return (
-    <div className="page guest-file" data-testid="guest-profile">
-      <header className="page-header">
-        <Link to={backTo} className="listing-back">
-          <BackArrow />
-          Back to guest profiles
-        </Link>
-      </header>
-      <div className="profile-board">
-        <div className="profile-grid">
-          <section className="profile-quadrant is-demographics" aria-label="Personal details">
-            <div className="profile-person">
-              <span className="avatar profile-avatar" aria-hidden="true">
-                {initials(guest.name)}
-              </span>
-              <h1>{guest.name}</h1>
-            </div>
-            <dl className="profile-facts-list">
-              <div>
-                <dt>Origin</dt>
-                <dd>{guest.origin}</dd>
+    <GuestProfileModal backTo={backTo} title={guest.name} onClose={close}>
+      <div className="guest-file">
+        <div className="profile-board">
+          <div className="profile-grid">
+            <section className="profile-quadrant is-demographics" aria-label="Personal details">
+              <div className="profile-person">
+                <span className="avatar profile-avatar" aria-hidden="true">
+                  {initials(guest.name)}
+                </span>
+                <h1>{guest.name}</h1>
               </div>
-              <div>
-                <dt>Country</dt>
-                <dd>{guest.country}</dd>
-              </div>
-              <div>
-                <dt>Region</dt>
-                <dd>{formatGuestRegion(guest.region)}</dd>
-              </div>
-              <div>
-                <dt>Date of birth</dt>
-                <dd>{guest.birthDate}</dd>
-              </div>
-              <div>
-                <dt>Profession</dt>
-                <dd>{guest.profession}</dd>
-              </div>
-              <div>
-                <dt>Hobbies</dt>
-                <dd>{guest.hobbies}</dd>
-              </div>
-              <div className="is-wide">
-                <dt>Companions</dt>
-                <dd>{travelCompanionshipLabels[guest.companionship]}</dd>
-              </div>
-            </dl>
-          </section>
+              <dl className="profile-facts-list">
+                <div>
+                  <dt>Origin</dt>
+                  <dd>{guest.origin}</dd>
+                </div>
+                <div>
+                  <dt>Country</dt>
+                  <dd>{guest.country}</dd>
+                </div>
+                <div>
+                  <dt>Region</dt>
+                  <dd>{formatGuestRegion(guest.region)}</dd>
+                </div>
+                <div>
+                  <dt>Date of birth</dt>
+                  <dd>{guest.birthDate}</dd>
+                </div>
+                <div>
+                  <dt>Profession</dt>
+                  <dd>{guest.profession}</dd>
+                </div>
+                <div>
+                  <dt>Hobbies</dt>
+                  <dd>{guest.hobbies}</dd>
+                </div>
+                <div className="is-wide">
+                  <dt>Companions</dt>
+                  <dd>{travelCompanionshipLabels[guest.companionship]}</dd>
+                </div>
+              </dl>
+            </section>
 
-          <section className="profile-quadrant is-stay" aria-label="Stay history">
-            <header className="profile-quadrant-head">
-              <h2>Stay history</h2>
-              <span className="profile-quadrant-meta">
-                {stayDays} {stayDays === 1 ? "day" : "days"} total
-              </span>
-            </header>
-            <div className="profile-scroll">
-              <ul className="profile-records">
-                {guest.stays.map((stay) => (
-                  <li key={`${stay.from}-${stay.roomType}`} className="profile-stay-row">
-                    <div className="profile-stay-main">
-                      <span className="cell-strong">{stay.roomType}</span>
-                      <span className="cell-strong profile-stay-board">
-                        {boardTypeLabels[stay.boardType]}
-                      </span>
-                    </div>
-                    <span className="priority-meta">
-                      {stay.from} – {stay.to} · {bookingSourceLabels[stay.bookingSource]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          <section className="profile-quadrant is-preferences" aria-label="Preferences">
-            <header className="profile-quadrant-head">
-              <h2>Preferences</h2>
-            </header>
-            <dl className="profile-facts-list is-stacked">
-              <div>
-                <dt>Room type</dt>
-                <dd>{guest.preferences.roomType}</dd>
-              </div>
-              <div>
-                <dt>Bed type</dt>
-                <dd>{guest.preferences.bedType}</dd>
-              </div>
-              <div>
-                <dt>Pillow type</dt>
-                <dd>{guest.preferences.pillowType}</dd>
-              </div>
-              <div>
-                <dt>Dining</dt>
-                <dd>{guest.preferences.dining}</dd>
-              </div>
-            </dl>
-          </section>
-
-          <section className="profile-quadrant is-incidents" aria-label="Incidents">
-            <header className="profile-quadrant-head">
-              <h2>Incidents</h2>
-              <button
-                type="button"
-                className="profile-add"
-                aria-label="Open incident"
-                onClick={() => setIncidentOpen(true)}
-              >
-                <PlusIcon />
-              </button>
-            </header>
-            <div className="profile-scroll">
-              {incidents.length === 0 ? (
-                <EmptyState
-                  title="No incidents on file"
-                  description="Nothing recorded for this guest yet. Use + to open a new incident."
-                />
-              ) : (
+            <section className="profile-quadrant is-stay" aria-label="Stay history">
+              <header className="profile-quadrant-head">
+                <h2>Stay history</h2>
+                <span className="profile-quadrant-meta">
+                  {stayDays} {stayDays === 1 ? "day" : "days"} total
+                </span>
+              </header>
+              <div className="profile-scroll">
                 <ul className="profile-records">
-                  {incidents.map((record) => (
-                    <li key={record.id}>
-                      <span className="profile-record-state">{record.state}</span>
-                      <span className="cell-strong">{record.label}</span>
-                      <span className="priority-meta">
-                        {record.detail} · {record.when}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
-
-          <section className="profile-quadrant is-opportunities" aria-label="Opportunities">
-            <header className="profile-quadrant-head">
-              <h2>Opportunities</h2>
-              <button
-                type="button"
-                className="profile-add"
-                aria-label="Add opportunity"
-                onClick={() => setOpportunityOpen(true)}
-              >
-                <PlusIcon />
-              </button>
-            </header>
-            <div className="profile-scroll">
-              {opportunities.length === 0 ? (
-                <EmptyState
-                  title="No opportunities on file"
-                  description="No upselling, amenity or loyalty actions yet. Use + to add one."
-                />
-              ) : (
-                <ul className="profile-records is-opp-list">
-                  {opportunities.map((record) => (
-                    <li key={record.id} className="profile-opp-item">
-                      <div className="profile-opp-main">
-                        <span className="cell-strong">{record.detail}</span>
-                        <span className="priority-meta">
-                          {record.label} · {record.when}
+                  {guest.stays.map((stay) => (
+                    <li key={`${stay.from}-${stay.roomType}`} className="profile-stay-row">
+                      <div className="profile-stay-main">
+                        <span className="cell-strong">{stay.roomType}</span>
+                        <span className="cell-strong profile-stay-board">
+                          {boardTypeLabels[stay.boardType]}
                         </span>
                       </div>
-                      <span className="profile-record-state">{record.state}</span>
+                      <span className="priority-meta">
+                        {stay.from} – {stay.to} · {bookingSourceLabels[stay.bookingSource]}
+                      </span>
                     </li>
                   ))}
                 </ul>
-              )}
-            </div>
-          </section>
+              </div>
+            </section>
 
-          <section className="profile-quadrant is-spend" aria-label="Spend">
-            <header className="profile-quadrant-head">
-              <h2>Spend</h2>
-            </header>
-            <SpendDonut spend={guest.spend} />
-          </section>
+            <section className="profile-quadrant is-preferences" aria-label="Preferences">
+              <header className="profile-quadrant-head">
+                <h2>Preferences</h2>
+              </header>
+              <dl className="profile-facts-list is-stacked">
+                <div>
+                  <dt>Room type</dt>
+                  <dd>{guest.preferences.roomType}</dd>
+                </div>
+                <div>
+                  <dt>Bed type</dt>
+                  <dd>{guest.preferences.bedType}</dd>
+                </div>
+                <div>
+                  <dt>Pillow type</dt>
+                  <dd>{guest.preferences.pillowType}</dd>
+                </div>
+                <div>
+                  <dt>Dining</dt>
+                  <dd>{guest.preferences.dining}</dd>
+                </div>
+              </dl>
+            </section>
 
-          <section className="profile-quadrant is-notes" aria-label="Notes">
-            <h2>Notes</h2>
-            <div className="notes-body">
-              <div className="profile-scroll notes-list-pane">
-                {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
+            <section className="profile-quadrant is-incidents" aria-label="Incidents">
+              <header className="profile-quadrant-head">
+                <h2>Incidents</h2>
+                <button
+                  type="button"
+                  className="profile-add"
+                  aria-label="Open incident"
+                  onClick={() => setIncidentOpen(true)}
+                >
+                  <PlusIcon />
+                </button>
+              </header>
+              <div className="profile-scroll">
+                {incidents.length === 0 ? (
                   <EmptyState
-                    title="No notes yet"
-                    description="Add a note below so the next shift knows what matters for this guest."
+                    title="No incidents on file"
+                    description="Nothing recorded for this guest yet. Use + to open a new incident."
                   />
                 ) : (
-                  <ul className="profile-records note-list">
-                    {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (
-                      <li key={`${note.date}-${note.text}`}>
-                        <span className="cell-strong">{note.text}</span>
+                  <ul className="profile-records">
+                    {incidents.map((record) => (
+                      <li key={record.id}>
+                        <span className="profile-record-state">{record.state}</span>
+                        <span className="cell-strong">{record.label}</span>
                         <span className="priority-meta">
-                          {note.author} · {note.date}
+                          {record.detail} · {record.when}
                         </span>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
-              <form
-                className="note-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  addGuestNote(guest.id, draft);
-                  setDraft("");
-                }}
-              >
-                <textarea
-                  className="note-input"
-                  aria-label="Write a note"
-                  placeholder="Write a note about this guest"
-                  rows={4}
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                />
-                <button type="submit" className="add-incident" disabled={!draft.trim()}>
-                  Add note
+            </section>
+
+            <section className="profile-quadrant is-opportunities" aria-label="Opportunities">
+              <header className="profile-quadrant-head">
+                <h2>Opportunities</h2>
+                <button
+                  type="button"
+                  className="profile-add"
+                  aria-label="Add opportunity"
+                  onClick={() => setOpportunityOpen(true)}
+                >
+                  <PlusIcon />
                 </button>
-              </form>
-            </div>
-          </section>
+              </header>
+              <div className="profile-scroll">
+                {opportunities.length === 0 ? (
+                  <EmptyState
+                    title="No opportunities on file"
+                    description="No upselling, amenity or loyalty actions yet. Use + to add one."
+                  />
+                ) : (
+                  <ul className="profile-records is-opp-list">
+                    {opportunities.map((record) => (
+                      <li key={record.id} className="profile-opp-item">
+                        <div className="profile-opp-main">
+                          <span className="cell-strong">{record.detail}</span>
+                          <span className="priority-meta">
+                            {record.label} · {record.when}
+                          </span>
+                        </div>
+                        <span className="profile-record-state">{record.state}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </section>
+
+            <section className="profile-quadrant is-spend" aria-label="Spend">
+              <header className="profile-quadrant-head">
+                <h2>Spend</h2>
+              </header>
+              <SpendDonut spend={guest.spend} />
+            </section>
+
+            <section className="profile-quadrant is-notes" aria-label="Notes">
+              <h2>Notes</h2>
+              <div className="notes-body">
+                <div className="profile-scroll notes-list-pane">
+                  {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
+                    <EmptyState
+                      title="No notes yet"
+                      description="Add a note below so the next shift knows what matters for this guest."
+                    />
+                  ) : (
+                    <ul className="profile-records note-list">
+                      {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (
+                        <li key={`${note.date}-${note.text}`}>
+                          <span className="cell-strong">{note.text}</span>
+                          <span className="priority-meta">
+                            {note.author} · {note.date}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <form
+                  className="note-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    addGuestNote(guest.id, draft);
+                    setDraft("");
+                  }}
+                >
+                  <textarea
+                    className="note-input"
+                    aria-label="Write a note"
+                    placeholder="Write a note about this guest"
+                    rows={4}
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                  />
+                  <button type="submit" className="add-incident" disabled={!draft.trim()}>
+                    Add note
+                  </button>
+                </form>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
       {incidentOpen ? (
@@ -493,7 +516,7 @@ export function GuestProfile() {
       {opportunityOpen ? (
         <GuestOpportunityDrawer guest={guest} onClose={() => setOpportunityOpen(false)} onAdd={addOpportunity} />
       ) : null}
-    </div>
+    </GuestProfileModal>
   );
 }
 
@@ -507,6 +530,20 @@ function BackArrow() {
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M3 3l8 8M11 3 3 11"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
       />
     </svg>
   );

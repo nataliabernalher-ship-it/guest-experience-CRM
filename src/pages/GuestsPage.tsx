@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import {
   guestsForFilter,

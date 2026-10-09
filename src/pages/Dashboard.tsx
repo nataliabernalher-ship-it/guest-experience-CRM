@@ -120,19 +120,32 @@ const TREND_COLORS = {
   "guest-experience": "#2f6b4f",
 } as const;
 
+type TrendDot = { key: string; x: number; y: number; left: string; top: string };
+
 function seriesPath(
   values: readonly number[],
   width: number,
-  plotBottom: number,
-  plotHeight: number,
-): { line: string; dots: { x: number; y: number; key: string }[] } {
+  height: number,
+  padX: number,
+  padTop: number,
+  padBottom: number,
+): { line: string; dots: TrendDot[] } {
   const max = Math.max(...values, 1);
   const last = Math.max(values.length - 1, 1);
-  const dots = values.map((value, index) => ({
-    key: String(index),
-    x: (index / last) * width,
-    y: plotBottom - (value / max) * plotHeight,
-  }));
+  const plotWidth = Math.max(width - padX * 2, 1);
+  const plotBottom = height - padBottom;
+  const plotHeight = Math.max(plotBottom - padTop, 1);
+  const dots = values.map((value, index) => {
+    const x = padX + (index / last) * plotWidth;
+    const y = plotBottom - (value / max) * plotHeight;
+    return {
+      key: String(index),
+      x,
+      y,
+      left: `${(x / width) * 100}%`,
+      top: `${(y / height) * 100}%`,
+    };
+  });
   const line = dots
     .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
     .join(" ");
@@ -152,69 +165,53 @@ function MilestonesTrendChart({
 }) {
   const width = 280;
   const height = 96;
-  const padTop = 6;
-  const padBottom = 4;
-  const plotBottom = height - padBottom;
-  const plotHeight = Math.max(plotBottom - padTop, 1);
-  const upsellingSeries = seriesPath(upselling, width, plotBottom, plotHeight);
-  const loyaltySeries = seriesPath(loyalty, width, plotBottom, plotHeight);
-  const pamperedSeries = seriesPath(pampered, width, plotBottom, plotHeight);
+  const padX = 8;
+  const padTop = 8;
+  const padBottom = 8;
+  const series = [
+    { id: "upselling", color: TREND_COLORS.upselling, values: upselling },
+    { id: "loyalty", color: TREND_COLORS.loyalty, values: loyalty },
+    { id: "guest-experience", color: TREND_COLORS["guest-experience"], values: pampered },
+  ].map((item) => ({
+    ...item,
+    ...seriesPath(item.values, width, height, padX, padTop, padBottom),
+  }));
 
   return (
     <div className="upselling-trend-plot">
-      <svg
-        className="upselling-trend-chart"
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        role="img"
-        aria-label="Upselling, loyalty and guests pampered over the last 7 days"
-      >
-        <path
-          className="upselling-trend-line"
-          style={{ stroke: TREND_COLORS.upselling }}
-          d={upsellingSeries.line}
-        />
-        <path
-          className="upselling-trend-line"
-          style={{ stroke: TREND_COLORS.loyalty }}
-          d={loyaltySeries.line}
-        />
-        <path
-          className="upselling-trend-line"
-          style={{ stroke: TREND_COLORS["guest-experience"] }}
-          d={pamperedSeries.line}
-        />
-        {upsellingSeries.dots.map((point) => (
-          <circle
-            key={`u-${point.key}`}
-            className="upselling-trend-dot"
-            style={{ stroke: TREND_COLORS.upselling }}
-            cx={point.x}
-            cy={point.y}
-            r="1.6"
-          />
-        ))}
-        {loyaltySeries.dots.map((point) => (
-          <circle
-            key={`l-${point.key}`}
-            className="upselling-trend-dot"
-            style={{ stroke: TREND_COLORS.loyalty }}
-            cx={point.x}
-            cy={point.y}
-            r="1.6"
-          />
-        ))}
-        {pamperedSeries.dots.map((point) => (
-          <circle
-            key={`p-${point.key}`}
-            className="upselling-trend-dot"
-            style={{ stroke: TREND_COLORS["guest-experience"] }}
-            cx={point.x}
-            cy={point.y}
-            r="1.6"
-          />
-        ))}
-      </svg>
+      <div className="upselling-trend-canvas">
+        <svg
+          className="upselling-trend-chart"
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="Upselling, loyalty and guests pampered over the last 7 days"
+        >
+          {series.map((item) => (
+            <path
+              key={item.id}
+              className="upselling-trend-line"
+              style={{ stroke: item.color }}
+              d={item.line}
+            />
+          ))}
+        </svg>
+        <div className="upselling-trend-dots" aria-hidden="true">
+          {series.flatMap((item) =>
+            item.dots.map((point) => (
+              <span
+                key={`${item.id}-${point.key}`}
+                className="upselling-trend-dot"
+                style={{
+                  left: point.left,
+                  top: point.top,
+                  borderColor: item.color,
+                }}
+              />
+            )),
+          )}
+        </div>
+      </div>
       <div className="upselling-trend-labels" aria-hidden="true">
         {labels.map((label, index) => (
           <span
@@ -225,6 +222,7 @@ function MilestonesTrendChart({
           </span>
         ))}
       </div>
+      <p className="milestones-period">Last 7 days</p>
     </div>
   );
 }
@@ -402,34 +400,45 @@ export function Dashboard() {
               <h2 id="insight-heading">Insight of the day</h2>
             </header>
             <div className="insight-metrics">
-              <div className="insight-metric" data-testid="insight-upselling">
+              <Link
+                to={`${listings["check-ins"].path}?category=upselling`}
+                className="insight-metric"
+                data-testid="insight-upselling"
+              >
                 <span className="insight-metric-icon" aria-hidden="true">
                   <InsightIcon category="upselling" />
                 </span>
                 <span className="insight-metric-label">Upselling</span>
                 <span className="insight-metric-value">{insightCounts.upselling}</span>
-              </div>
-              <div className="insight-metric" data-testid="insight-amenities">
+              </Link>
+              <Link
+                to={`${listings["check-ins"].path}?category=guest-experience`}
+                className="insight-metric"
+                data-testid="insight-amenities"
+              >
                 <span className="insight-metric-icon" aria-hidden="true">
                   <InsightIcon category="guest-experience" />
                 </span>
                 <span className="insight-metric-label">Special amenities</span>
                 <span className="insight-metric-value">{insightCounts.guestExperience}</span>
-              </div>
-              <div className="insight-metric" data-testid="insight-loyalties">
+              </Link>
+              <Link
+                to={`${listings["check-ins"].path}?category=loyalty`}
+                className="insight-metric"
+                data-testid="insight-loyalties"
+              >
                 <span className="insight-metric-icon" aria-hidden="true">
                   <InsightIcon category="loyalty" />
                 </span>
                 <span className="insight-metric-label">Loyalties</span>
                 <span className="insight-metric-value">{insightCounts.loyalty}</span>
-              </div>
+              </Link>
             </div>
           </section>
 
           <section className="results is-aside" aria-label="Milestones achieved">
             <header className="milestones-head">
               <h2>Milestones achieved</h2>
-              <p className="milestones-period">Last 7 days</p>
             </header>
             <div className="milestones-body">
               <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
