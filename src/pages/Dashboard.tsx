@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   compareActions,
   guestById,
-  guestHeadcount,
   guests,
   type Guest,
   isPending,
@@ -11,10 +10,10 @@ import {
   listings,
   money,
   reservationCount,
-  type Category,
   type ShiftAction,
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
+import { OutcomeMark } from "../components/OutcomeMark";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
@@ -196,6 +195,18 @@ function MilestonesTrendChart({
           role="img"
           aria-label={`${label} over the last 7 days`}
         >
+          <g className="upselling-trend-grid" aria-hidden="true">
+            {series.dots.map((point) => (
+              <line
+                key={`grid-${point.key}`}
+                className="upselling-trend-grid-line"
+                x1={point.x}
+                y1={padTop}
+                x2={point.x}
+                y2={height - padBottom}
+              />
+            ))}
+          </g>
           <path className="upselling-trend-line" style={{ stroke: color }} d={series.line} />
         </svg>
         <div className="upselling-trend-dots" aria-hidden="true">
@@ -227,46 +238,6 @@ function MilestonesTrendChart({
   );
 }
 
-function InsightIcon({ category }: { category: Exclude<Category, "recovery"> }) {
-  if (category === "upselling") {
-    return (
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <path
-          d="M10 2.2 11.5 7.6 17.2 9.2 11.5 10.8 10 16.2 8.5 10.8 2.8 9.2 8.5 7.6Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-  if (category === "loyalty") {
-    return (
-      <svg viewBox="0 0 20 20" aria-hidden="true">
-        <path
-          d="M10 2.6 15.8 9.5 10 16.4 4.2 9.5Z"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.4"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 20 20" aria-hidden="true">
-      <path
-        d="M10 16.4S3.8 12.2 3.8 8.2A3.2 3.2 0 0 1 10 6.8a3.2 3.2 0 0 1 6.2 1.4c0 4-6.2 8.2-6.2 8.2Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function Dashboard() {
   const [now, setNow] = useState(() => new Date());
 
@@ -288,9 +259,7 @@ export function Dashboard() {
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
   );
   const checkOutReservations = reservationCount("check-out");
-  const checkOutGuests = guestHeadcount("check-out");
   const checkInReservations = reservationCount("check-in");
-  const checkInGuestCount = guestHeadcount("check-in");
   const progressPercent = nowToPercent(now);
   const pendingOpportunities = actions.filter(
     (action) => action.category !== "recovery" && isPending(action),
@@ -340,11 +309,7 @@ export function Dashboard() {
                     data-testid="context-check-outs"
                   >
                     <span className="shift-band-copy">
-                      <span className="shift-band-title">Check-out</span>
-                      <span className="shift-band-meta">
-                        {checkOutReservations} check-outs / {checkOutGuests}{" "}
-                        {checkOutGuests === 1 ? "guest" : "guests"}
-                      </span>
+                      <span className="shift-band-title">Check out: {checkOutReservations}</span>
                     </span>
                     <span className="shift-band-bar" aria-hidden="true">
                       <span
@@ -360,11 +325,7 @@ export function Dashboard() {
                     data-testid="context-check-ins"
                   >
                     <span className="shift-band-copy">
-                      <span className="shift-band-title">Check-in</span>
-                      <span className="shift-band-meta">
-                        {checkInReservations} check-ins / {checkInGuestCount}{" "}
-                        {checkInGuestCount === 1 ? "guest" : "guests"}
-                      </span>
+                      <span className="shift-band-title">Check in: {checkInReservations}</span>
                     </span>
                     <span className="shift-band-bar" aria-hidden="true">
                       <span
@@ -403,33 +364,27 @@ export function Dashboard() {
               <Link
                 to={`${listings["check-ins"].path}?category=upselling`}
                 className="insight-metric"
+                data-category="upselling"
                 data-testid="insight-upselling"
               >
-                <span className="insight-metric-icon" aria-hidden="true">
-                  <InsightIcon category="upselling" />
-                </span>
                 <span className="insight-metric-label">Upselling</span>
                 <span className="insight-metric-value">{insightCounts.upselling}</span>
               </Link>
               <Link
                 to={`${listings["check-ins"].path}?category=guest-experience`}
                 className="insight-metric"
+                data-category="guest-experience"
                 data-testid="insight-amenities"
               >
-                <span className="insight-metric-icon" aria-hidden="true">
-                  <InsightIcon category="guest-experience" />
-                </span>
                 <span className="insight-metric-label">Special amenities</span>
                 <span className="insight-metric-value">{insightCounts.guestExperience}</span>
               </Link>
               <Link
                 to={`${listings["check-ins"].path}?category=loyalty`}
                 className="insight-metric"
+                data-category="loyalty"
                 data-testid="insight-loyalties"
               >
-                <span className="insight-metric-icon" aria-hidden="true">
-                  <InsightIcon category="loyalty" />
-                </span>
                 <span className="insight-metric-label">Loyalties</span>
                 <span className="insight-metric-value">{insightCounts.loyalty}</span>
               </Link>
@@ -573,7 +528,13 @@ export function Dashboard() {
                         </span>
                         <GuestMark guest={guest} />
                         {opportunity ? (
-                          <CategoryPill category={opportunity.category} />
+                          opportunity.status === "done" ? (
+                            <OutcomeMark rejected={false} />
+                          ) : opportunity.status === "rejected" ? (
+                            <OutcomeMark rejected />
+                          ) : (
+                            <CategoryPill category={opportunity.category} />
+                          )
                         ) : (
                           <span className="guest-none">–</span>
                         )}
