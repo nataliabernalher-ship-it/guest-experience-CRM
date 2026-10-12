@@ -618,8 +618,12 @@ export function Dashboard() {
                               {guestRoom}
                             </span>
                           </span>
-                          <span className={action.status === "pending" ? "incident-status" : "incident-status is-advanced"}>
-                            {action.status === "notified" ? "Notified" : action.status === "solved" ? "Solved" : "Pending"}
+                          <span className="incident-status">
+                            {action.status === "notified"
+                              ? "Notified"
+                              : action.status === "solved"
+                                ? "Solved"
+                                : "Pending"}
                           </span>
                         </button>
                       </li>

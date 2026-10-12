@@ -1,5 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  SortableTh,
+  compareByGuestOrRoom,
+  nextSort,
+  type SortDir,
+  type SortKey,
+} from "../components/SortableTh";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import {
   guestsForFilter,
@@ -98,10 +105,18 @@ export function GuestsPage() {
   const query = params.get("q") ?? "";
   const needle = query.trim().toLowerCase();
   const { status, retry } = useViewLoad(`guests-${filter}-${needle}`);
-  const rows = guestsForFilter(filter).filter((guest) => {
-    if (!needle) return true;
-    return guest.name.toLowerCase().includes(needle) || guest.room.includes(needle);
-  });
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const rows = useMemo(() => {
+    const filtered = guestsForFilter(filter).filter((guest) => {
+      if (!needle) return true;
+      return guest.name.toLowerCase().includes(needle) || guest.room.includes(needle);
+    });
+    if (!sortKey || sortKey === "category") return filtered;
+    return [...filtered].sort((a, b) =>
+      compareByGuestOrRoom(a.name, a.room, b.name, b.room, sortKey, sortDir),
+    );
+  }, [filter, needle, sortKey, sortDir]);
   const profileQuery = new URLSearchParams();
   if (filter !== "all") profileQuery.set("stay", filter);
   if (query) profileQuery.set("q", query);
@@ -114,6 +129,12 @@ export function GuestsPage() {
 
   function clearFilters() {
     setParams({}, { replace: true });
+  }
+
+  function handleSort(key: SortKey) {
+    const next = nextSort(sortKey, sortDir, key);
+    setSortKey(next.key);
+    setSortDir(next.dir);
   }
 
   return (
@@ -216,9 +237,9 @@ export function GuestsPage() {
           </colgroup>
           <thead>
             <tr>
-              <th>Guest</th>
+              <SortableTh label="Guest" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
               <th>Stay</th>
-              <th>Room</th>
+              <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
               <th>People</th>
               <th>Origin</th>
               <th>Age</th>

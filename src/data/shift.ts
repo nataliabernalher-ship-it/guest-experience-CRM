@@ -1124,7 +1124,7 @@ export function returningGuests(source: Guest[] = guests): Guest[] {
     .sort((a, b) => Number(b.vip) - Number(a.vip) || b.previousStays - a.previousStays);
 }
 
-const actionSeed: Omit<ShiftAction, "status">[] = [
+const actionSeed: Array<Omit<ShiftAction, "status"> & { status?: ActionStatus }> = [
   {
     id: "sofia-ac",
     guestId: "sofia",
@@ -1135,6 +1135,7 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     severity: "urgent",
     proximity: 3,
     timingLabel: "Later today",
+    status: "pending",
     createdAt: shiftDateTime(7, 12),
     history: [{ status: "pending", at: shiftDateTime(7, 12), note: "Incident opened" }],
   },
@@ -1148,8 +1149,13 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     severity: "normal",
     proximity: 0,
     timingLabel: "This morning",
+    status: "notified",
     createdAt: shiftDateTime(6, 40),
-    history: [{ status: "pending", at: shiftDateTime(6, 40), note: "Incident opened" }],
+    notifiedAt: shiftDateTime(7, 5),
+    history: [
+      { status: "pending", at: shiftDateTime(6, 40), note: "Incident opened" },
+      { status: "notified", at: shiftDateTime(7, 5), note: "Department notified" },
+    ],
   },
   {
     id: "tom-minibar",
@@ -1161,6 +1167,7 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     severity: "low",
     proximity: 0,
     timingLabel: "This morning",
+    status: "pending",
     createdAt: shiftDateTime(8, 5),
     history: [{ status: "pending", at: shiftDateTime(8, 5), note: "Incident opened" }],
   },
@@ -1174,8 +1181,13 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     severity: "normal",
     proximity: 1,
     timingLabel: "Today",
+    status: "notified",
     createdAt: shiftDateTime(9, 20),
-    history: [{ status: "pending", at: shiftDateTime(9, 20), note: "Incident opened" }],
+    notifiedAt: shiftDateTime(9, 45),
+    history: [
+      { status: "pending", at: shiftDateTime(9, 20), note: "Incident opened" },
+      { status: "notified", at: shiftDateTime(9, 45), note: "Department notified" },
+    ],
   },
   {
     id: "nina-safe",
@@ -1187,8 +1199,15 @@ const actionSeed: Omit<ShiftAction, "status">[] = [
     severity: "low",
     proximity: 2,
     timingLabel: "Today",
+    status: "solved",
     createdAt: shiftDateTime(10, 15),
-    history: [{ status: "pending", at: shiftDateTime(10, 15), note: "Incident opened" }],
+    notifiedAt: shiftDateTime(10, 30),
+    solvedAt: shiftDateTime(11, 10),
+    history: [
+      { status: "pending", at: shiftDateTime(10, 15), note: "Incident opened" },
+      { status: "notified", at: shiftDateTime(10, 30), note: "Department notified" },
+      { status: "solved", at: shiftDateTime(11, 10), note: "Marked as solved" },
+    ],
   },
   {
     id: "laura-spa",

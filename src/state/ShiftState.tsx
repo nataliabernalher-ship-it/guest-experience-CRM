@@ -56,16 +56,8 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
         setActions((current) =>
           current.map((action) => {
             if (action.id !== id) return action;
-            const deferToInHouse =
-              status === "pending" &&
-              action.category !== "recovery" &&
-              (action.listing === "check-ins" || action.listing === "check-outs");
             if (action.category !== "recovery") {
-              return {
-                ...action,
-                status,
-                listing: deferToInHouse ? "in-house" : action.listing,
-              };
+              return { ...action, status };
             }
             if (action.status === status) return action;
             const at = new Date().toISOString();

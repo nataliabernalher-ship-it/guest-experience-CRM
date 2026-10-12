@@ -113,6 +113,7 @@ export function IncidentDetailModal({
   function mark(status: Extract<ActionStatus, "notified" | "solved" | "confirmed">) {
     if (action.status === status) return;
     setActionStatus(action.id, status);
+    if (status === "confirmed") onClose();
   }
 
   function undo(status: Extract<ActionStatus, "pending" | "notified" | "solved">) {

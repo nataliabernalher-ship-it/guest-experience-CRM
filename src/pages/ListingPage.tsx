@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
@@ -19,6 +19,14 @@ import {
 } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
 import { OutcomeMark } from "../components/OutcomeMark";
+import {
+  SortableTh,
+  compareByCategory,
+  compareByGuestOrRoom,
+  nextSort,
+  type SortDir,
+  type SortKey,
+} from "../components/SortableTh";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
@@ -40,7 +48,14 @@ const categoryFilters: { id: "all" | Exclude<Category, "recovery">; label: strin
   { id: "loyalty", label: "Loyalty" },
 ];
 
+const statusFilters: { id: "all" | "pending" | "done"; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "pending", label: "Pending" },
+  { id: "done", label: "Done" },
+];
+
 type OpportunityCategoryFilter = (typeof categoryFilters)[number]["id"];
+type OpportunityStatusFilter = (typeof statusFilters)[number]["id"];
 
 function selectedCategory(value: string | null): OpportunityCategoryFilter {
   if (value === "upselling" || value === "guest-experience" || value === "loyalty") return value;
@@ -74,6 +89,20 @@ function initials(name: string): string {
 interface Row {
   guest: Guest;
   action: ShiftAction;
+}
+
+function sortRows(rows: Row[], key: SortKey | null, dir: SortDir): Row[] {
+  if (!key) return rows;
+  return [...rows].sort((a, b) => {
+    if (key === "category") return compareByCategory(a.action.category, b.action.category, dir);
+    return compareByGuestOrRoom(a.guest.name, a.guest.room, b.guest.name, b.guest.room, key, dir);
+  });
+}
+
+function matchesStatus(action: ShiftAction, status: OpportunityStatusFilter): boolean {
+  if (status === "all") return true;
+  if (status === "pending") return action.status === "pending";
+  return action.status === "done" || action.status === "rejected";
 }
 
 type ListingItem =
@@ -137,7 +166,7 @@ function matchesSeverity(action: ShiftAction, severity: "all" | Severity): boole
   return severity === "all" || action.severity === severity;
 }
 
-function matchesCategory(action: ShiftAction, category: "all" | Exclude<Category, "recovery">): boolean {
+function matchesCategory(action: ShiftAction, category: OpportunityCategoryFilter): boolean {
   return category === "all" || action.category === category;
 }
 
@@ -207,6 +236,29 @@ function OpportunityOutcomeButtons({
   );
 }
 
+function UndoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M4.2 5.2H9a2.8 2.8 0 1 1 0 5.6H7.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.8 2.8 3.4 5.2 5.8 7.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function OpportunityActionCells({
   action,
   isRecovery,
@@ -216,6 +268,9 @@ function OpportunityActionCells({
   isRecovery: boolean;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
+  const canUndo =
+    action.category !== "recovery" && (action.status === "done" || action.status === "rejected");
+
   return (
     <>
       <td className="cell-strong">{action.label}</td>
@@ -237,14 +292,26 @@ function OpportunityActionCells({
           <OpportunityOutcomeButtons action={action} onStatus={onStatus} />
         )}
       </td>
-      <td className="cell-mark">
-        {action.category === "recovery" && action.status === "confirmed" ? (
-          <OutcomeMark rejected={false} />
-        ) : action.category !== "recovery" && action.status === "rejected" ? (
-          <OutcomeMark rejected />
-        ) : action.category !== "recovery" && action.status === "done" ? (
-          <OutcomeMark rejected={false} />
-        ) : null}
+      <td className="cell-mark" onClick={(event) => event.stopPropagation()}>
+        <span className="cell-mark-actions">
+          {action.category === "recovery" && action.status === "confirmed" ? (
+            <OutcomeMark rejected={false} />
+          ) : action.category !== "recovery" && action.status === "rejected" ? (
+            <OutcomeMark rejected />
+          ) : action.category !== "recovery" && action.status === "done" ? (
+            <OutcomeMark rejected={false} />
+          ) : null}
+          {canUndo ? (
+            <button
+              type="button"
+              className="listing-undo"
+              aria-label="Undo status change"
+              onClick={() => onStatus(action.id, "pending")}
+            >
+              <UndoIcon />
+            </button>
+          ) : null}
+        </span>
       </td>
     </>
   );
@@ -400,8 +467,21 @@ function ListingCard({
   const [params] = useSearchParams();
   const { status, retry } = useViewLoad(`${isRecovery ? "recovery" : "opportunities"}-${params.toString()}`);
   const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const columnCount = isRecovery ? 8 : 7;
   const hasRows = pending.length + groups.reduce((total, group) => total + group.rows.length, 0) > 0;
+  const sortedPending = useMemo(() => sortRows(pending, sortKey, sortDir), [pending, sortKey, sortDir]);
+  const sortedGroups = useMemo(
+    () => groups.map((group) => ({ ...group, rows: sortRows(group.rows, sortKey, sortDir) })),
+    [groups, sortKey, sortDir],
+  );
+
+  function handleSort(key: SortKey) {
+    const next = nextSort(sortKey, sortDir, key);
+    setSortKey(next.key);
+    setSortDir(next.dir);
+  }
 
   useEffect(() => {
     if (!focus) return;
@@ -470,10 +550,20 @@ function ListingCard({
           </colgroup>
           <thead>
             <tr>
-              <th>Guest</th>
-              <th>Room</th>
+              <SortableTh label="Guest" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+              <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
               <th>Action</th>
-              <th>Category</th>
+              {isRecovery ? (
+                <th>Category</th>
+              ) : (
+                <SortableTh
+                  label="Category"
+                  sortKey="category"
+                  activeKey={sortKey}
+                  direction={sortDir}
+                  onSort={handleSort}
+                />
+              )}
               {isRecovery ? <th>Created</th> : <th>Value</th>}
               {isRecovery ? <th>Severity</th> : null}
               <th>Mark the status</th>
@@ -482,7 +572,7 @@ function ListingCard({
           </thead>
           <tbody>
             <ListingRows
-              rows={pending}
+              rows={sortedPending}
               isRecovery={isRecovery}
               focus={focus}
               sectionKey="pending"
@@ -492,7 +582,7 @@ function ListingCard({
               onOpenIncident={onOpenIncident}
               onOpenOpportunity={onOpenOpportunity}
             />
-            {groups.map((group) =>
+            {sortedGroups.map((group) =>
               group.rows.length > 0 ? (
                 <Fragment key={group.title}>
                   <tr className="listing-group">
@@ -655,6 +745,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const { actions, setActionStatus, addIncident, addOpportunity } = useShift();
   const [params, setParams] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
+  const [statusFilter, setStatusFilter] = useState<OpportunityStatusFilter>("all");
   const category = selectedCategory(params.get("category"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);
@@ -689,7 +780,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const pending = isRecovery
     ? recoveryRows(actions, severity)
     : opportunityRows(listingId, actions)
-        .filter(({ action }) => matchesCategory(action, category))
+        .filter(({ action }) => matchesCategory(action, category) && matchesStatus(action, statusFilter))
         .sort((a, b) => compareActions(a.action, b.action));
   const groups: { title: string; rows: Row[] }[] = [];
   const selectedIncident =
@@ -778,9 +869,29 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                   </button>
                 ))}
               </div>
-              <button type="button" className="add-incident" onClick={() => setOpportunityDrawerOpen(true)}>
-                Add opportunity
-              </button>
+              <div className="listing-tools-actions">
+                <label className="listing-status-filter">
+                  <span className="visually-hidden">Status</span>
+                  <select
+                    className="status-select"
+                    aria-label="Status"
+                    value={statusFilter}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (next === "all" || next === "pending" || next === "done") setStatusFilter(next);
+                    }}
+                  >
+                    {statusFilters.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="button" className="add-incident" onClick={() => setOpportunityDrawerOpen(true)}>
+                  Add opportunity
+                </button>
+              </div>
             </div>
           )
         }

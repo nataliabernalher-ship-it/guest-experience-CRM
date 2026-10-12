@@ -11,6 +11,14 @@ import { CategoryPill } from "../components/CategoryPill";
 import { OutcomeMark } from "../components/OutcomeMark";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { OpportunityDrawer } from "../components/OpportunityDrawer";
+import {
+  SortableTh,
+  compareByCategory,
+  compareByGuestOrRoom,
+  nextSort,
+  type SortDir,
+  type SortKey,
+} from "../components/SortableTh";
 import { useShift } from "../state/ShiftState";
 
 const typeFilters: { id: "all" | Exclude<Category, "recovery">; label: string }[] = [
@@ -114,6 +122,29 @@ function OpportunityOutcomeButtons({
   );
 }
 
+function UndoIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M4.2 5.2H9a2.8 2.8 0 1 1 0 5.6H7.2"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.8 2.8 3.4 5.2 5.8 7.6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function OpportunityDetailCells({
   guest,
   action,
@@ -123,6 +154,8 @@ function OpportunityDetailCells({
   action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
+  const canUndo = action.status === "done" || action.status === "rejected";
+
   return (
     <>
       <td className="cell-strong">{action.label}</td>
@@ -140,12 +173,24 @@ function OpportunityDetailCells({
       <td onClick={(event) => event.stopPropagation()}>
         <OpportunityOutcomeButtons action={action} onStatus={onStatus} />
       </td>
-      <td className="cell-mark">
-        {action.status === "rejected" ? (
-          <OutcomeMark rejected />
-        ) : action.status === "done" ? (
-          <OutcomeMark rejected={false} />
-        ) : null}
+      <td className="cell-mark" onClick={(event) => event.stopPropagation()}>
+        <span className="cell-mark-actions">
+          {action.status === "rejected" ? (
+            <OutcomeMark rejected />
+          ) : action.status === "done" ? (
+            <OutcomeMark rejected={false} />
+          ) : null}
+          {canUndo ? (
+            <button
+              type="button"
+              className="listing-undo"
+              aria-label="Undo status change"
+              onClick={() => onStatus(action.id, "pending")}
+            >
+              <UndoIcon />
+            </button>
+          ) : null}
+        </span>
       </td>
     </>
   );
@@ -245,15 +290,32 @@ export function OpportunitiesPage() {
   const [type, setType] = useState<(typeof typeFilters)[number]["id"]>("all");
   const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
-  const opportunities = useMemo(
-    () =>
-      actions
-        .filter((action) => action.listing === "check-ins" && action.category !== "recovery")
-        .filter((action) => type === "all" || action.category === type)
-        .map((action) => ({ action, guest: guestById(action.guestId) }))
-        .sort((a, b) => a.guest.name.localeCompare(b.guest.name) || a.action.label.localeCompare(b.action.label)),
-    [actions, type],
-  );
+  const [sortKey, setSortKey] = useState<SortKey | null>("guest");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const opportunities = useMemo(() => {
+    const rows = actions
+      .filter((action) => action.listing === "check-ins" && action.category !== "recovery")
+      .filter((action) => type === "all" || action.category === type)
+      .map((action) => ({ action, guest: guestById(action.guestId) }));
+    if (!sortKey) {
+      return rows.sort(
+        (a, b) => a.guest.name.localeCompare(b.guest.name) || a.action.label.localeCompare(b.action.label),
+      );
+    }
+    return [...rows].sort((a, b) => {
+      const byKey =
+        sortKey === "category"
+          ? compareByCategory(a.action.category, b.action.category, sortDir)
+          : compareByGuestOrRoom(a.guest.name, a.guest.room, b.guest.name, b.guest.room, sortKey, sortDir);
+      return byKey || a.action.label.localeCompare(b.action.label);
+    });
+  }, [actions, type, sortKey, sortDir]);
+
+  function handleSort(key: SortKey) {
+    const next = nextSort(sortKey, sortDir, key);
+    setSortKey(next.key);
+    setSortDir(next.dir);
+  }
   const hasRows = opportunities.length > 0;
   const selectedOpportunity =
     selectedOpportunityId == null
@@ -312,10 +374,16 @@ export function OpportunitiesPage() {
           </colgroup>
           <thead>
             <tr>
-              <th>Guest</th>
-              <th>Room</th>
+              <SortableTh label="Guest" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+              <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
               <th>Opportunity</th>
-              <th>Category</th>
+              <SortableTh
+                label="Category"
+                sortKey="category"
+                activeKey={sortKey}
+                direction={sortDir}
+                onSort={handleSort}
+              />
               <th>People</th>
               <th>Unit value</th>
               <th>Total</th>
