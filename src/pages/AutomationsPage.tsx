@@ -440,230 +440,224 @@ function AutomationBuilderModal({
         </header>
 
         <div className="automation-modal-body">
-          <label className="drawer-field automation-modal-name">
-            Automation name
-            <input
-              className="incident-input"
-              aria-label="Automation name"
-              placeholder="e.g. Loyalty signup"
-              value={draft.name}
-              onChange={(event) => onChange({ ...draft, name: event.target.value })}
-            />
-          </label>
+          <section className="rule-section automation-modal-basics" aria-labelledby="basics-heading">
+            <h3 id="basics-heading">1. AUTOMATION</h3>
+            <label className="drawer-field automation-modal-name">
+              Automation name
+              <input
+                className="incident-input"
+                aria-label="Automation name"
+                placeholder="e.g. Loyalty signup"
+                value={draft.name}
+                onChange={(event) => onChange({ ...draft, name: event.target.value })}
+              />
+            </label>
+            <label className="drawer-field">
+              Details or description
+              <textarea
+                className="incident-input is-area"
+                aria-label="Details or description"
+                placeholder="Write details or a description"
+                rows={2}
+                value={draft.description}
+                onChange={(event) => onChange({ ...draft, description: event.target.value })}
+              />
+            </label>
+          </section>
 
-          <div className="automation-modal-row">
-            <section className="rule-section" aria-labelledby="when-heading">
-              <h3 id="when-heading">1. WHEN</h3>
-              <p className="rule-prompt">When should this automation run?</p>
-              <div className="condition-list">
-                {draft.conditions.map((condition, index) => (
-                  <div key={condition.id} className="condition-row">
-                    {index > 0 ? <span className="condition-and">AND</span> : null}
-                    <div className="condition-controls">
-                      <div className="condition-fields">
-                        <label className="drawer-field">
-                          Guest data
-                          <select
-                            className="status-select"
-                            aria-label="Condition field"
-                            value={condition.field}
-                            onChange={(event) =>
-                              updateCondition(condition.id, { field: event.target.value as ConditionField })
-                            }
-                          >
-                            {conditionFields.map((field) => (
-                              <option key={field.id} value={field.id}>
-                                {field.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="drawer-field">
-                          Match
-                          <select
-                            className="status-select"
-                            aria-label="Condition operator"
-                            value={condition.operator}
-                            onChange={(event) =>
-                              updateCondition(condition.id, {
-                                operator: event.target.value as ConditionOperator,
-                              })
-                            }
-                          >
-                            {operatorsForField(condition.field).map((operator) => (
-                              <option key={operator.id} value={operator.id}>
-                                {operator.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        {fieldNeedsValue(condition.field, condition.operator) ? (
-                          <label className="drawer-field">
-                            Value
-                            {valueOptionsFor(condition.field) ? (
-                              <select
-                                className="status-select"
-                                aria-label="Condition value"
-                                value={condition.value}
-                                onChange={(event) =>
-                                  updateCondition(condition.id, { value: event.target.value })
-                                }
-                              >
-                                {condition.field === "guest-region"
-                                  ? regionOptionGroups().map((group) => (
-                                      <optgroup key={group.label} label={group.label}>
-                                        {group.options.map((value) => (
-                                          <option key={value} value={value}>
-                                            {value}
-                                          </option>
-                                        ))}
-                                      </optgroup>
-                                    ))
-                                  : valueOptionsFor(condition.field)!.map((value) => (
-                                      <option key={value} value={value}>
-                                        {value}
-                                      </option>
-                                    ))}
-                              </select>
-                            ) : (
-                              <input
-                                className="incident-input"
-                                aria-label="Condition value"
-                                value={condition.value}
-                                onChange={(event) =>
-                                  updateCondition(condition.id, { value: event.target.value })
-                                }
-                              />
-                            )}
-                          </label>
-                        ) : null}
-                      </div>
-                      {draft.conditions.length > 1 ? (
-                        <button
-                          type="button"
-                          className="condition-remove"
-                          aria-label="Remove condition"
-                          onClick={() => removeCondition(condition.id)}
+          <section className="rule-section" aria-labelledby="when-heading">
+            <h3 id="when-heading">2. WHEN</h3>
+            <p className="rule-prompt">When should this automation run?</p>
+            <div className="condition-list">
+              {draft.conditions.map((condition, index) => (
+                <div key={condition.id} className="condition-row">
+                  {index > 0 ? <span className="condition-and">AND</span> : null}
+                  <div className="condition-controls">
+                    <div className="condition-fields">
+                      <label className="drawer-field">
+                        Guest data
+                        <select
+                          className="status-select"
+                          aria-label="Condition field"
+                          value={condition.field}
+                          onChange={(event) =>
+                            updateCondition(condition.id, { field: event.target.value as ConditionField })
+                          }
                         >
-                          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
-                            <path
-                              d="M2.5 2.5l7 7M9.5 2.5l-7 7"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
+                          {conditionFields.map((field) => (
+                            <option key={field.id} value={field.id}>
+                              {field.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="drawer-field">
+                        Match
+                        <select
+                          className="status-select"
+                          aria-label="Condition operator"
+                          value={condition.operator}
+                          onChange={(event) =>
+                            updateCondition(condition.id, {
+                              operator: event.target.value as ConditionOperator,
+                            })
+                          }
+                        >
+                          {operatorsForField(condition.field).map((operator) => (
+                            <option key={operator.id} value={operator.id}>
+                              {operator.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      {fieldNeedsValue(condition.field, condition.operator) ? (
+                        <label className="drawer-field">
+                          Value
+                          {valueOptionsFor(condition.field) ? (
+                            <select
+                              className="status-select"
+                              aria-label="Condition value"
+                              value={condition.value}
+                              onChange={(event) =>
+                                updateCondition(condition.id, { value: event.target.value })
+                              }
+                            >
+                              {condition.field === "guest-region"
+                                ? regionOptionGroups().map((group) => (
+                                    <optgroup key={group.label} label={group.label}>
+                                      {group.options.map((value) => (
+                                        <option key={value} value={value}>
+                                          {value}
+                                        </option>
+                                      ))}
+                                    </optgroup>
+                                  ))
+                                : valueOptionsFor(condition.field)!.map((value) => (
+                                    <option key={value} value={value}>
+                                      {value}
+                                    </option>
+                                  ))}
+                            </select>
+                          ) : (
+                            <input
+                              className="incident-input"
+                              aria-label="Condition value"
+                              value={condition.value}
+                              onChange={(event) =>
+                                updateCondition(condition.id, { value: event.target.value })
+                              }
                             />
-                          </svg>
-                        </button>
+                          )}
+                        </label>
                       ) : null}
                     </div>
+                    {draft.conditions.length > 1 ? (
+                      <button
+                        type="button"
+                        className="condition-remove"
+                        aria-label="Remove condition"
+                        onClick={() => removeCondition(condition.id)}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+                          <path
+                            d="M2.5 2.5l7 7M9.5 2.5l-7 7"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </button>
+                    ) : null}
                   </div>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="rule-add" onClick={addCondition}>
+              + Add condition
+            </button>
+          </section>
+
+          <section className="rule-section" aria-labelledby="timing-heading">
+            <h3 id="timing-heading">3. TIMING</h3>
+            <p className="rule-prompt">When should reception act?</p>
+            <label className="drawer-field">
+              Timing
+              <select
+                className="status-select"
+                aria-label="Timing"
+                value={draft.timing}
+                onChange={(event) =>
+                  onChange({ ...draft, timing: event.target.value as AutomationTiming })
+                }
+              >
+                {timingOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
                 ))}
-              </div>
-              <button type="button" className="rule-add" onClick={addCondition}>
-                + Add condition
-              </button>
-            </section>
+              </select>
+            </label>
+          </section>
 
-            <section className="rule-section" aria-labelledby="then-heading">
-              <h3 id="then-heading">2. THEN</h3>
-              <p className="rule-prompt">What should reception do?</p>
-              <div className="then-grid">
-                <label className="drawer-field">
-                  Category
-                  <select
-                    className="status-select"
-                    aria-label="Opportunity category"
-                    value={draft.category}
-                    onChange={(event) => setCategory(event.target.value as AutomationCategory)}
-                  >
-                    <option value="upselling">Upselling</option>
-                    <option value="loyalty">Loyalty</option>
-                    <option value="guest-experience">Special amenities</option>
-                  </select>
-                </label>
-                <label className="drawer-field">
-                  Action
-                  <ActionCombobox
-                    value={draft.actionLabel}
-                    options={actions}
-                    onChange={(actionLabel, fromOption) => {
-                      onChange({
-                        ...draft,
-                        actionLabel,
-                        valuePerPerson:
-                          draft.category === "upselling" && fromOption
-                            ? String(defaultValuePerPerson(actionLabel))
-                            : draft.valuePerPerson,
-                      });
-                    }}
-                  />
-                </label>
-                {draft.category === "upselling" ? (
-                  <label className="drawer-field">
-                    Value per person (€)
-                    <input
-                      className="incident-input"
-                      type="number"
-                      min="0"
-                      step="1"
-                      inputMode="decimal"
-                      aria-label="Value per person"
-                      placeholder="e.g. 80"
-                      value={draft.valuePerPerson}
-                      onChange={(event) => onChange({ ...draft, valuePerPerson: event.target.value })}
-                    />
-                  </label>
-                ) : null}
-              </div>
-              <p className="rule-note">
-                This creates an opportunity for reception to act on — it does not contact the guest.
-              </p>
-            </section>
-          </div>
-
-          <div className="automation-modal-row">
-            <section className="rule-section" aria-labelledby="timing-heading">
-              <h3 id="timing-heading">3. TIMING</h3>
-              <p className="rule-prompt">When should reception act?</p>
+          <section className="rule-section" aria-labelledby="then-heading">
+            <h3 id="then-heading">4. THEN</h3>
+            <p className="rule-prompt">What should reception do?</p>
+            <div className="then-grid">
               <label className="drawer-field">
-                Timing
+                Category
                 <select
                   className="status-select"
-                  aria-label="Timing"
-                  value={draft.timing}
-                  onChange={(event) =>
-                    onChange({ ...draft, timing: event.target.value as AutomationTiming })
-                  }
+                  aria-label="Opportunity category"
+                  value={draft.category}
+                  onChange={(event) => setCategory(event.target.value as AutomationCategory)}
                 >
-                  {timingOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="upselling">Upselling</option>
+                  <option value="loyalty">Loyalty</option>
+                  <option value="guest-experience">Special amenities</option>
                 </select>
               </label>
-            </section>
-
-            <section className="rule-section" aria-labelledby="details-heading">
-              <h3 id="details-heading">4. DETAILS</h3>
-              <p className="rule-prompt">Add details or a description for this automation</p>
               <label className="drawer-field">
-                Details
-                <textarea
-                  className="incident-input is-area"
-                  aria-label="Details or description"
-                  placeholder="Write details or a description"
-                  rows={2}
-                  value={draft.description}
-                  onChange={(event) => onChange({ ...draft, description: event.target.value })}
+                Action
+                <ActionCombobox
+                  value={draft.actionLabel}
+                  options={actions}
+                  onChange={(actionLabel, fromOption) => {
+                    onChange({
+                      ...draft,
+                      actionLabel,
+                      valuePerPerson:
+                        draft.category === "upselling" && fromOption
+                          ? String(defaultValuePerPerson(actionLabel))
+                          : draft.valuePerPerson,
+                    });
+                  }}
                 />
               </label>
-            </section>
-          </div>
+              {draft.category === "upselling" ? (
+                <label className="drawer-field">
+                  Value per person (€)
+                  <input
+                    className="incident-input"
+                    type="number"
+                    min="0"
+                    step="1"
+                    inputMode="decimal"
+                    aria-label="Value per person"
+                    placeholder="e.g. 80"
+                    value={draft.valuePerPerson}
+                    onChange={(event) => onChange({ ...draft, valuePerPerson: event.target.value })}
+                  />
+                </label>
+              ) : null}
+            </div>
+            <p className="rule-note">
+              This creates an opportunity for reception to act on — it does not contact the guest.
+            </p>
+          </section>
 
           <section className="rule-summary automation-modal-summary" aria-label="Rule summary">
-            <h3>Rule summary</h3>
+            <h3>5. Rule summary</h3>
             <div className="rule-summary-body is-horizontal">
               <div className="rule-summary-block">
                 <span className="rule-summary-label">WHEN</span>

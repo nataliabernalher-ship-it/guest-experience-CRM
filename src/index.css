@@ -1514,7 +1514,8 @@ a.context-metric.is-recovery:hover {
 }
 
 .modal-root:has(.automation-modal) {
-  padding: 8px;
+  padding: 2vh 12%;
+  place-items: stretch;
 }
 
 .modal-backdrop {
@@ -3594,7 +3595,7 @@ a.vip-name.guest-link:hover,
 
 .status-select {
   appearance: none;
-  border: 0;
+  border: 1px solid rgba(21, 21, 21, 0.12);
   border-radius: 10px;
   padding: 7px 32px 7px 14px;
   background-color: #ffffff;
@@ -3900,12 +3901,14 @@ a.vip-name.guest-link:hover,
 .automation-modal {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-rows: auto auto auto;
-  width: min(1144px, calc(100vw - 16px));
-  max-height: calc(100vh - 16px);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
   overflow: hidden;
-  padding: var(--box-pad);
+  padding: 0;
   border: 0;
   border-radius: 12px;
   background: #ffffff;
@@ -3916,10 +3919,11 @@ a.vip-name.guest-link:hover,
 
 .automation-modal-head {
   display: flex;
-  align-items: flex-start;
+  flex: none;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 10px;
+  padding: 14px 24px 10px;
   border-bottom: 1px solid rgba(21, 21, 21, 0.08);
 }
 
@@ -3936,10 +3940,27 @@ a.vip-name.guest-link:hover,
 
 .automation-modal-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
+  flex: 1;
+  align-content: start;
+  align-items: stretch;
   min-height: 0;
-  padding: 10px 0;
-  overflow: hidden;
+  padding: 16px 24px;
+  overflow: auto;
+}
+
+.automation-modal-body > .rule-section,
+.automation-modal-body > .automation-modal-summary {
+  min-width: 0;
+  height: 100%;
+  border: 1px solid rgba(21, 21, 21, 0.12);
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.automation-modal-body > .automation-modal-summary {
+  border-color: rgba(244, 121, 32, 0.28);
 }
 
 .automation-modal-name {
@@ -3989,10 +4010,16 @@ a.vip-name.guest-link:hover,
   resize: none;
 }
 
+.automation-modal-basics {
+  gap: 8px;
+  padding: 10px 12px;
+}
+
 .automation-modal-summary {
-  width: 100%;
+  width: auto;
   gap: 6px;
   padding: var(--box-pad);
+  grid-column: 1;
 }
 
 .automation-modal-summary h3 {
@@ -4042,9 +4069,10 @@ a.vip-name.guest-link:hover,
 
 .automation-modal-actions {
   display: flex;
+  flex: none;
   justify-content: flex-end;
   gap: 10px;
-  padding-top: 10px;
+  padding: 14px 24px;
   border-top: 1px solid rgba(21, 21, 21, 0.08);
 }
 
@@ -4155,8 +4183,12 @@ a.vip-name.guest-link:hover,
 }
 
 @media (max-width: 1100px) {
-  .automation-modal-row {
+  .automation-modal-body {
     grid-template-columns: 1fr;
+  }
+
+  .automation-modal-summary {
+    grid-column: 1;
   }
 
   .rule-summary-body.is-horizontal {
