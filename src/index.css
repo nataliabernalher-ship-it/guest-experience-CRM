@@ -1,18 +1,18 @@
 :root {
   color: #151515;
-  background: #E6E6E6;
+  background: #ffffff;
   font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --page: #E6E6E6;
-  --surface: #E6E6E6;
+  --page: #ffffff;
+  --surface: #ffffff;
   --surface-raised: #f7f7f7;
   --ink: #151515;
   --muted: #8a8a8a;
   --line: #EBEBEB;
-  --gray: #E6E6E6;
+  --gray: #ffffff;
   --accent: #F47920;
-  --sidebar: #E6E6E6;
+  --sidebar: #ffffff;
   --shadow: none;
   --shadow-lift: none;
   --box-pad: 16px;
@@ -43,11 +43,25 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--page);
+  background-color: #ffffff;
   background-image:
     linear-gradient(rgba(21, 21, 21, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(21, 21, 21, 0.06) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(90deg, rgba(21, 21, 21, 0.06) 1px, transparent 1px),
+    radial-gradient(ellipse 70% 55% at 8% 12%, rgba(120, 120, 120, 0.28), transparent 58%),
+    radial-gradient(ellipse 65% 50% at 92% 8%, rgba(180, 180, 180, 0.35), transparent 52%),
+    radial-gradient(ellipse 55% 60% at 88% 88%, rgba(100, 100, 100, 0.22), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 12% 92%, rgba(200, 200, 200, 0.4), transparent 52%),
+    radial-gradient(ellipse 45% 40% at 48% 42%, rgba(255, 255, 255, 0.92), transparent 68%),
+    linear-gradient(165deg, #ffffff 0%, #f2f2f2 48%, #ffffff 100%);
+  background-size:
+    48px 48px,
+    48px 48px,
+    auto,
+    auto,
+    auto,
+    auto,
+    auto,
+    auto;
   background-attachment: fixed;
   color: var(--ink);
   font-size: 15px;
