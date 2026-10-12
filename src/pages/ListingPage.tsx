@@ -86,6 +86,23 @@ function initials(name: string): string {
     .join("");
 }
 
+function VipStar() {
+  return (
+    <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
+      <path
+        d="M9 1.6 11.1 6.2l5 .4-3.8 3.2 1.2 4.8L9 12.2l-4.5 2.4 1.2-4.8L1.9 6.6l5-.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function GuestMark({ guest }: { guest: Guest }) {
+  if (guest.vip) return <VipStar />;
+  if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
+  return null;
+}
+
 interface Row {
   guest: Guest;
   action: ShiftAction;
@@ -183,21 +200,33 @@ function RecoveryMarkStatus({
   action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
+  const statusWhen =
+    action.status === "notified" && action.notifiedAt
+      ? formatIncidentWhen(action.notifiedAt)
+      : action.status === "solved" && action.solvedAt
+        ? formatIncidentWhen(action.solvedAt)
+        : null;
+
   return (
-    <select
-      className="status-select"
-      aria-label="Mark the status"
-      value={action.status}
-      onChange={(event) => {
-        const next = event.target.value;
-        if (next === "pending" || next === "notified" || next === "solved" || next === "confirmed") onStatus(action.id, next);
-      }}
-    >
-      <option value="pending">Pending</option>
-      <option value="notified">Notified</option>
-      <option value="solved">Solved</option>
-      <option value="confirmed">Confirmed with guest</option>
-    </select>
+    <div className="incident-mark-status">
+      <select
+        className="status-select"
+        aria-label="Mark the status"
+        value={action.status}
+        onChange={(event) => {
+          const next = event.target.value;
+          if (next === "pending" || next === "notified" || next === "solved" || next === "confirmed") {
+            onStatus(action.id, next);
+          }
+        }}
+      >
+        <option value="pending">Pending</option>
+        <option value="notified">Notified</option>
+        <option value="solved">Solved</option>
+        <option value="confirmed">Confirmed with guest</option>
+      </select>
+      {statusWhen ? <span className="incident-status-when">{statusWhen}</span> : null}
+    </div>
   );
 }
 
@@ -320,6 +349,7 @@ function OpportunityActionCells({
 function ListingRows({
   rows,
   isRecovery,
+  showGuestMarks,
   focus,
   settled,
   sectionKey,
@@ -331,6 +361,7 @@ function ListingRows({
 }: {
   rows: Row[];
   isRecovery: boolean;
+  showGuestMarks: boolean;
   focus: string | null;
   settled?: boolean;
   sectionKey: string;
@@ -367,6 +398,7 @@ function ListingRows({
                 {initials(guest.name)}
               </span>
               <span className="cell-strong">{guest.name}</span>
+              {showGuestMarks ? <GuestMark guest={guest} /> : null}
             </span>
           </td>
           <td>{guest.room}</td>
@@ -402,6 +434,7 @@ function ListingRows({
                 {initials(guest.name)}
               </span>
               <span className="cell-strong">{guest.name}</span>
+              {showGuestMarks ? <GuestMark guest={guest} /> : null}
               <button
                 type="button"
                 className="guest-accordion-toggle"
@@ -449,6 +482,7 @@ function ListingCard({
   pending,
   groups,
   isRecovery,
+  showGuestMarks,
   focus,
   onStatus,
   onOpenIncident,
@@ -458,6 +492,7 @@ function ListingCard({
   pending: Row[];
   groups: { title: string; rows: Row[] }[];
   isRecovery: boolean;
+  showGuestMarks: boolean;
   focus: string | null;
   onStatus: (id: string, status: ActionStatus) => void;
   onOpenIncident: (action: ShiftAction) => void;
@@ -574,6 +609,7 @@ function ListingCard({
             <ListingRows
               rows={sortedPending}
               isRecovery={isRecovery}
+              showGuestMarks={showGuestMarks}
               focus={focus}
               sectionKey="pending"
               expandedGuests={expandedGuests}
@@ -591,6 +627,7 @@ function ListingCard({
                   <ListingRows
                     rows={group.rows}
                     isRecovery={isRecovery}
+                    showGuestMarks={showGuestMarks}
                     focus={focus}
                     settled
                     sectionKey={group.title}
@@ -828,6 +865,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
         pending={pending}
         groups={groups}
         isRecovery={isRecovery}
+        showGuestMarks={listingId === "check-ins"}
         focus={focus}
         onStatus={setActionStatus}
         onOpenOpportunity={(action) => setSelectedOpportunityId(action.id)}

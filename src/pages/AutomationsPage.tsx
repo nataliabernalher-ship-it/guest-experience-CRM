@@ -252,7 +252,7 @@ export function AutomationsPage() {
           {automations.length} {automations.length === 1 ? "automation" : "automations"}
         </span>
         <button type="button" className="add-incident" onClick={openCreate}>
-          + Create automation
+          Create automation
         </button>
       </div>
 
@@ -274,7 +274,7 @@ export function AutomationsPage() {
                   Try again
                 </button>
                 <button type="button" className="add-incident" onClick={openCreate}>
-                  + Create automation
+                  Create automation
                 </button>
               </>
             }
@@ -287,7 +287,7 @@ export function AutomationsPage() {
             description="Create a rule to turn guest data into opportunities for reception. Start with one clear WHEN / THEN condition."
             action={
               <button type="button" className="add-incident" onClick={openCreate}>
-                + Create automation
+                Create automation
               </button>
             }
           />

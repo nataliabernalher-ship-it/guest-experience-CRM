@@ -5,7 +5,7 @@ import { ShiftCorner } from "./ShiftCorner";
 const navItems: { to: string; label: string; end: boolean; icon: ReactNode }[] = [
   { to: "/", label: "Dashboard", end: true, icon: <DashboardIcon /> },
   { to: "/opportunities", label: "Opportunities", end: false, icon: <OpportunitiesIcon /> },
-  { to: "/recovery", label: "Recovery", end: false, icon: <RecoveryIcon /> },
+  { to: "/recovery", label: "Incidents", end: false, icon: <RecoveryIcon /> },
   { to: "/guests", label: "Guest Profiles", end: false, icon: <GuestsIcon /> },
   { to: "/automations", label: "Automations", end: false, icon: <AutomationsIcon /> },
 ];

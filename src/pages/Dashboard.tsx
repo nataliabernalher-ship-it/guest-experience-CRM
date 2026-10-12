@@ -75,23 +75,6 @@ function stayLine(guest: Guest): string {
   return `Room ${guest.room} · Arriving today · ${stays}`;
 }
 
-function VipStar() {
-  return (
-    <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
-      <path
-        d="M9 1.6 11.1 6.2l5 .4-3.8 3.2 1.2 4.8L9 12.2l-4.5 2.4 1.2-4.8L1.9 6.6l5-.4Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function GuestMark({ guest }: { guest: Guest }) {
-  if (guest.vip) return <VipStar />;
-  if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
-  return null;
-}
-
 function checkInActionsForGuest(guestId: string, source: ShiftAction[]): ShiftAction[] {
   return source.filter(
     (action) => action.guestId === guestId && action.listing === "check-ins" && action.category !== "recovery",
@@ -526,7 +509,6 @@ export function Dashboard() {
                           <span className="vip-name">{guest.name}</span>
                           <span className="vip-meta">{stayLine(guest)}</span>
                         </span>
-                        <GuestMark guest={guest} />
                         {opportunity ? (
                           opportunity.status === "done" ? (
                             <OutcomeMark rejected={false} />

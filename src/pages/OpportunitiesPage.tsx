@@ -36,6 +36,23 @@ function initials(name: string): string {
     .join("");
 }
 
+function VipStar() {
+  return (
+    <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
+      <path
+        d="M9 1.6 11.1 6.2l5 .4-3.8 3.2 1.2 4.8L9 12.2l-4.5 2.4 1.2-4.8L1.9 6.6l5-.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function GuestMark({ guest }: { guest: Guest }) {
+  if (guest.vip) return <VipStar />;
+  if (guest.previousStays >= 1) return <span className="guest-badge is-returning">Returning</span>;
+  return null;
+}
+
 function saleCell(action: ShiftAction, amount: number | null) {
   if (action.category !== "upselling" || amount == null) return <span className="guest-none">–</span>;
   return money.format(amount);
@@ -222,6 +239,7 @@ function OpportunityRows({
                 {initials(guest.name)}
               </span>
               <span className="cell-strong">{guest.name}</span>
+              <GuestMark guest={guest} />
             </span>
           </td>
           <td>{guest.room}</td>
@@ -249,6 +267,7 @@ function OpportunityRows({
                 {initials(guest.name)}
               </span>
               <span className="cell-strong">{guest.name}</span>
+              <GuestMark guest={guest} />
               <button
                 type="button"
                 className="guest-accordion-toggle"

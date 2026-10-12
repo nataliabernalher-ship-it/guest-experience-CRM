@@ -1,18 +1,18 @@
 :root {
   color: #151515;
-  background: #EDEDED;
+  background: #E6E6E6;
   font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --page: #EDEDED;
-  --surface: #EDEDED;
+  --page: #E6E6E6;
+  --surface: #E6E6E6;
   --surface-raised: #f7f7f7;
   --ink: #151515;
   --muted: #8a8a8a;
   --line: #EBEBEB;
-  --gray: #EDEDED;
+  --gray: #E6E6E6;
   --accent: #F47920;
-  --sidebar: #EDEDED;
+  --sidebar: #E6E6E6;
   --shadow: none;
   --shadow-lift: none;
   --box-pad: 16px;
@@ -2221,6 +2221,27 @@ a.vip-name.guest-link:hover,
 
 .cell-created {
   color: #b0b0b0;
+  white-space: nowrap;
+}
+
+.incident-mark-status {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.incident-mark-status .status-select {
+  flex: 0 1 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+.incident-status-when {
+  flex: none;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
