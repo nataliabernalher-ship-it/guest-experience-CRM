@@ -302,7 +302,7 @@ function OpportunityActionCells({
 
   return (
     <>
-      <td className="cell-strong">{action.label}</td>
+      <td className="cell-action">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
       </td>
@@ -843,8 +843,27 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
 
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
-      <header className="page-header">
-        <h1>{isOpportunityListing ? "Opportunities" : listing.title}</h1>
+      <header className="page-header is-split">
+        <div className="page-header-bar">
+          <h1>{isOpportunityListing ? "Opportunities" : listing.title}</h1>
+          {isOpportunityListing ? (
+            <button
+              type="button"
+              className="add-incident page-header-action"
+              onClick={() => setOpportunityDrawerOpen(true)}
+            >
+              Open opportunities
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="add-incident page-header-action"
+              onClick={() => setDrawerOpen(true)}
+            >
+              Open incident
+            </button>
+          )}
+        </div>
       </header>
       {isOpportunityListing ? (
         <div className="listing-moment-tabs" role="tablist" aria-label="Stay moment">
@@ -887,9 +906,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                   </button>
                 ))}
               </div>
-              <button type="button" className="add-incident" onClick={() => setDrawerOpen(true)}>
-                Open incident
-              </button>
             </div>
           ) : (
             <div className="listing-tools">
@@ -926,9 +942,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                     ))}
                   </select>
                 </label>
-                <button type="button" className="add-incident" onClick={() => setOpportunityDrawerOpen(true)}>
-                  Add opportunity
-                </button>
               </div>
             </div>
           )

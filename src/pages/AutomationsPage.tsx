@@ -243,18 +243,14 @@ export function AutomationsPage() {
 
   return (
     <div className="page" data-testid="automations">
-      <header className="page-header">
-        <h1>Automations</h1>
+      <header className="page-header is-split">
+        <div className="page-header-bar">
+          <h1>Automations</h1>
+          <button type="button" className="add-incident page-header-action" onClick={openCreate}>
+            Create automation
+          </button>
+        </div>
       </header>
-
-      <div className="automations-toolbar">
-        <span className="automations-count">
-          {automations.length} {automations.length === 1 ? "automation" : "automations"}
-        </span>
-        <button type="button" className="add-incident" onClick={openCreate}>
-          Create automation
-        </button>
-      </div>
 
       {status === "loading" ? (
         <div className="page-view-state">

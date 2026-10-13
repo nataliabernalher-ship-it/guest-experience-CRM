@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ShiftCorner } from "./ShiftCorner";
 
@@ -139,6 +139,16 @@ function CloseIcon() {
 export function Shell() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const indicatorReady = useRef(false);
+  const [indicator, setIndicator] = useState({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+    visible: false,
+    animate: false,
+  });
 
   useEffect(() => {
     setMenuOpen(false);
@@ -152,6 +162,38 @@ export function Shell() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [menuOpen]);
+
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+
+    function updateIndicator() {
+      if (!nav) return;
+      const active = nav.querySelector<HTMLElement>(".top-nav-link.is-active");
+      if (!active || window.matchMedia("(max-width: 720px)").matches) {
+        setIndicator((current) => ({ ...current, visible: false }));
+        return;
+      }
+      const next = {
+        left: active.offsetLeft,
+        top: active.offsetTop,
+        width: active.offsetWidth,
+        height: active.offsetHeight,
+        visible: true,
+        animate: indicatorReady.current,
+      };
+      setIndicator(next);
+      if (!indicatorReady.current) {
+        requestAnimationFrame(() => {
+          indicatorReady.current = true;
+        });
+      }
+    }
+
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [pathname, menuOpen]);
 
   return (
     <div className={menuOpen ? "app is-menu-open" : "app"}>
@@ -176,7 +218,22 @@ export function Shell() {
         </div>
 
         <div className="topbar-center">
-          <nav id="primary-nav" className="top-nav" aria-label="Primary">
+          <nav id="primary-nav" className="top-nav" aria-label="Primary" ref={navRef}>
+            <span
+              className={[
+                "top-nav-indicator",
+                indicator.visible ? "is-visible" : "",
+                indicator.animate ? "is-animated" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-hidden="true"
+              style={{
+                transform: `translate(${indicator.left}px, ${indicator.top}px)`,
+                width: indicator.width,
+                height: indicator.height,
+              }}
+            />
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -195,10 +252,15 @@ export function Shell() {
 
         <div className="topbar-user">
           <div className="topbar-user-row">
-            <p className="topbar-username">Clara Mendes</p>
+            <div className="topbar-user-identity">
+              <span className="avatar topbar-avatar" aria-hidden="true">
+                CM
+              </span>
+              <p className="topbar-username">Clara Mendes</p>
+            </div>
             <button type="button" className="topbar-logout">
-              <LogoutIcon />
               Log out
+              <LogoutIcon />
             </button>
           </div>
         </div>

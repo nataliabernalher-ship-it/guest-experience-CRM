@@ -175,7 +175,7 @@ function OpportunityDetailCells({
 
   return (
     <>
-      <td className="cell-strong">{action.label}</td>
+      <td className="cell-action">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
       </td>
@@ -357,7 +357,9 @@ export function OpportunitiesPage() {
   return (
     <div className="page" data-testid="opportunities">
       <header className="page-header">
-        <h1>Opportunities</h1>
+        <div className="page-header-bar">
+          <h1>Opportunities</h1>
+        </div>
       </header>
       <section className="table-card">
         <div className="listing-tools">

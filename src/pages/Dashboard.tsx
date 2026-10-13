@@ -23,9 +23,9 @@ import { useShift } from "../state/ShiftState";
 
 function greeting(now: Date): string {
   const hour = now.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "Good morning, Clara";
+  if (hour < 18) return "Good afternoon, Clara";
+  return "Good evening, Clara";
 }
 
 function ChevronRightIcon() {
@@ -134,10 +134,10 @@ function MilestonesTrendChart({
   label: string;
 }) {
   const width = 280;
-  const height = 96;
+  const height = 64;
   const padX = 8;
-  const padTop = 8;
-  const padBottom = 8;
+  const padTop = 6;
+  const padBottom = 6;
   const color = TREND_COLORS[metric];
   const series = seriesPath(values, width, height, padX, padTop, padBottom);
 
@@ -189,7 +189,6 @@ function MilestonesTrendChart({
           </span>
         ))}
       </div>
-      <p className="milestones-period">Last 7 days</p>
     </div>
   );
 }
@@ -237,55 +236,51 @@ export function Dashboard() {
   return (
     <div className="page" data-testid="dashboard">
       <header className="page-header is-dashboard">
-        <div className="dashboard-greeting">
-          <h1>{greeting(new Date())}</h1>
+        <div className="dashboard-hero-row">
+          <div className="dashboard-greeting">
+            <h1>{greeting(new Date())}</h1>
+          </div>
+          <div className="shift-cards" data-testid="shift-cards" aria-label="Today's shift">
+            <Link to={listings["check-ins"].path} className="shift-card is-check-ins" data-testid="context-check-ins">
+              <span className="shift-card-count">{checkInReservations}</span>
+              <span className="shift-card-copy">
+                <span className="shift-card-label">Check-ins</span>
+                <span className="shift-card-meta">reservations</span>
+              </span>
+              <span className="shift-card-arrow" aria-hidden="true">
+                <ChevronRightIcon />
+              </span>
+            </Link>
+            <Link to={listings["in-house"].path} className="shift-card is-in-house" data-testid="context-in-house">
+              <span className="shift-card-count">{inHouseGuests}</span>
+              <span className="shift-card-copy">
+                <span className="shift-card-label">In-house</span>
+                <span className="shift-card-meta">guests</span>
+              </span>
+              <span className="shift-card-arrow" aria-hidden="true">
+                <ChevronRightIcon />
+              </span>
+            </Link>
+            <Link
+              to={listings["check-outs"].path}
+              className="shift-card is-check-outs"
+              data-testid="context-check-outs"
+            >
+              <span className="shift-card-count">{checkOutReservations}</span>
+              <span className="shift-card-copy">
+                <span className="shift-card-label">Check-outs</span>
+                <span className="shift-card-meta">reservations</span>
+              </span>
+              <span className="shift-card-arrow" aria-hidden="true">
+                <ChevronRightIcon />
+              </span>
+            </Link>
+          </div>
         </div>
       </header>
 
       <div className="dashboard-body">
         <div className="dashboard-left">
-          <section className="context is-unified" aria-labelledby="shift-actions-heading">
-            <header className="context-head">
-              <h2 id="shift-actions-heading">Today&apos;s shift</h2>
-            </header>
-            <div className="shift-cards" data-testid="shift-cards">
-              <Link to={listings["check-ins"].path} className="shift-card is-check-ins" data-testid="context-check-ins">
-                <span className="shift-card-count">{checkInReservations}</span>
-                <span className="shift-card-copy">
-                  <span className="shift-card-label">Check-ins</span>
-                  <span className="shift-card-meta">reservations</span>
-                </span>
-                <span className="shift-card-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
-                </span>
-              </Link>
-              <Link to={listings["in-house"].path} className="shift-card is-in-house" data-testid="context-in-house">
-                <span className="shift-card-count">{inHouseGuests}</span>
-                <span className="shift-card-copy">
-                  <span className="shift-card-label">In-house</span>
-                  <span className="shift-card-meta">guests</span>
-                </span>
-                <span className="shift-card-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
-                </span>
-              </Link>
-              <Link
-                to={listings["check-outs"].path}
-                className="shift-card is-check-outs"
-                data-testid="context-check-outs"
-              >
-                <span className="shift-card-count">{checkOutReservations}</span>
-                <span className="shift-card-copy">
-                  <span className="shift-card-label">Check-outs</span>
-                  <span className="shift-card-meta">reservations</span>
-                </span>
-                <span className="shift-card-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
-                </span>
-              </Link>
-            </div>
-          </section>
-
           <section className="insight-of-day" aria-labelledby="insight-heading" data-testid="insight-of-day">
             <header className="insight-of-day-head">
               <h2 id="insight-heading">Insight of the day</h2>
@@ -304,9 +299,6 @@ export function Dashboard() {
                   <span className="insight-metric-label">Upselling opportunities</span>
                   <span className="insight-metric-value">{insightCounts.upselling}</span>
                 </span>
-                <span className="insight-metric-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
-                </span>
               </Link>
               <Link
                 to={`${listings["check-ins"].path}?category=guest-experience`}
@@ -320,9 +312,6 @@ export function Dashboard() {
                 <span className="insight-metric-copy">
                   <span className="insight-metric-label">Special amenities</span>
                   <span className="insight-metric-value">{insightCounts.guestExperience}</span>
-                </span>
-                <span className="insight-metric-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
                 </span>
               </Link>
               <Link
@@ -338,9 +327,6 @@ export function Dashboard() {
                   <span className="insight-metric-label">Loyalty sign-ups</span>
                   <span className="insight-metric-value">{insightCounts.loyalty}</span>
                 </span>
-                <span className="insight-metric-arrow" aria-hidden="true">
-                  <ChevronRightIcon />
-                </span>
               </Link>
             </div>
           </section>
@@ -350,25 +336,28 @@ export function Dashboard() {
               <h2>Milestones achieved</h2>
             </header>
             <div className="milestones-body">
-              <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
-                <MilestonesTrendChart
-                  labels={last7Days.upsellingByDay.map((point) => point.label)}
-                  metric={milestoneMetric}
-                  label={
-                    milestoneMetric === "upselling"
-                      ? "Upselling"
-                      : milestoneMetric === "loyalty"
-                        ? "Loyalty sign-ups"
-                        : "Guests pampered"
-                  }
-                  values={
-                    milestoneMetric === "upselling"
-                      ? last7Days.upsellingByDay.map((point) => point.value)
-                      : milestoneMetric === "loyalty"
-                        ? last7Days.loyaltyByDay.map((point) => point.value)
-                        : last7Days.guestsPamperedByDay.map((point) => point.value)
-                  }
-                />
+              <div className="upselling-trend-stack">
+                <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
+                  <MilestonesTrendChart
+                    labels={last7Days.upsellingByDay.map((point) => point.label)}
+                    metric={milestoneMetric}
+                    label={
+                      milestoneMetric === "upselling"
+                        ? "Upselling"
+                        : milestoneMetric === "loyalty"
+                          ? "Loyalty sign-ups"
+                          : "Guests pampered"
+                    }
+                    values={
+                      milestoneMetric === "upselling"
+                        ? last7Days.upsellingByDay.map((point) => point.value)
+                        : milestoneMetric === "loyalty"
+                          ? last7Days.loyaltyByDay.map((point) => point.value)
+                          : last7Days.guestsPamperedByDay.map((point) => point.value)
+                    }
+                  />
+                </div>
+                <p className="milestones-period">Last 7 days</p>
               </div>
               <div className="results-metrics" role="tablist" aria-label="Milestone metric">
                 <button
@@ -498,6 +487,12 @@ export function Dashboard() {
               </ul>
             )}
             <div className="board-foot">
+              <p className="board-foot-count">
+                <span className="board-foot-count-value">{checkInGuests.length}</span>
+                <span className="board-foot-count-label">
+                  {checkInGuests.length === 1 ? "check-in" : "check-ins"}
+                </span>
+              </p>
               <Link to={listings["check-ins"].path} className="view-all">
                 View all
               </Link>
@@ -585,6 +580,12 @@ export function Dashboard() {
                 </ol>
               )}
               <div className="board-foot">
+                <p className="board-foot-count">
+                  <span className="board-foot-count-value">{incidents.length}</span>
+                  <span className="board-foot-count-label">
+                    {incidents.length === 1 ? "incident" : "incidents"}
+                  </span>
+                </p>
                 <Link to={listings.recovery.path} className="view-all">
                   View all
                 </Link>

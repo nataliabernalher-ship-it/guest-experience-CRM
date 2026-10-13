@@ -141,8 +141,10 @@ export function GuestsPage() {
     <>
     <div className="page" data-testid="guests-list">
       <header className="page-header">
-        <h1>Guest Profiles</h1>
-        <p className="people-total">{peopleCount()} guests</p>
+        <div className="page-header-bar">
+          <h1>Guest Profiles</h1>
+          <p className="people-total">{peopleCount()} guests</p>
+        </div>
       </header>
       <section className="table-card">
         <div className="guest-toolbar">

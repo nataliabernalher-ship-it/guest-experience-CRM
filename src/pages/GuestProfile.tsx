@@ -21,7 +21,7 @@ import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
 const spendColors: Record<keyof GuestSpend, string> = {
-  stay: "#F47920",
+  stay: "#FF6544",
   extras: "#3D6B5A",
 };
 
