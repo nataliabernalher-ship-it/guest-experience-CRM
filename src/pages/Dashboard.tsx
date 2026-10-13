@@ -207,7 +207,7 @@ export function Dashboard() {
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
   );
   const checkOutReservations = reservationCount("check-out");
-  const checkInReservations = reservationCount("check-in");
+  const checkInReservations = checkInGuests.length;
   const inHouseGuests = peopleCount("in-house");
   const pendingOpportunities = actions.filter(
     (action) => action.category !== "recovery" && isPending(action),

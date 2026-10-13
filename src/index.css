@@ -2548,7 +2548,6 @@ a.vip-name.guest-link:hover,
 
 .listing-table:not(.is-guests) .cell-value,
 .listing-table:not(.is-guests) .cell-created,
-.listing-table:not(.is-guests) .category-pill,
 .listing-table:not(.is-guests) .status-select,
 .listing-table:not(.is-guests) .outcome-btn,
 .listing-table:not(.is-guests) .incident-status-when {
@@ -2557,7 +2556,24 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .category-pill {
+  font-size: 14px;
   font-weight: 400;
+}
+
+.listing-table:not(.is-guests) .category-pill[data-category="upselling"] {
+  color: #8a5a1e;
+}
+
+.listing-table:not(.is-guests) .category-pill[data-category="loyalty"] {
+  color: #2f5f8a;
+}
+
+.listing-table:not(.is-guests) .category-pill[data-category="guest-experience"] {
+  color: #2f6b4f;
+}
+
+.listing-table:not(.is-guests) .category-pill[data-category="recovery"] {
+  color: #8a3d3d;
 }
 
 .listing-table:not(.is-guests) .status-select,

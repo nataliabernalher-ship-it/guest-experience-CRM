@@ -1098,9 +1098,9 @@ export function peopleCount(moment?: StayMoment): number {
   return guests.filter((guest) => guest.moment === moment).length;
 }
 
-/** Reservations for the day (hotel-wide). More guests than bookings when parties share a reservation. */
+/** Reservations for the day (hotel-wide). Check-ins match unique guests with Opportunities. */
 export function reservationCount(moment: StayMoment): number {
-  if (moment === "check-in") return 6;
+  if (moment === "check-in") return 8;
   if (moment === "in-house") return 10;
   return 4;
 }
