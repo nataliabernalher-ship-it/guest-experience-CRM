@@ -897,9 +897,10 @@ h2 {
   margin-top: 0;
 }
 
-.board > .table-card.is-checkins .vip-list {
+.board > .table-card.is-checkins .vip-list.is-checkins-fit {
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 .board-side .table-card,
@@ -1019,6 +1020,35 @@ h2 {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.board-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.board-scroll:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(21, 21, 21, 0.28) transparent;
+}
+
+.board-scroll:hover::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.board-scroll:hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.board-scroll:hover::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(21, 21, 21, 0.28);
+}
+
+.board-scroll:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(21, 21, 21, 0.4);
 }
 
 .vip-list {

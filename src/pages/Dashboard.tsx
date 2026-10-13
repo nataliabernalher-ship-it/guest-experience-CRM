@@ -475,7 +475,7 @@ export function Dashboard() {
                 }
               />
             ) : (
-              <ul className="vip-list board-scroll">
+              <ul className="vip-list is-checkins-fit">
                 {checkInGuests.map((guest) => {
                   const opportunity = opportunityForGuest(guest.id, actions);
                   return (
