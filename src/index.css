@@ -522,12 +522,12 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: clamp(4px, 1.2vw, 8px);
   min-width: 0;
   min-height: 0;
   height: 100%;
   align-self: stretch;
-  padding: 12px 10px;
+  padding: clamp(8px, 1.4vw, 12px) clamp(6px, 1vw, 10px);
   border: 0;
   border-radius: 12px;
   background: #ffffff;
@@ -536,15 +536,16 @@ h2 {
   text-align: center;
   text-decoration: none;
   cursor: pointer;
+  overflow: hidden;
 }
 
 .insight-metric[data-category="upselling"] {
-  background: rgba(138, 90, 30, 0.12);
-  color: #8a5a1e;
+  background: rgba(162, 100, 255, 0.12);
+  color: #A264FF;
 }
 
 .insight-metric[data-category="upselling"]:hover {
-  background: rgba(138, 90, 30, 0.18);
+  background: rgba(162, 100, 255, 0.18);
 }
 
 .insight-metric[data-category="loyalty"] {
@@ -569,20 +570,24 @@ h2 {
   display: grid;
   place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: clamp(22px, 28%, 36px);
+  aspect-ratio: 1;
+  height: auto;
+  max-width: 100%;
   border-radius: 50%;
   background: rgba(21, 21, 21, 0.06);
   color: inherit;
 }
 
 .insight-metric-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 55%;
+  height: 55%;
+  max-width: 20px;
+  max-height: 20px;
 }
 
 .insight-metric[data-category="upselling"] .insight-metric-icon {
-  background: rgba(138, 90, 30, 0.16);
+  background: rgba(162, 100, 255, 0.16);
 }
 
 .insight-metric[data-category="loyalty"] .insight-metric-icon {
@@ -605,7 +610,7 @@ h2 {
 }
 
 .insight-metric-value {
-  font-size: 18px;
+  font-size: clamp(15px, 2.2vw, 18px);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -614,11 +619,13 @@ h2 {
 
 .insight-metric-label {
   color: inherit;
-  font-size: 13px;
+  font-size: clamp(11px, 1.5vw, 13px);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
   opacity: 0.85;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-left .results.is-aside {
@@ -800,12 +807,12 @@ h2 {
 }
 
 .dashboard-left .results.is-aside .result.is-upselling.is-selected {
-  background: rgba(138, 90, 30, 0.12);
-  color: #8a5a1e;
+  background: rgba(162, 100, 255, 0.12);
+  color: #A264FF;
 }
 
 .dashboard-left .results.is-aside .result.is-upselling.is-selected:hover {
-  background: rgba(138, 90, 30, 0.18);
+  background: rgba(162, 100, 255, 0.18);
 }
 
 .dashboard-left .results.is-aside .result.is-loyalty.is-selected {
@@ -832,7 +839,12 @@ h2 {
   gap: 6px;
 }
 
-.dashboard-left .results.is-aside .result-value,
+.dashboard-left .results.is-aside .result-value {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink);
+}
+
 .dashboard-left .results.is-aside .trend-arrow {
   font-size: 18px;
   line-height: 1;
@@ -900,6 +912,107 @@ h2 {
 .board-side .panel {
   display: flex;
   flex-direction: column;
+}
+
+.board-side .panel.is-upsell-potential .board-scroll {
+  padding-top: 4px;
+}
+
+.upsell-potential {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.upsell-potential-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.upsell-potential-total-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.upsell-potential-total-value {
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.upsell-potential-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.upsell-potential-row {
+  display: grid;
+  gap: 6px;
+}
+
+.upsell-potential-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.upsell-potential-offer {
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.upsell-potential-amount {
+  flex: none;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.upsell-potential-track {
+  height: 18px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(162, 100, 255, 0.12);
+}
+
+.upsell-potential-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #A264FF;
+}
+
+.upsell-potential-empty {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.insight-placeholder {
+  padding: var(--box-pad);
+}
+
+.insight-placeholder-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.45;
 }
 
 .board-scroll {
@@ -2502,8 +2615,8 @@ a.vip-name.guest-link:hover,
 }
 
 .category-pill[data-category="upselling"] {
-  color: #8a5a1e;
-  background: rgba(138, 90, 30, 0.12);
+  color: #A264FF;
+  background: rgba(162, 100, 255, 0.12);
 }
 
 .category-pill[data-category="loyalty"] {
@@ -2561,7 +2674,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .category-pill[data-category="upselling"] {
-  color: #8a5a1e;
+  color: #A264FF;
 }
 
 .listing-table:not(.is-guests) .category-pill[data-category="loyalty"] {
@@ -3636,6 +3749,17 @@ a.vip-name.guest-link:hover,
 
   .insight-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .insight-metric-icon {
+    width: 32px;
+  }
+
+  .insight-metric-icon svg {
+    width: 18px;
+    height: 18px;
+    max-width: none;
+    max-height: none;
   }
 
   .board {

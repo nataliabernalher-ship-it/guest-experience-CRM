@@ -1064,9 +1064,11 @@ export function listingForMoment(moment: StayMoment): ListingId {
 }
 
 export const upsellServices = [
-  { id: "transfer", label: "Airport transfer", offer: "Offer airport transfer", value: 65 },
+  { id: "transfer", label: "Airport transfer", offer: "Offer Airport transfer", value: 65 },
   { id: "spa", label: "Spa massage", offer: "Offer a spa massage", value: 80 },
   { id: "late", label: "Late check-out", offer: "Offer late check-out", value: 45 },
+  { id: "flamenco", label: "Flamenco show", offer: "Offer Flamenco show", value: 55 },
+  { id: "upgrade", label: "Room upgrade", offer: "Offer Room upgrade", value: 60 },
 ] as const;
 
 export const experienceTypes = [
@@ -1100,7 +1102,7 @@ export function peopleCount(moment?: StayMoment): number {
 
 /** Reservations for the day (hotel-wide). Check-ins match unique guests with Opportunities. */
 export function reservationCount(moment: StayMoment): number {
-  if (moment === "check-in") return 8;
+  if (moment === "check-in") return 11;
   if (moment === "in-house") return 10;
   return 4;
 }
@@ -1303,6 +1305,39 @@ const actionSeed: Array<Omit<ShiftAction, "status"> & { status?: ActionStatus }>
     timingLabel: "Today",
   },
   {
+    id: "omar-transfer",
+    guestId: "omar",
+    category: "upselling",
+    label: "Offer Airport transfer",
+    description: "Offer a private transfer to the airport for departure day.",
+    listing: "check-ins",
+    proximity: 9,
+    timingLabel: "Today",
+    value: 65,
+  },
+  {
+    id: "ines-flamenco",
+    guestId: "ines",
+    category: "upselling",
+    label: "Offer Flamenco show",
+    description: "Suggest tickets for a local flamenco show during the stay.",
+    listing: "check-ins",
+    proximity: 10,
+    timingLabel: "Today",
+    value: 55,
+  },
+  {
+    id: "lucas-upgrade",
+    guestId: "lucas",
+    category: "upselling",
+    label: "Offer Room upgrade",
+    description: "Offer a paid room upgrade when a higher category is available.",
+    listing: "check-ins",
+    proximity: 11,
+    timingLabel: "Today",
+    value: 60,
+  },
+  {
     id: "kenji-birthday",
     guestId: "kenji",
     category: "guest-experience",
@@ -1436,6 +1471,45 @@ export function momentCategoryCounts(listing: ListingId, source: ShiftAction[] =
     loyalty: relevant.filter((action) => action.category === "loyalty").length,
     guestExperience: relevant.filter((action) => action.category === "guest-experience").length,
   };
+}
+
+/** Short offer bucket for charts (Spa, Breakfast, Late check-out, …). */
+export function upsellOfferLabel(actionLabel: string): string {
+  if (/spa/i.test(actionLabel)) return "Spa";
+  if (/breakfast/i.test(actionLabel)) return "Breakfast";
+  if (/upgrade/i.test(actionLabel)) return "Room upgrade";
+  if (/late/i.test(actionLabel)) return "Late check-out";
+  if (/transfer/i.test(actionLabel)) return "Airport transfer";
+  if (/flamenco/i.test(actionLabel)) return "Flamenco show";
+  if (/restaurant/i.test(actionLabel)) return "Restaurant";
+  return actionLabel.replace(/^Offer\s+/i, "").trim() || "Other";
+}
+
+export type UpsellPotentialRow = {
+  offer: string;
+  amount: number;
+  count: number;
+};
+
+/** Pending upselling potential € grouped by offer type (partySize × unit value). */
+export function upsellingPotentialByOffer(source: ShiftAction[] = actions): UpsellPotentialRow[] {
+  const totals = new Map<string, { amount: number; count: number }>();
+  for (const action of source) {
+    if (action.category !== "upselling" || !isPending(action) || action.value == null) continue;
+    let partySize = 1;
+    try {
+      partySize = Math.max(guestById(action.guestId).partySize, 1);
+    } catch {
+      partySize = 1;
+    }
+    const offer = upsellOfferLabel(action.label);
+    const amount = partySize * action.value;
+    const current = totals.get(offer) ?? { amount: 0, count: 0 };
+    totals.set(offer, { amount: current.amount + amount, count: current.count + 1 });
+  }
+  return [...totals.entries()]
+    .map(([offer, row]) => ({ offer, amount: row.amount, count: row.count }))
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export const money = new Intl.NumberFormat("en-IE", {

@@ -164,7 +164,8 @@ export const actionsByCategory: Record<AutomationCategory, string[]> = {
     "Offer Breakfast",
     "Offer Room upgrade",
     "Offer Late check-out",
-    "Offer Transfer",
+    "Offer Airport transfer",
+    "Offer Flamenco show",
     "Offer Restaurant",
   ],
   loyalty: ["Invite to Loyalty program"],
@@ -230,7 +231,8 @@ export function defaultValuePerPerson(actionLabel: string): number {
   if (actionLabel.includes("Breakfast")) return 28;
   if (actionLabel.includes("upgrade") || actionLabel.includes("Upgrade")) return 60;
   if (actionLabel.includes("Late")) return 45;
-  if (actionLabel.includes("Transfer")) return 65;
+  if (actionLabel.includes("Transfer") || actionLabel.includes("transfer")) return 65;
+  if (actionLabel.includes("Flamenco")) return 55;
   if (actionLabel.includes("Restaurant")) return 40;
   return 50;
 }
@@ -382,6 +384,60 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Offer breakfast for the stay when it is not included in the rate.",
+    status: "active",
+  },
+  {
+    id: "auto-airport-transfer",
+    name: "Airport transfer",
+    category: "upselling",
+    actionLabel: "Offer Airport transfer",
+    valuePerPerson: 65,
+    conditions: [
+      {
+        id: "auto-airport-transfer-c1",
+        field: "previous-stays",
+        operator: "gte",
+        value: "0",
+      },
+    ],
+    timing: "before-check-out",
+    description: "Offer a private transfer to the airport for departure day.",
+    status: "active",
+  },
+  {
+    id: "auto-flamenco",
+    name: "Flamenco show",
+    category: "upselling",
+    actionLabel: "Offer Flamenco show",
+    valuePerPerson: 55,
+    conditions: [
+      {
+        id: "auto-flamenco-c1",
+        field: "previous-stays",
+        operator: "gte",
+        value: "1",
+      },
+    ],
+    timing: "during-stay",
+    description: "Suggest tickets for a local flamenco show during the stay.",
+    status: "active",
+  },
+  {
+    id: "auto-room-upgrade",
+    name: "Room upgrade",
+    category: "upselling",
+    actionLabel: "Offer Room upgrade",
+    valuePerPerson: 60,
+    conditions: [
+      {
+        id: "auto-room-upgrade-c1",
+        field: "loyalty-status",
+        operator: "is",
+        value: "Not enrolled",
+      },
+    ],
+    timing: "at-check-in",
+    description: "Offer a paid room upgrade when a higher category is available.",
     status: "active",
   },
 ];

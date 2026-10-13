@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  compareActions,
-  guestById,
   guests,
   type Guest,
   isPending,
@@ -12,11 +10,12 @@ import {
   peopleCount,
   reservationCount,
   type ShiftAction,
+  upsellingPotentialByOffer,
+  type UpsellPotentialRow,
 } from "../data/shift";
 import { CategoryIcon, CategoryPill } from "../components/CategoryPill";
 import { OutcomeMark } from "../components/OutcomeMark";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
-import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
@@ -85,7 +84,7 @@ type MilestoneMetric = "upselling" | "loyalty" | "pampered";
 
 /** Solid hue matching category tag colors (text / tag fill base). */
 const TREND_COLORS: Record<MilestoneMetric, string> = {
-  upselling: "#8a5a1e",
+  upselling: "#A264FF",
   loyalty: "#2f5f8a",
   pampered: "#2f6b4f",
 };
@@ -120,6 +119,40 @@ function seriesPath(
     .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
     .join(" ");
   return { line, dots };
+}
+
+function UpsellingPotentialChart({ rows }: { rows: UpsellPotentialRow[] }) {
+  const max = Math.max(...rows.map((row) => row.amount), 1);
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+
+  if (rows.length === 0) {
+    return <p className="upsell-potential-empty">No pending upselling potential right now.</p>;
+  }
+
+  return (
+    <div className="upsell-potential" data-testid="upselling-potential-chart">
+      <p className="upsell-potential-total">
+        <span className="upsell-potential-total-label">Potential</span>
+        <span className="upsell-potential-total-value">{money.format(total)}</span>
+      </p>
+      <ul className="upsell-potential-bars" aria-label="Upselling potential by offer">
+        {rows.map((row) => (
+          <li key={row.offer} className="upsell-potential-row">
+            <div className="upsell-potential-meta">
+              <span className="upsell-potential-offer">{row.offer}</span>
+              <span className="upsell-potential-amount">{money.format(row.amount)}</span>
+            </div>
+            <div className="upsell-potential-track" aria-hidden="true">
+              <span
+                className="upsell-potential-fill"
+                style={{ width: `${Math.max((row.amount / max) * 100, 4)}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 function MilestonesTrendChart({
@@ -200,7 +233,6 @@ export function Dashboard() {
 
   const { actions } = useShift();
   const { status, retry } = useViewLoad("dashboard");
-  const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const [milestoneMetric, setMilestoneMetric] = useState<MilestoneMetric>("upselling");
   const checkInGuests = guests.filter(
@@ -217,17 +249,7 @@ export function Dashboard() {
     guestExperience: pendingOpportunities.filter((action) => action.category === "guest-experience").length,
     loyalty: pendingOpportunities.filter((action) => action.category === "loyalty").length,
   };
-  const incidents = actions
-    .filter(
-      (action) =>
-        action.category === "recovery" &&
-        (action.status === "pending" || action.status === "notified" || action.status === "solved"),
-    )
-    .sort(compareActions);
-  const selectedIncident =
-    selectedIncidentId == null
-      ? null
-      : actions.find((action) => action.id === selectedIncidentId && action.category === "recovery") ?? null;
+  const upsellPotential = upsellingPotentialByOffer(actions);
   const selectedOpportunity =
     selectedOpportunityId == null
       ? null
@@ -500,103 +522,17 @@ export function Dashboard() {
           </section>
 
           <div className="board-side">
-            <section className="panel" aria-labelledby="priority-heading">
+            <section className="panel is-upsell-potential" aria-labelledby="upsell-potential-heading">
               <div className="panel-head">
-                <h2 id="priority-heading">Incidents that need to be resolved</h2>
+                <h2 id="upsell-potential-heading">Upselling potential by offer</h2>
               </div>
-              {status === "loading" ? (
-                <LoadingState
-                  title="Loading incidents"
-                  description="We’re collecting open incidents that still need follow-up."
-                />
-              ) : status === "error" ? (
-                <ErrorState
-                  title="Couldn’t load incidents"
-                  description="The priority list didn’t load. Try again, or open Recovery to continue."
-                  action={
-                    <>
-                      <button type="button" className="add-incident" onClick={retry}>
-                        Try again
-                      </button>
-                      <Link to={listings.recovery.path} className="view-all">
-                        Open Recovery
-                      </Link>
-                    </>
-                  }
-                />
-              ) : incidents.length === 0 ? (
-                <EmptyState
-                  title="No open incidents"
-                  description="Nothing urgent is waiting right now. Open Recovery if you need to review closed cases or add a new incident."
-                  action={
-                    <Link to={listings.recovery.path} className="view-all">
-                      Open Recovery
-                    </Link>
-                  }
-                />
-              ) : (
-                <ol className="priority board-scroll" data-testid="priority-list">
-                  {incidents.map((action) => {
-                    let guestName = "Unknown guest";
-                    let guestRoom = "—";
-                    try {
-                      const guest = guestById(action.guestId);
-                      guestName = guest.name;
-                      guestRoom = guest.room;
-                    } catch {
-                      /* keep fallback labels */
-                    }
-                    return (
-                      <li key={action.id}>
-                        <button
-                          type="button"
-                          className="priority-row"
-                          data-testid="priority-action"
-                          data-severity={action.severity ?? "none"}
-                          onClick={() => setSelectedIncidentId(action.id)}
-                        >
-                          <span className={`severity severity-${action.severity ?? "none"}`}>
-                            {action.severity}
-                          </span>
-                          <span className="priority-copy">
-                            <span className="priority-label">{action.label}</span>
-                            <span className="priority-meta">
-                              {guestName}
-                              {" · Room "}
-                              {guestRoom}
-                            </span>
-                          </span>
-                          <span className="incident-status">
-                            {action.status === "notified"
-                              ? "Notified"
-                              : action.status === "solved"
-                                ? "Solved"
-                                : "Pending"}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-              <div className="board-foot">
-                <p className="board-foot-count">
-                  <span className="board-foot-count-value">{incidents.length}</span>
-                  <span className="board-foot-count-label">
-                    {incidents.length === 1 ? "incident" : "incidents"}
-                  </span>
-                </p>
-                <Link to={listings.recovery.path} className="view-all">
-                  View all
-                </Link>
+              <div className="board-scroll">
+                <UpsellingPotentialChart rows={upsellPotential} />
               </div>
             </section>
           </div>
         </div>
       </div>
-      {selectedIncident ? (
-        <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />
-      ) : null}
       {selectedOpportunity ? (
         <OpportunityDetailModal action={selectedOpportunity} onClose={() => setSelectedOpportunityId(null)} />
       ) : null}

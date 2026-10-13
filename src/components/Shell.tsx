@@ -5,9 +5,9 @@ import { ShiftCorner } from "./ShiftCorner";
 const navItems: { to: string; label: string; end: boolean; icon: ReactNode }[] = [
   { to: "/", label: "Dashboard", end: true, icon: <DashboardIcon /> },
   { to: "/opportunities", label: "Opportunities", end: false, icon: <OpportunitiesIcon /> },
-  { to: "/recovery", label: "Incidents", end: false, icon: <RecoveryIcon /> },
   { to: "/guests", label: "Guest Profiles", end: false, icon: <GuestsIcon /> },
   { to: "/automations", label: "Automations", end: false, icon: <AutomationsIcon /> },
+  { to: "/insight", label: "Insight", end: false, icon: <InsightIcon /> },
 ];
 
 function linkIsActive(to: string, end: boolean, pathname: string): boolean {
@@ -44,21 +44,23 @@ function OpportunitiesIcon() {
   );
 }
 
-function RecoveryIcon() {
+function InsightIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-      <g
+      <path
+        d="M4 14.5V11M8 14.5V8.5M12 14.5V6M16 14.5V9.5"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"
-        strokeLinejoin="round"
-        transform="rotate(-32 10 10)"
-      >
-        <rect x="3" y="7.2" width="14" height="5.6" rx="1.8" />
-        <path d="M7.8 7.2v5.6M12.2 7.2v5.6" />
-        <path d="M9.1 8.8v2.4M10.9 8.8v2.4M10 9.4v1.2" />
-      </g>
+      />
+      <path
+        d="M3.5 16.2h13"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
