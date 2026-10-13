@@ -1,6 +1,6 @@
 import { categoryLabels, type Category } from "../data/shift";
 
-function CategoryIcon({ category }: { category: Category }) {
+export function CategoryIcon({ category }: { category: Category }) {
   if (category === "upselling") {
     return (
       <svg viewBox="0 0 16 16" aria-hidden="true">

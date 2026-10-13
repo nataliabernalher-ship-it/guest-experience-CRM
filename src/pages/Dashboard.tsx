@@ -9,21 +9,17 @@ import {
   last7Days,
   listings,
   money,
+  peopleCount,
   reservationCount,
   type ShiftAction,
 } from "../data/shift";
-import { CategoryPill } from "../components/CategoryPill";
+import { CategoryIcon, CategoryPill } from "../components/CategoryPill";
 import { OutcomeMark } from "../components/OutcomeMark";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
-
-const SHIFT_START_HOUR = 7;
-const SHIFT_END_HOUR = 24; // 00:00
-/** Sparse axis labels for the shift timeline (07 → 00). */
-const TIMELINE_HOURS = [7, 12, 14, 18, 0] as const;
 
 function greeting(now: Date): string {
   const hour = now.getHours();
@@ -32,42 +28,19 @@ function greeting(now: Date): string {
   return "Good evening";
 }
 
-function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, "0")}:00`;
-}
-
-/** Maps a clock hour (0–23) onto the 07→00 shift axis as 0–100%. */
-function hourToPercent(hour: number): number {
-  const point = hour === 0 ? SHIFT_END_HOUR : hour;
-  const span = SHIFT_END_HOUR - SHIFT_START_HOUR;
-  return Math.min(100, Math.max(0, ((point - SHIFT_START_HOUR) / span) * 100));
-}
-
-function nowToPercent(now: Date): number {
-  const hours = now.getHours() + now.getMinutes() / 60;
-  if (hours < SHIFT_START_HOUR) return 0;
-  return Math.min(100, ((hours - SHIFT_START_HOUR) / (SHIFT_END_HOUR - SHIFT_START_HOUR)) * 100);
-}
-
-function bandStyle(fromHour: number, toHour: number): { left: string; width: string } {
-  const left = hourToPercent(fromHour);
-  const right = hourToPercent(toHour === 0 ? 0 : toHour);
-  return {
-    left: `${left}%`,
-    width: `${Math.max(0, right - left)}%`,
-  };
-}
-
-/** How much of a band (from→to hours) has elapsed at `now`, as 0–100%. */
-function bandElapsedPercent(fromHour: number, toHour: number, now: Date): number {
-  const start = hourToPercent(fromHour);
-  const end = hourToPercent(toHour === 0 ? 0 : toHour);
-  const span = end - start;
-  if (span <= 0) return 0;
-  const current = nowToPercent(now);
-  if (current <= start) return 0;
-  if (current >= end) return 100;
-  return ((current - start) / span) * 100;
+function ChevronRightIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M6 3.5 10.5 8 6 12.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function stayLine(guest: Guest): string {
@@ -222,15 +195,8 @@ function MilestonesTrendChart({
 }
 
 export function Dashboard() {
-  const [now, setNow] = useState(() => new Date());
-
   useEffect(() => {
     document.title = "Guest Experience";
-  }, []);
-
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(id);
   }, []);
 
   const { actions } = useShift();
@@ -243,7 +209,7 @@ export function Dashboard() {
   );
   const checkOutReservations = reservationCount("check-out");
   const checkInReservations = reservationCount("check-in");
-  const progressPercent = nowToPercent(now);
+  const inHouseGuests = peopleCount("in-house");
   const pendingOpportunities = actions.filter(
     (action) => action.category !== "recovery" && isPending(action),
   );
@@ -282,60 +248,41 @@ export function Dashboard() {
             <header className="context-head">
               <h2 id="shift-actions-heading">Today&apos;s shift</h2>
             </header>
-            <div className="shift-timeline" data-testid="shift-timeline">
-              <div className="shift-timeline-track">
-                <div className="shift-timeline-bands">
-                  <Link
-                    to={listings["check-outs"].path}
-                    className="shift-band is-check-out"
-                    style={bandStyle(7, 12)}
-                    data-testid="context-check-outs"
-                  >
-                    <span className="shift-band-copy">
-                      <span className="shift-band-title">Check out: {checkOutReservations}</span>
-                    </span>
-                    <span className="shift-band-bar" aria-hidden="true">
-                      <span
-                        className="shift-band-bar-fill"
-                        style={{ width: `${bandElapsedPercent(7, 12, now)}%` }}
-                      />
-                    </span>
-                  </Link>
-                  <Link
-                    to={listings["check-ins"].path}
-                    className="shift-band is-check-in"
-                    style={bandStyle(14, 0)}
-                    data-testid="context-check-ins"
-                  >
-                    <span className="shift-band-copy">
-                      <span className="shift-band-title">Check in: {checkInReservations}</span>
-                    </span>
-                    <span className="shift-band-bar" aria-hidden="true">
-                      <span
-                        className="shift-band-bar-fill"
-                        style={{ width: `${bandElapsedPercent(14, 0, now)}%` }}
-                      />
-                    </span>
-                  </Link>
-                </div>
-                <div
-                  className="shift-timeline-now"
-                  style={{ left: `${progressPercent}%` }}
-                  aria-label={`Current time ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`}
-                />
-                <div className="shift-timeline-hours" aria-hidden="true">
-                  {TIMELINE_HOURS.map((hour) => (
-                    <span
-                      key={hour}
-                      className="shift-timeline-hour"
-                      style={{ left: `${hourToPercent(hour)}%` }}
-                    >
-                      <span className="shift-timeline-tick" />
-                      {hourLabel(hour)}
-                    </span>
-                  ))}
-                </div>
-              </div>
+            <div className="shift-cards" data-testid="shift-cards">
+              <Link to={listings["check-ins"].path} className="shift-card is-check-ins" data-testid="context-check-ins">
+                <span className="shift-card-count">{checkInReservations}</span>
+                <span className="shift-card-copy">
+                  <span className="shift-card-label">Check-ins</span>
+                  <span className="shift-card-meta">reservations</span>
+                </span>
+                <span className="shift-card-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
+              </Link>
+              <Link to={listings["in-house"].path} className="shift-card is-in-house" data-testid="context-in-house">
+                <span className="shift-card-count">{inHouseGuests}</span>
+                <span className="shift-card-copy">
+                  <span className="shift-card-label">In-house</span>
+                  <span className="shift-card-meta">guests</span>
+                </span>
+                <span className="shift-card-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
+              </Link>
+              <Link
+                to={listings["check-outs"].path}
+                className="shift-card is-check-outs"
+                data-testid="context-check-outs"
+              >
+                <span className="shift-card-count">{checkOutReservations}</span>
+                <span className="shift-card-copy">
+                  <span className="shift-card-label">Check-outs</span>
+                  <span className="shift-card-meta">reservations</span>
+                </span>
+                <span className="shift-card-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
+              </Link>
             </div>
           </section>
 
@@ -350,8 +297,16 @@ export function Dashboard() {
                 data-category="upselling"
                 data-testid="insight-upselling"
               >
-                <span className="insight-metric-label">Upselling</span>
-                <span className="insight-metric-value">{insightCounts.upselling}</span>
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <CategoryIcon category="upselling" />
+                </span>
+                <span className="insight-metric-copy">
+                  <span className="insight-metric-label">Upselling opportunities</span>
+                  <span className="insight-metric-value">{insightCounts.upselling}</span>
+                </span>
+                <span className="insight-metric-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
               </Link>
               <Link
                 to={`${listings["check-ins"].path}?category=guest-experience`}
@@ -359,8 +314,16 @@ export function Dashboard() {
                 data-category="guest-experience"
                 data-testid="insight-amenities"
               >
-                <span className="insight-metric-label">Special amenities</span>
-                <span className="insight-metric-value">{insightCounts.guestExperience}</span>
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <CategoryIcon category="guest-experience" />
+                </span>
+                <span className="insight-metric-copy">
+                  <span className="insight-metric-label">Special amenities</span>
+                  <span className="insight-metric-value">{insightCounts.guestExperience}</span>
+                </span>
+                <span className="insight-metric-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
               </Link>
               <Link
                 to={`${listings["check-ins"].path}?category=loyalty`}
@@ -368,8 +331,16 @@ export function Dashboard() {
                 data-category="loyalty"
                 data-testid="insight-loyalties"
               >
-                <span className="insight-metric-label">Loyalties</span>
-                <span className="insight-metric-value">{insightCounts.loyalty}</span>
+                <span className="insight-metric-icon" aria-hidden="true">
+                  <CategoryIcon category="loyalty" />
+                </span>
+                <span className="insight-metric-copy">
+                  <span className="insight-metric-label">Loyalty sign-ups</span>
+                  <span className="insight-metric-value">{insightCounts.loyalty}</span>
+                </span>
+                <span className="insight-metric-arrow" aria-hidden="true">
+                  <ChevronRightIcon />
+                </span>
               </Link>
             </div>
           </section>
