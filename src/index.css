@@ -667,7 +667,7 @@ h2 {
 .upselling-trend-stack {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 0;
   min-width: 0;
   min-height: 0;
   height: 100%;
@@ -681,12 +681,14 @@ h2 {
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
-  text-align: center;
+  text-align: left;
   white-space: nowrap;
 }
 
 .upselling-trend-chart-wrap {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
   min-height: 0;
   width: 100%;
@@ -697,6 +699,11 @@ h2 {
   background: #ffffff;
   box-shadow: none;
   overflow: hidden;
+}
+
+.upselling-trend-chart-wrap .upselling-trend-plot {
+  flex: 1;
+  min-height: 0;
 }
 
 .upselling-trend-plot {
@@ -756,22 +763,20 @@ h2 {
 }
 
 .upselling-trend-labels {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  padding: 0 2.85%;
+  position: relative;
+  height: 12px;
   color: var(--muted);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
+}
+
+.upselling-trend-labels span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
   text-align: center;
-}
-
-.upselling-trend-labels .is-start {
-  text-align: left;
-}
-
-.upselling-trend-labels .is-end {
-  text-align: right;
+  white-space: nowrap;
 }
 
 .dashboard-left .results-metrics {
@@ -1478,7 +1483,7 @@ h2 {
 }
 
 .vip-row:hover {
-  background: #FFF1EE;
+  background: #f7f7f7;
   box-shadow: none;
 }
 
@@ -1700,6 +1705,8 @@ h2 {
 }
 
 .page-header.is-dashboard .shift-card {
+  min-height: 64px;
+  padding: 12px 14px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.16);
   color: #fff;
@@ -2265,7 +2272,7 @@ a.context-metric.is-recovery:hover {
 }
 
 .priority-row:hover {
-  background: #FFF1EE;
+  background: #f7f7f7;
   box-shadow: none;
 }
 
@@ -2940,7 +2947,7 @@ a.context-metric.is-recovery:hover {
 
 .listing-table tbody tr:hover td,
 .listing-table tbody tr:focus-within td {
-  background: #FFF1EE;
+  background: #f7f7f7;
 }
 
 .listing-table tbody tr.guest-row {
@@ -4221,11 +4228,11 @@ a.vip-name.guest-link:hover,
   max-width: 100%;
   margin: 22px 0 14px;
   gap: 4px;
-  padding: 6px;
+  padding: 0;
   box-sizing: border-box;
-  background: var(--box-face);
+  background: transparent;
   border: 0;
-  border-radius: 12px;
+  border-radius: 0;
   box-shadow: none;
 }
 
@@ -4237,10 +4244,10 @@ a.vip-name.guest-link:hover,
   box-sizing: border-box;
   min-width: 0;
   height: 30px;
-  border: 0;
+  border: 1px solid rgba(21, 21, 21, 0.18);
   border-radius: 8px;
   padding: 0 18px;
-  background: transparent;
+  background: #ffffff;
   box-shadow: none;
   color: rgba(21, 21, 21, 0.72);
   font: inherit;
@@ -4256,11 +4263,12 @@ a.vip-name.guest-link:hover,
 .listing-moment-tab:hover {
   color: var(--ink);
   background: #f7f7f7;
+  border-color: rgba(21, 21, 21, 0.28);
   box-shadow: none;
 }
 
 .listing-moment-tab.is-active {
-  border: 0;
+  border-color: var(--accent);
   background: var(--accent);
   box-shadow: none;
   color: #fff;

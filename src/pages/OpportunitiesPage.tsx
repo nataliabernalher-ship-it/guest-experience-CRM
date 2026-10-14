@@ -139,29 +139,6 @@ function OpportunityOutcomeButtons({
   );
 }
 
-function UndoIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <path
-        d="M4.2 5.2H9a2.8 2.8 0 1 1 0 5.6H7.2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5.8 2.8 3.4 5.2 5.8 7.6"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 function OpportunityDetailCells({
   guest,
   action,
@@ -171,8 +148,6 @@ function OpportunityDetailCells({
   action: ShiftAction;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
-  const canUndo = action.status === "done" || action.status === "rejected";
-
   return (
     <>
       <td className="cell-action">{action.label}</td>
@@ -196,16 +171,6 @@ function OpportunityDetailCells({
             <OutcomeMark rejected />
           ) : action.status === "done" ? (
             <OutcomeMark rejected={false} />
-          ) : null}
-          {canUndo ? (
-            <button
-              type="button"
-              className="listing-undo"
-              aria-label="Undo status change"
-              onClick={() => onStatus(action.id, "pending")}
-            >
-              <UndoIcon />
-            </button>
           ) : null}
         </span>
       </td>

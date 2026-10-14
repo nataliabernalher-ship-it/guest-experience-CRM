@@ -214,10 +214,7 @@ function MilestonesTrendChart({
       </div>
       <div className="upselling-trend-labels" aria-hidden="true">
         {labels.map((day, index) => (
-          <span
-            key={day}
-            className={index === 0 ? "is-start" : index === labels.length - 1 ? "is-end" : undefined}
-          >
+          <span key={day} style={{ left: series.dots[index]?.left }}>
             {day}
           </span>
         ))}
@@ -360,6 +357,7 @@ export function Dashboard() {
             <div className="milestones-body">
               <div className="upselling-trend-stack">
                 <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
+                  <p className="milestones-period">Last 7 days</p>
                   <MilestonesTrendChart
                     labels={last7Days.upsellingByDay.map((point) => point.label)}
                     metric={milestoneMetric}
@@ -379,7 +377,6 @@ export function Dashboard() {
                     }
                   />
                 </div>
-                <p className="milestones-period">Last 7 days</p>
               </div>
               <div className="results-metrics" role="tablist" aria-label="Milestone metric">
                 <button
