@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import logoDark from "../assets/guest-experience-logo-dark.png";
+import logoLight from "../assets/guest-experience-logo.png";
 import { ShiftCorner } from "./ShiftCorner";
 
 const navItems: { to: string; label: string; end: boolean; icon: ReactNode }[] = [
@@ -172,7 +174,7 @@ export function Shell() {
     function updateIndicator() {
       if (!nav) return;
       const active = nav.querySelector<HTMLElement>(".top-nav-link.is-active");
-      if (!active || window.matchMedia("(max-width: 720px)").matches) {
+      if (!active || window.matchMedia("(max-width: 1100px)").matches) {
         setIndicator((current) => ({ ...current, visible: false }));
         return;
       }
@@ -201,11 +203,21 @@ export function Shell() {
     <div className={menuOpen ? "app is-menu-open" : "app"}>
       <header className="topbar">
         <div className="topbar-lead">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden="true">
-              G
-            </span>
-            <span className="brand-name">Guest Experience</span>
+          <div className="brand" role="img" aria-label="Guest Experience">
+            <img
+              className="brand-logo brand-logo-light"
+              src={logoLight}
+              alt=""
+              width={204}
+              height={63}
+            />
+            <img
+              className="brand-logo brand-logo-dark"
+              src={logoDark}
+              alt=""
+              width={204}
+              height={63}
+            />
           </div>
           <button
             type="button"

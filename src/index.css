@@ -99,8 +99,8 @@ h2 {
   z-index: 1;
 }
 
-.app .brand-name {
-  color: #fff;
+.app .brand-logo-dark {
+  display: none;
 }
 
 .app .topbar-username {
@@ -165,23 +165,20 @@ h2 {
   min-width: 0;
 }
 
-.brand-mark {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
+.brand-logo {
+  display: block;
   flex: none;
-  border-radius: 12px;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 400;
+  width: auto;
+  height: 48px;
+  object-fit: contain;
+}
+
+.brand-mark {
+  display: none;
 }
 
 .brand-name {
-  color: var(--ink);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
+  display: none;
 }
 
 .brand-note,
@@ -3709,6 +3706,78 @@ a.vip-name.guest-link:hover,
   padding-bottom: 0;
 }
 
+@media (max-width: 1100px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+  }
+
+  .profile-quadrant.is-demographics,
+  .profile-quadrant.is-stay,
+  .profile-quadrant.is-spend,
+  .profile-quadrant.is-preferences,
+  .profile-quadrant.is-incidents,
+  .profile-quadrant.is-opportunities,
+  .profile-quadrant.is-notes {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .profile-quadrant.is-demographics {
+    order: 1;
+  }
+
+  .profile-quadrant.is-stay {
+    order: 2;
+  }
+
+  .profile-quadrant.is-spend {
+    order: 3;
+  }
+
+  .profile-quadrant.is-incidents {
+    order: 4;
+  }
+
+  .profile-quadrant.is-opportunities {
+    order: 5;
+  }
+
+  .profile-quadrant.is-preferences {
+    order: 6;
+  }
+
+  .profile-quadrant.is-notes {
+    order: 7;
+  }
+
+  .notes-body {
+    grid-template-columns: 1fr;
+  }
+
+  .note-form {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-facts-list {
+    grid-template-columns: 1fr;
+  }
+
+  .spend-chart {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .spend-donut-slot {
+    width: 100%;
+  }
+}
+
 .profile-facts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3820,113 +3889,6 @@ a.vip-name.guest-link:hover,
     padding-bottom: var(--surface-overlap, 24px);
   }
 
-
-  .topbar {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      "lead center user"
-      ". shift .";
-    column-gap: 10px;
-    row-gap: 8px;
-    padding: 12px 16px;
-  }
-
-  .brand-name {
-    display: none;
-  }
-
-  .topbar-center {
-    justify-self: stretch;
-    min-width: 0;
-  }
-
-  .top-nav {
-    justify-self: stretch;
-    width: 100%;
-    overflow-x: auto;
-  }
-
-  .top-nav-link {
-    min-width: 86px;
-    flex: 1 1 0;
-    padding: 6px 12px 5px;
-  }
-
-  .top-nav-label {
-    font-size: 11px;
-  }
-
-  .topbar > .shift-corner {
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  [data-testid="dashboard"] {
-    height: auto;
-    overflow: visible;
-  }
-
-  .dashboard-body {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    padding: 0;
-    overflow: visible;
-  }
-
-  .dashboard-left {
-    height: auto;
-    grid-template-rows: auto;
-    gap: 16px;
-    padding: 0;
-  }
-
-  .dashboard-left .insight-of-day,
-  .dashboard-left .results.is-aside {
-    overflow: visible;
-  }
-
-  .page-header.is-dashboard .dashboard-hero-row {
-    flex-wrap: wrap;
-    align-items: stretch;
-  }
-
-  .page-header.is-dashboard .shift-cards {
-    width: 100%;
-  }
-
-  .dashboard-left .results.is-aside {
-    padding: var(--box-pad);
-  }
-
-  .dashboard-left .results.is-aside .milestones-body {
-    grid-template-columns: minmax(0, 1fr) minmax(140px, 0.4fr);
-    gap: 10px;
-  }
-
-  .board-side {
-    height: auto;
-  }
-
-  .board .panel,
-  .board .table-card,
-  .board > .table-card.is-checkins,
-  .board-side .table-card,
-  .board-side .panel {
-    height: auto;
-    flex: none;
-  }
-
-  .page-header h1 {
-    font-size: 36px;
-  }
-}
-
-@media (max-width: 720px) {
-  .main {
-    padding: 0 14px 24px;
-  }
-
   .topbar {
     position: relative;
     z-index: 40;
@@ -3934,12 +3896,16 @@ a.vip-name.guest-link:hover,
     grid-template-areas: "lead";
     justify-items: stretch;
     gap: 0;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: var(--page);
   }
 
-  .app .brand-name {
-    color: var(--ink);
+  .app .brand-logo-light {
+    display: none;
+  }
+
+  .app .brand-logo-dark {
+    display: block;
   }
 
   .app .topbar-menu-toggle {
@@ -3951,9 +3917,8 @@ a.vip-name.guest-link:hover,
     justify-self: stretch;
   }
 
-  .brand-name {
-    display: inline;
-    font-size: 15px;
+  .brand-logo {
+    height: 40px;
   }
 
   .topbar-menu-toggle {
@@ -4045,7 +4010,7 @@ a.vip-name.guest-link:hover,
 
   .app.is-menu-open .top-nav-link:hover {
     color: var(--ink);
-    background: #FFF1EE;
+    background: #f7f7f7;
   }
 
   .app.is-menu-open .top-nav-indicator {
@@ -4095,6 +4060,75 @@ a.vip-name.guest-link:hover,
 
   .app.is-menu-open {
     overflow: hidden;
+  }
+
+  [data-testid="dashboard"] {
+    height: auto;
+    overflow: visible;
+  }
+
+  .dashboard-body {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .dashboard-left {
+    height: auto;
+    grid-template-rows: auto;
+    gap: 16px;
+    padding: 0;
+  }
+
+  .dashboard-left .insight-of-day,
+  .dashboard-left .results.is-aside {
+    overflow: visible;
+  }
+
+  .page-header.is-dashboard .dashboard-hero-row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .page-header.is-dashboard .shift-cards {
+    width: 100%;
+  }
+
+  .dashboard-left .results.is-aside {
+    padding: var(--box-pad);
+  }
+
+  .dashboard-left .results.is-aside .milestones-body {
+    grid-template-columns: minmax(0, 1fr) minmax(140px, 0.4fr);
+    gap: 10px;
+  }
+
+  .board-side {
+    height: auto;
+  }
+
+  .board .panel,
+  .board .table-card,
+  .board > .table-card.is-checkins,
+  .board-side .table-card,
+  .board-side .panel {
+    height: auto;
+    flex: none;
+  }
+
+  .page-header h1 {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 720px) {
+  .main {
+    padding: 0 14px 24px;
+  }
+
+  .topbar {
+    padding: 10px 14px;
   }
 
   .dashboard-body {
