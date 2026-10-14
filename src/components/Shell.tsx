@@ -7,7 +7,7 @@ const navItems: { to: string; label: string; end: boolean; icon: ReactNode }[] =
   { to: "/opportunities", label: "Opportunities", end: false, icon: <OpportunitiesIcon /> },
   { to: "/guests", label: "Guest Profiles", end: false, icon: <GuestsIcon /> },
   { to: "/automations", label: "Automations", end: false, icon: <AutomationsIcon /> },
-  { to: "/insight", label: "Insight", end: false, icon: <InsightIcon /> },
+  { to: "/insight", label: "Reports", end: false, icon: <InsightIcon /> },
 ];
 
 function linkIsActive(to: string, end: boolean, pathname: string): boolean {
