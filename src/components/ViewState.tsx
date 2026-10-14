@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 type ViewStateProps = {
   title: string;
-  description: string;
+  description?: string;
   action?: ReactNode;
   testId?: string;
 };
@@ -28,7 +28,7 @@ export function EmptyState({ title, description, action, testId = "view-empty" }
     <div className="view-state is-empty" data-testid={testId}>
       <div className="view-state-copy">
         <h3 className="view-state-title">{title}</h3>
-        <p className="view-state-description">{description}</p>
+        {description ? <p className="view-state-description">{description}</p> : null}
       </div>
       {action ? <div className="view-state-action">{action}</div> : null}
     </div>

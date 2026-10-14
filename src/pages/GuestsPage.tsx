@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Outlet, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   SortableTh,
   compareByGuestOrRoom,
@@ -138,7 +138,6 @@ export function GuestsPage() {
   }
 
   return (
-    <>
     <div className="page" data-testid="guests-list">
       <header className="page-header">
         <div className="page-header-bar">
@@ -304,7 +303,5 @@ export function GuestsPage() {
         )}
       </section>
     </div>
-    <Outlet />
-    </>
   );
 }

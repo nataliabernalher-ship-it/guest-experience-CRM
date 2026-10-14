@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   actionsByCategory,
   defaultOperatorForField,
@@ -145,110 +146,37 @@ function ActionCombobox({
   );
 }
 
+function emptyDraft(): Draft {
+  const base = emptyAutomationDraft();
+  return {
+    ...base,
+    valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
+    description: base.description ?? "",
+  };
+}
+
 export function AutomationsPage() {
+  const navigate = useNavigate();
   const {
     automations,
     setStatus,
-    upsert,
     duplicate,
     remove: removeAutomation,
   } = useAutomations();
   const { status, retry } = useViewLoad("automations");
-  const [drawerMode, setDrawerMode] = useState<"closed" | "create" | "edit">("closed");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<Draft>(() => {
-    const base = emptyAutomationDraft();
-    return {
-      ...base,
-      valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
-      description: base.description ?? "",
-    };
-  });
 
   useEffect(() => {
     document.title = "Automations · Guest Experience";
   }, []);
-
-  const editing = useMemo(
-    () => (editingId == null ? null : automations.find((item) => item.id === editingId) ?? null),
-    [automations, editingId],
-  );
-
-  function openCreate() {
-    setEditingId(null);
-    const base = emptyAutomationDraft();
-    setDraft({
-      ...base,
-      valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
-      description: base.description ?? "",
-    });
-    setDrawerMode("create");
-  }
-
-  function openEdit(automation: Automation) {
-    setEditingId(automation.id);
-    setDraft(toDraft(automation));
-    setDrawerMode("edit");
-  }
-
-  function closeDrawer() {
-    setDrawerMode("closed");
-    setEditingId(null);
-  }
-
-  function remove(id: string) {
-    removeAutomation(id);
-    if (editingId === id) closeDrawer();
-  }
-
-  function save() {
-    const name = draft.name.trim() || draft.actionLabel;
-    const actionLabel = draft.actionLabel.trim();
-    if (!actionLabel || draft.conditions.length === 0) return;
-    const parsedValue = Number(draft.valuePerPerson);
-    const valuePerPerson =
-      draft.category === "upselling" && Number.isFinite(parsedValue) && parsedValue >= 0
-        ? parsedValue
-        : undefined;
-    if (draft.category === "upselling" && valuePerPerson == null) return;
-
-    const description = draft.description.trim();
-    const payload = {
-      name,
-      category: draft.category,
-      actionLabel,
-      valuePerPerson,
-      conditions: draft.conditions,
-      timing: draft.timing,
-      description: description || undefined,
-      status: (editing?.status ?? "active") as AutomationStatus,
-    };
-
-    if (drawerMode === "edit" && editingId) {
-      upsert({ id: editingId, ...payload });
-    } else {
-      upsert({
-        id: createAutomationId(),
-        ...payload,
-        status: "active",
-      });
-    }
-    closeDrawer();
-  }
-
-  const upsellValueOk =
-    draft.category !== "upselling" ||
-    (draft.valuePerPerson.trim() !== "" && Number.isFinite(Number(draft.valuePerPerson)) && Number(draft.valuePerPerson) >= 0);
-  const ready = draft.actionLabel.trim().length > 0 && draft.conditions.length > 0 && upsellValueOk;
 
   return (
     <div className="page" data-testid="automations">
       <header className="page-header is-split">
         <div className="page-header-bar">
           <h1>Automations</h1>
-          <button type="button" className="add-incident page-header-action" onClick={openCreate}>
+          <Link to="/automations/new" className="add-incident page-header-action">
             Create automation
-          </button>
+          </Link>
         </div>
       </header>
 
@@ -269,9 +197,9 @@ export function AutomationsPage() {
                 <button type="button" className="add-incident" onClick={retry}>
                   Try again
                 </button>
-                <button type="button" className="add-incident" onClick={openCreate}>
+                <Link to="/automations/new" className="add-incident">
                   Create automation
-                </button>
+                </Link>
               </>
             }
           />
@@ -282,9 +210,9 @@ export function AutomationsPage() {
             title="No automations yet"
             description="Create a rule to turn guest data into opportunities for reception. Start with one clear WHEN / THEN condition."
             action={
-              <button type="button" className="add-incident" onClick={openCreate}>
+              <Link to="/automations/new" className="add-incident">
                 Create automation
-              </button>
+              </Link>
             }
           />
         </div>
@@ -328,13 +256,21 @@ export function AutomationsPage() {
                   <option value="inactive">Inactive</option>
                 </select>
                 <div className="row-actions">
-                  <button type="button" className="row-action" onClick={() => openEdit(automation)}>
+                  <button
+                    type="button"
+                    className="row-action"
+                    onClick={() => navigate(`/automations/${automation.id}`)}
+                  >
                     Edit
                   </button>
                   <button type="button" className="row-action" onClick={() => duplicate(automation)}>
                     Duplicate
                   </button>
-                  <button type="button" className="row-action is-danger" onClick={() => remove(automation.id)}>
+                  <button
+                    type="button"
+                    className="row-action is-danger"
+                    onClick={() => removeAutomation(automation.id)}
+                  >
                     Delete
                   </button>
                 </div>
@@ -343,36 +279,40 @@ export function AutomationsPage() {
           ))}
         </ul>
       )}
-
-      {drawerMode !== "closed" ? (
-        <AutomationBuilderModal
-          draft={draft}
-          title={drawerMode === "edit" ? (editing?.name ?? "Edit automation") : "Create automation"}
-          ready={ready}
-          onChange={setDraft}
-          onClose={closeDrawer}
-          onSave={save}
-        />
-      ) : null}
     </div>
   );
 }
 
-function AutomationBuilderModal({
-  draft,
-  title,
-  ready,
-  onChange,
-  onClose,
-  onSave,
-}: {
-  draft: Draft;
-  title: string;
-  ready: boolean;
-  onChange: (draft: Draft) => void;
-  onClose: () => void;
-  onSave: () => void;
-}) {
+export function AutomationBuilderPage() {
+  const navigate = useNavigate();
+  const { automationId } = useParams();
+  const { automations, upsert } = useAutomations();
+  const editing = useMemo(
+    () => (automationId ? automations.find((item) => item.id === automationId) ?? null : null),
+    [automations, automationId],
+  );
+  const isCreate = !automationId;
+  const [draft, setDraft] = useState<Draft>(() =>
+    editing ? toDraft(editing) : emptyDraft(),
+  );
+  const [hydratedId, setHydratedId] = useState<string | null>(editing?.id ?? null);
+
+  useEffect(() => {
+    if (isCreate) {
+      setDraft(emptyDraft());
+      setHydratedId(null);
+      document.title = "Create a new automation · Guest Experience";
+      return;
+    }
+    if (editing && editing.id !== hydratedId) {
+      setDraft(toDraft(editing));
+      setHydratedId(editing.id);
+    }
+    document.title = editing
+      ? `${editing.name} · Automations · Guest Experience`
+      : "Automation · Guest Experience";
+  }, [editing, hydratedId, isCreate]);
+
   const whenLines = formatWhenSummary(draft.conditions);
   const parsedDraftValue = Number(draft.valuePerPerson);
   const thenLine = formatThenSummary(
@@ -381,11 +321,22 @@ function AutomationBuilderModal({
   );
   const atLine = formatTimingSummary(draft.timing);
   const actions = actionsByCategory[draft.category];
+  const upsellValueOk =
+    draft.category !== "upselling" ||
+    (draft.valuePerPerson.trim() !== "" &&
+      Number.isFinite(Number(draft.valuePerPerson)) &&
+      Number(draft.valuePerPerson) >= 0);
+  const ready = draft.actionLabel.trim().length > 0 && draft.conditions.length > 0 && upsellValueOk;
+  const title = isCreate ? "Create a new automation" : (editing?.name ?? "Edit automation");
+
+  function goBack() {
+    navigate("/automations");
+  }
 
   function updateCondition(id: string, patch: Partial<AutomationCondition>) {
-    onChange({
-      ...draft,
-      conditions: draft.conditions.map((condition) => {
+    setDraft((current) => ({
+      ...current,
+      conditions: current.conditions.map((condition) => {
         if (condition.id !== id) return condition;
         const next = { ...condition, ...patch };
         if (patch.field && patch.field !== condition.field) {
@@ -394,58 +345,118 @@ function AutomationBuilderModal({
         }
         return next;
       }),
-    });
+    }));
   }
 
   function addCondition() {
-    onChange({ ...draft, conditions: [...draft.conditions, emptyCondition()] });
+    setDraft((current) => ({ ...current, conditions: [...current.conditions, emptyCondition()] }));
   }
 
   function removeCondition(id: string) {
-    if (draft.conditions.length <= 1) return;
-    onChange({ ...draft, conditions: draft.conditions.filter((condition) => condition.id !== id) });
+    setDraft((current) => {
+      if (current.conditions.length <= 1) return current;
+      return { ...current, conditions: current.conditions.filter((condition) => condition.id !== id) };
+    });
   }
 
   function setCategory(category: AutomationCategory) {
     const actionLabel = actionsByCategory[category][0];
-    onChange({
-      ...draft,
+    setDraft((current) => ({
+      ...current,
       category,
       actionLabel,
       valuePerPerson: category === "upselling" ? String(defaultValuePerPerson(actionLabel)) : "",
-    });
+    }));
+  }
+
+  function save() {
+    const name = draft.name.trim() || draft.actionLabel;
+    const actionLabel = draft.actionLabel.trim();
+    if (!actionLabel || draft.conditions.length === 0) return;
+    const parsedValue = Number(draft.valuePerPerson);
+    const valuePerPerson =
+      draft.category === "upselling" && Number.isFinite(parsedValue) && parsedValue >= 0
+        ? parsedValue
+        : undefined;
+    if (draft.category === "upselling" && valuePerPerson == null) return;
+
+    const description = draft.description.trim();
+    const payload = {
+      name,
+      category: draft.category,
+      actionLabel,
+      valuePerPerson,
+      conditions: draft.conditions,
+      timing: draft.timing,
+      description: description || undefined,
+      status: (editing?.status ?? "active") as AutomationStatus,
+    };
+
+    if (!isCreate && editing) {
+      upsert({ id: editing.id, ...payload });
+    } else {
+      upsert({
+        id: createAutomationId(),
+        ...payload,
+        status: "active",
+      });
+    }
+    goBack();
+  }
+
+  if (!isCreate && !editing) {
+    return (
+      <div className="page automation-builder-page" data-testid="automation-builder">
+        <header className="page-header automation-builder-page-head">
+          <div className="page-header-bar">
+            <Link to="/automations" className="listing-back">
+              <BackArrow />
+              Back to automations
+            </Link>
+          </div>
+        </header>
+        <div className="page-view-state">
+          <ErrorState
+            title="Automation not found"
+            description="This automation id isn’t in the current list. Go back and choose another rule."
+            action={
+              <Link to="/automations" className="view-all">
+                Back to automations
+              </Link>
+            }
+          />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="modal-root">
-      <button type="button" className="modal-backdrop" aria-label="Close" onClick={onClose} />
-      <div className="automation-modal" role="dialog" aria-modal="true" aria-labelledby="automation-builder-title">
-        <header className="automation-modal-head">
-          <h2 id="automation-builder-title">{title}</h2>
-          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
-            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-              <path
-                d="M3 3l8 8M11 3 3 11"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
+    <div className="page automation-builder-page" data-testid="automation-builder">
+      <header className="page-header automation-builder-page-head">
+        <div className="page-header-bar">
+          <Link to="/automations" className="listing-back">
+            <BackArrow />
+            Back to automations
+          </Link>
+        </div>
+      </header>
+
+      <div className="automation-builder">
+        <header className="automation-builder-head">
+          <h1 id="automation-builder-title">{title}</h1>
         </header>
 
-        <div className="automation-modal-body">
-          <section className="rule-section automation-modal-basics" aria-labelledby="basics-heading">
+        <div className="automation-builder-body">
+          <section className="rule-section automation-builder-basics" aria-labelledby="basics-heading">
             <h3 id="basics-heading">1. AUTOMATION</h3>
-            <label className="drawer-field automation-modal-name">
+            <label className="drawer-field automation-builder-name">
               Automation name
               <input
                 className="incident-input"
                 aria-label="Automation name"
                 placeholder="e.g. Loyalty signup"
                 value={draft.name}
-                onChange={(event) => onChange({ ...draft, name: event.target.value })}
+                onChange={(event) => setDraft({ ...draft, name: event.target.value })}
               />
             </label>
             <label className="drawer-field">
@@ -456,13 +467,32 @@ function AutomationBuilderModal({
                 placeholder="Write details or a description"
                 rows={2}
                 value={draft.description}
-                onChange={(event) => onChange({ ...draft, description: event.target.value })}
+                onChange={(event) => setDraft({ ...draft, description: event.target.value })}
               />
             </label>
           </section>
 
+          <section className="rule-section" aria-labelledby="timing-heading">
+            <h3 id="timing-heading">2. TIMING</h3>
+            <p className="rule-prompt">When should reception act?</p>
+            <select
+              className="status-select automation-timing-select"
+              aria-label="Timing"
+              value={draft.timing}
+              onChange={(event) =>
+                setDraft({ ...draft, timing: event.target.value as AutomationTiming })
+              }
+            >
+              {timingOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </section>
+
           <section className="rule-section" aria-labelledby="when-heading">
-            <h3 id="when-heading">2. WHEN</h3>
+            <h3 id="when-heading">3. WHEN</h3>
             <p className="rule-prompt">When should this automation run?</p>
             <div className="condition-list">
               {draft.conditions.map((condition, index) => (
@@ -574,28 +604,6 @@ function AutomationBuilderModal({
             </button>
           </section>
 
-          <section className="rule-section" aria-labelledby="timing-heading">
-            <h3 id="timing-heading">3. TIMING</h3>
-            <p className="rule-prompt">When should reception act?</p>
-            <label className="drawer-field">
-              Timing
-              <select
-                className="status-select"
-                aria-label="Timing"
-                value={draft.timing}
-                onChange={(event) =>
-                  onChange({ ...draft, timing: event.target.value as AutomationTiming })
-                }
-              >
-                {timingOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </section>
-
           <section className="rule-section" aria-labelledby="then-heading">
             <h3 id="then-heading">4. THEN</h3>
             <p className="rule-prompt">What should reception do?</p>
@@ -619,7 +627,7 @@ function AutomationBuilderModal({
                   value={draft.actionLabel}
                   options={actions}
                   onChange={(actionLabel, fromOption) => {
-                    onChange({
+                    setDraft({
                       ...draft,
                       actionLabel,
                       valuePerPerson:
@@ -642,7 +650,7 @@ function AutomationBuilderModal({
                     aria-label="Value per person"
                     placeholder="e.g. 80"
                     value={draft.valuePerPerson}
-                    onChange={(event) => onChange({ ...draft, valuePerPerson: event.target.value })}
+                    onChange={(event) => setDraft({ ...draft, valuePerPerson: event.target.value })}
                   />
                 </label>
               ) : null}
@@ -652,8 +660,8 @@ function AutomationBuilderModal({
             </p>
           </section>
 
-          <section className="rule-summary automation-modal-summary" aria-label="Rule summary">
-            <h3>5. Rule summary</h3>
+          <section className="rule-summary automation-builder-summary" aria-label="Rule summary">
+            <h3>5. RULE SUMMARY</h3>
             <div className="rule-summary-body is-horizontal">
               <div className="rule-summary-block">
                 <span className="rule-summary-label">WHEN</span>
@@ -684,15 +692,30 @@ function AutomationBuilderModal({
           </section>
         </div>
 
-        <div className="automation-modal-actions">
-          <button type="button" className="incident-cancel" onClick={onClose}>
+        <div className="automation-builder-actions">
+          <button type="button" className="incident-cancel" onClick={goBack}>
             Cancel
           </button>
-          <button type="button" className="add-incident" disabled={!ready} onClick={onSave}>
+          <button type="button" className="add-incident" disabled={!ready} onClick={save}>
             Save automation
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function BackArrow() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M11 7H3M6 3.5 2.5 7 6 10.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

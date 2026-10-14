@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
@@ -10,6 +10,7 @@ import {
   categoryLabels,
   formatSpend,
   guests,
+  shiftDay,
   spendCategoryLabels,
   travelCompanionshipLabels,
   type GuestSpend,
@@ -20,6 +21,30 @@ import {
 import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
+const monthIndex: Record<string, number> = {
+  January: 0,
+  February: 1,
+  March: 2,
+  April: 3,
+  May: 4,
+  June: 5,
+  July: 6,
+  August: 7,
+  September: 8,
+  October: 9,
+  November: 10,
+  December: 11,
+};
+
+function ageFromBirthDate(birthDate: string): number {
+  const [dayText, monthText, yearText] = birthDate.split(" ");
+  const birth = new Date(Number(yearText), monthIndex[monthText] ?? 0, Number(dayText));
+  let years = shiftDay.getFullYear() - birth.getFullYear();
+  const monthDelta = shiftDay.getMonth() - birth.getMonth();
+  if (monthDelta < 0 || (monthDelta === 0 && shiftDay.getDate() < birth.getDate())) years -= 1;
+  return years;
+}
+
 const spendColors: Record<keyof GuestSpend, string> = {
   stay: "#FF6544",
   extras: "#3D6B5A",
@@ -29,51 +54,14 @@ const spendOrder: Array<keyof GuestSpend> = ["stay", "extras"];
 
 function SpendDonut({ spend }: { spend: GuestSpend }) {
   const total = spend.stay + spend.extras;
-  const size = 112;
-  const stroke = 16;
+  const size = 148;
+  const stroke = 20;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   let offset = 0;
 
   return (
     <div className="spend-chart">
-      <div className="spend-donut" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-          <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke="rgba(21, 21, 21, 0.06)"
-            strokeWidth={stroke}
-          />
-          {spendOrder.map((key) => {
-            const value = spend[key];
-            const length = total > 0 ? (value / total) * circumference : 0;
-            const segment = (
-              <circle
-                key={key}
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
-                stroke={spendColors[key]}
-                strokeWidth={stroke}
-                strokeDasharray={`${length} ${circumference - length}`}
-                strokeDashoffset={-offset}
-                strokeLinecap="butt"
-                transform={`rotate(-90 ${size / 2} ${size / 2})`}
-              />
-            );
-            offset += length;
-            return segment;
-          })}
-        </svg>
-        <div className="spend-donut-center">
-          <strong>{formatSpend(total)}</strong>
-          <span>Total</span>
-        </div>
-      </div>
       <ul className="spend-legend">
         {spendOrder.map((key) => (
           <li key={key}>
@@ -83,6 +71,45 @@ function SpendDonut({ spend }: { spend: GuestSpend }) {
           </li>
         ))}
       </ul>
+      <div className="spend-donut-slot">
+        <div className="spend-donut" style={{ width: size, height: size }}>
+          <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke="rgba(21, 21, 21, 0.06)"
+              strokeWidth={stroke}
+            />
+            {spendOrder.map((key) => {
+              const value = spend[key];
+              const length = total > 0 ? (value / total) * circumference : 0;
+              const segment = (
+                <circle
+                  key={key}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  fill="none"
+                  stroke={spendColors[key]}
+                  strokeWidth={stroke}
+                  strokeDasharray={`${length} ${circumference - length}`}
+                  strokeDashoffset={-offset}
+                  strokeLinecap="butt"
+                  transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                />
+              );
+              offset += length;
+              return segment;
+            })}
+          </svg>
+          <div className="spend-donut-center">
+            <strong>{formatSpend(total)}</strong>
+            <span>Total</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -121,51 +148,31 @@ function totalStayDays(stays: PastStay[]): number {
   return stays.reduce((sum, stay) => sum + stayNights(stay), 0);
 }
 
-function GuestProfileModal({
+function GuestProfileShell({
   backTo,
   title,
-  onClose,
   children,
 }: {
   backTo: string;
   title: string;
-  onClose: () => void;
   children: ReactNode;
 }) {
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [onClose]);
-
   return (
-    <div className="modal-root guest-profile-modal-root" data-testid="guest-profile">
-      <button type="button" className="modal-backdrop" aria-label="Close guest profile" onClick={onClose} />
-      <div className="guest-profile-modal" role="dialog" aria-modal="true" aria-label={title}>
-        <header className="guest-profile-modal-head">
+    <div className="page guest-profile-page" data-testid="guest-profile" aria-label={title}>
+      <header className="page-header guest-profile-page-head">
+        <div className="page-header-bar">
           <Link to={backTo} className="listing-back">
             <BackArrow />
             Back to guest profiles
           </Link>
-          <button type="button" className="modal-close" aria-label="Close" onClick={onClose}>
-            <CloseIcon />
-          </button>
-        </header>
-        <div className="guest-profile-modal-body">{children}</div>
-      </div>
+        </div>
+      </header>
+      <div className="guest-profile-page-body">{children}</div>
     </div>
   );
 }
 
 export function GuestProfile() {
-  const navigate = useNavigate();
   const { guestId } = useParams();
   const [params] = useSearchParams();
   const filter = selectedFilter(params.get("stay"));
@@ -174,7 +181,6 @@ export function GuestProfile() {
   if (filter !== "all") backQuery.set("stay", filter);
   if (query) backQuery.set("q", query);
   const backTo = backQuery.size ? `/guests?${backQuery}` : "/guests";
-  const close = useCallback(() => navigate(backTo), [navigate, backTo]);
   const { actions, notesByGuest, addGuestNote, addIncident, addOpportunity } = useShift();
   const guest = guests.find((item) => item.id === guestId);
   const { status, retry } = useViewLoad(`guest-${guestId ?? "missing"}`);
@@ -192,20 +198,20 @@ export function GuestProfile() {
 
   if (status === "loading") {
     return (
-      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
+      <GuestProfileShell backTo={backTo} title="Guest profile">
         <div className="page-view-state">
           <LoadingState
             title="Loading guest profile"
             description="We’re opening this guest’s details, stay history, and open actions."
           />
         </div>
-      </GuestProfileModal>
+      </GuestProfileShell>
     );
   }
 
   if (status === "error") {
     return (
-      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
+      <GuestProfileShell backTo={backTo} title="Guest profile">
         <div className="page-view-state">
           <ErrorState
             title="Couldn’t open this guest"
@@ -222,13 +228,13 @@ export function GuestProfile() {
             }
           />
         </div>
-      </GuestProfileModal>
+      </GuestProfileShell>
     );
   }
 
   if (!guest) {
     return (
-      <GuestProfileModal backTo={backTo} title="Guest profile" onClose={close}>
+      <GuestProfileShell backTo={backTo} title="Guest profile">
         <div className="page-view-state">
           <ErrorState
             title="Guest not found"
@@ -240,7 +246,7 @@ export function GuestProfile() {
             }
           />
         </div>
-      </GuestProfileModal>
+      </GuestProfileShell>
     );
   }
 
@@ -293,7 +299,7 @@ export function GuestProfile() {
   const stayDays = totalStayDays(guest.stays);
 
   return (
-    <GuestProfileModal backTo={backTo} title={guest.name} onClose={close}>
+    <GuestProfileShell backTo={backTo} title={guest.name}>
       <div className="guest-file">
         <div className="profile-board">
           <div className="profile-grid">
@@ -322,6 +328,10 @@ export function GuestProfile() {
                   <dd>{guest.birthDate}</dd>
                 </div>
                 <div>
+                  <dt>Age</dt>
+                  <dd>{ageFromBirthDate(guest.birthDate)}</dd>
+                </div>
+                <div>
                   <dt>Profession</dt>
                   <dd>{guest.profession}</dd>
                 </div>
@@ -329,7 +339,7 @@ export function GuestProfile() {
                   <dt>Hobbies</dt>
                   <dd>{guest.hobbies}</dd>
                 </div>
-                <div className="is-wide">
+                <div>
                   <dt>Companions</dt>
                   <dd>{travelCompanionshipLabels[guest.companionship]}</dd>
                 </div>
@@ -400,10 +410,7 @@ export function GuestProfile() {
               </header>
               <div className="profile-scroll">
                 {incidents.length === 0 ? (
-                  <EmptyState
-                    title="No incidents on file"
-                    description="Nothing recorded for this guest yet. Use + to open a new incident."
-                  />
+                  <EmptyState title="No incidents on file yet." />
                 ) : (
                   <ul className="profile-records">
                     {incidents.map((record) => (
@@ -434,10 +441,7 @@ export function GuestProfile() {
               </header>
               <div className="profile-scroll">
                 {opportunities.length === 0 ? (
-                  <EmptyState
-                    title="No opportunities on file"
-                    description="No upselling, amenity or loyalty actions yet. Use + to add one."
-                  />
+                  <EmptyState title="No opportunities on file yet." />
                 ) : (
                   <ul className="profile-records is-opp-list">
                     {opportunities.map((record) => (
@@ -468,10 +472,7 @@ export function GuestProfile() {
               <div className="notes-body">
                 <div className="profile-scroll notes-list-pane">
                   {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].length === 0 ? (
-                    <EmptyState
-                      title="No notes yet"
-                      description="Add a note below so the next shift knows what matters for this guest."
-                    />
+                    <EmptyState title="No notes yet." />
                   ) : (
                     <ul className="profile-records note-list">
                       {[...guest.notes, ...(notesByGuest[guest.id] ?? [])].map((note) => (
@@ -516,7 +517,7 @@ export function GuestProfile() {
       {opportunityOpen ? (
         <GuestOpportunityDrawer guest={guest} onClose={() => setOpportunityOpen(false)} onAdd={addOpportunity} />
       ) : null}
-    </GuestProfileModal>
+    </GuestProfileShell>
   );
 }
 
@@ -530,20 +531,6 @@ function BackArrow() {
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-      <path
-        d="M3 3l8 8M11 3 3 11"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
       />
     </svg>
   );
