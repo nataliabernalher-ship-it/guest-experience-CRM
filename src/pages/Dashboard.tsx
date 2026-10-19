@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  guestById,
   guests,
   type Guest,
   isPending,
-  last7Days,
   listings,
+  milestonePeriodOptions,
+  milestonesForPeriod,
+  type MilestonePeriod,
   money,
   peopleCount,
   reservationCount,
@@ -42,19 +45,32 @@ function ChevronRightIcon() {
   );
 }
 
-function stayLine(guest: Guest): string {
+function stayLine(guest: Guest, moment: "check-in" | "in-house" = "check-in"): string {
   const stays = guest.previousStays === 1 ? "1 stay" : `${guest.previousStays} stays`;
-  return `Room ${guest.room} · Arriving today · ${stays}`;
+  const momentLabel = moment === "in-house" ? "In-house" : "Arriving today";
+  return `Room ${guest.room} · ${momentLabel} · ${stays}`;
 }
 
-function checkInActionsForGuest(guestId: string, source: ShiftAction[]): ShiftAction[] {
+function actionsForGuest(
+  guestId: string,
+  listing: "check-ins" | "in-house",
+  source: ShiftAction[],
+): ShiftAction[] {
   return source.filter(
-    (action) => action.guestId === guestId && action.listing === "check-ins" && action.category !== "recovery",
+    (action) => action.guestId === guestId && action.listing === listing && action.category !== "recovery",
   );
 }
 
-function opportunityForGuest(guestId: string, source: ShiftAction[]): ShiftAction | undefined {
-  const forGuest = checkInActionsForGuest(guestId, source);
+function checkInActionsForGuest(guestId: string, source: ShiftAction[]): ShiftAction[] {
+  return actionsForGuest(guestId, "check-ins", source);
+}
+
+function opportunityForGuest(
+  guestId: string,
+  source: ShiftAction[],
+  listing: "check-ins" | "in-house" = "check-ins",
+): ShiftAction | undefined {
+  const forGuest = actionsForGuest(guestId, listing, source);
   return forGuest.find((action) => action.status === "pending") ?? forGuest[0];
 }
 
@@ -123,7 +139,6 @@ function seriesPath(
 
 function UpsellingPotentialChart({ rows }: { rows: UpsellPotentialRow[] }) {
   const max = Math.max(...rows.map((row) => row.amount), 1);
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
 
   if (rows.length === 0) {
     return <p className="upsell-potential-empty">No pending upselling potential right now.</p>;
@@ -131,11 +146,7 @@ function UpsellingPotentialChart({ rows }: { rows: UpsellPotentialRow[] }) {
 
   return (
     <div className="upsell-potential" data-testid="upselling-potential-chart">
-      <p className="upsell-potential-total">
-        <span className="upsell-potential-total-label">Potential</span>
-        <span className="upsell-potential-total-value">{money.format(total)}</span>
-      </p>
-      <ul className="upsell-potential-bars" aria-label="Upselling potential by offer">
+      <ul className="upsell-potential-bars" aria-label="Upselling potential for today">
         {rows.map((row) => (
           <li key={row.offer} className="upsell-potential-row">
             <div className="upsell-potential-meta">
@@ -232,8 +243,14 @@ export function Dashboard() {
   const { status, retry } = useViewLoad("dashboard");
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const [milestoneMetric, setMilestoneMetric] = useState<MilestoneMetric>("upselling");
+  const [milestonePeriod, setMilestonePeriod] = useState<MilestonePeriod>("7days");
+  const milestones = milestonesForPeriod(milestonePeriod);
   const checkInGuests = guests.filter(
     (guest) => guest.moment === "check-in" && checkInActionsForGuest(guest.id, actions).length > 0,
+  );
+  const inHouseActionGuests = guests.filter(
+    (guest) =>
+      guest.moment === "in-house" && actionsForGuest(guest.id, "in-house", actions).length > 0,
   );
   const checkOutReservations = reservationCount("check-out");
   const checkInReservations = checkInGuests.length;
@@ -247,6 +264,15 @@ export function Dashboard() {
     loyalty: pendingOpportunities.filter((action) => action.category === "loyalty").length,
   };
   const upsellPotential = upsellingPotentialByOffer(actions);
+  const earningsPotential = upsellPotential.reduce((sum, row) => sum + row.amount, 0);
+  const earningsAchieved = actions.reduce((sum, action) => {
+    if (action.category !== "upselling" || action.status !== "done" || action.value == null) return sum;
+    try {
+      return sum + Math.max(guestById(action.guestId).partySize, 1) * action.value;
+    } catch {
+      return sum + action.value;
+    }
+  }, 0);
   const selectedOpportunity =
     selectedOpportunityId == null
       ? null
@@ -353,13 +379,28 @@ export function Dashboard() {
           <section className="results is-aside" aria-label="Milestones achieved">
             <header className="milestones-head">
               <h2>Milestones achieved</h2>
+              <div className="guest-tags milestones-period" role="tablist" aria-label="Milestones period">
+                {milestonePeriodOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={milestonePeriod === option.id}
+                    className={
+                      milestonePeriod === option.id ? "guest-tag is-active" : "guest-tag"
+                    }
+                    onClick={() => setMilestonePeriod(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </header>
             <div className="milestones-body">
               <div className="upselling-trend-stack">
                 <div className="upselling-trend-chart-wrap" data-testid="upselling-trend">
-                  <p className="milestones-period">Last 7 days</p>
                   <MilestonesTrendChart
-                    labels={last7Days.upsellingByDay.map((point) => point.label)}
+                    labels={milestones.upsellingByDay.map((point) => point.label)}
                     metric={milestoneMetric}
                     label={
                       milestoneMetric === "upselling"
@@ -370,10 +411,10 @@ export function Dashboard() {
                     }
                     values={
                       milestoneMetric === "upselling"
-                        ? last7Days.upsellingByDay.map((point) => point.value)
+                        ? milestones.upsellingByDay.map((point) => point.value)
                         : milestoneMetric === "loyalty"
-                          ? last7Days.loyaltyByDay.map((point) => point.value)
-                          : last7Days.guestsPamperedByDay.map((point) => point.value)
+                          ? milestones.loyaltyByDay.map((point) => point.value)
+                          : milestones.guestsPamperedByDay.map((point) => point.value)
                     }
                   />
                 </div>
@@ -392,8 +433,8 @@ export function Dashboard() {
                   onClick={() => setMilestoneMetric("upselling")}
                 >
                   <span className="result-figure">
-                    <TrendArrow direction={last7Days.upsellingRevenue.direction} />
-                    <span className="result-value">{money.format(last7Days.upsellingRevenue.value)}</span>
+                    <TrendArrow direction={milestones.upsellingRevenue.direction} />
+                    <span className="result-value">{money.format(milestones.upsellingRevenue.value)}</span>
                   </span>
                   <span className="result-label">Upselling total</span>
                 </button>
@@ -408,8 +449,8 @@ export function Dashboard() {
                   onClick={() => setMilestoneMetric("loyalty")}
                 >
                   <span className="result-figure">
-                    <TrendArrow direction={last7Days.loyaltySignUps.direction} />
-                    <span className="result-value">{last7Days.loyaltySignUps.value}</span>
+                    <TrendArrow direction={milestones.loyaltySignUps.direction} />
+                    <span className="result-value">{milestones.loyaltySignUps.value}</span>
                   </span>
                   <span className="result-label">Loyalty sign-ups</span>
                 </button>
@@ -426,102 +467,203 @@ export function Dashboard() {
                   onClick={() => setMilestoneMetric("pampered")}
                 >
                   <span className="result-figure">
-                    <TrendArrow direction={last7Days.guestsPampered.direction} />
-                    <span className="result-value">{last7Days.guestsPampered.value}</span>
+                    <TrendArrow direction={milestones.guestsPampered.direction} />
+                    <span className="result-value">{milestones.guestsPampered.value}</span>
                   </span>
                   <span className="result-label">Guests pampered</span>
                 </button>
               </div>
             </div>
+            <Link to="/insight" className="milestones-reports-link">
+              See reports
+            </Link>
           </section>
         </div>
 
         <div className="board">
-          <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
-            <header className="table-card-head">
-              <h2 id="checkins-heading">Today check-in with actions</h2>
-            </header>
-            {status === "loading" ? (
-              <LoadingState
-                title="Loading check-ins"
-                description="We’re gathering today’s arrivals that still need an action."
-              />
-            ) : status === "error" ? (
-              <ErrorState
-                title="Couldn’t load check-ins"
-                description="Something went wrong while loading arrivals. Try again, or open the full check-in list."
-                action={
-                  <>
-                    <button type="button" className="add-incident" onClick={retry}>
-                      Try again
-                    </button>
+          <div className="board-center">
+            <section className="table-card is-checkins" aria-labelledby="checkins-heading" data-testid="today-check-ins">
+              <header className="table-card-head">
+                <h2 id="checkins-heading">Today check-in with actions</h2>
+              </header>
+              {status === "loading" ? (
+                <LoadingState
+                  title="Loading check-ins"
+                  description="We’re gathering today’s arrivals that still need an action."
+                />
+              ) : status === "error" ? (
+                <ErrorState
+                  title="Couldn’t load check-ins"
+                  description="Something went wrong while loading arrivals. Try again, or open the full check-in list."
+                  action={
+                    <>
+                      <button type="button" className="add-incident" onClick={retry}>
+                        Try again
+                      </button>
+                      <Link to={listings["check-ins"].path} className="view-all">
+                        View all check-ins
+                      </Link>
+                    </>
+                  }
+                />
+              ) : checkInGuests.length === 0 ? (
+                <EmptyState
+                  title="No check-ins need action"
+                  description="There are no arriving guests with pending opportunities right now. You can still browse the full check-in list."
+                  action={
                     <Link to={listings["check-ins"].path} className="view-all">
                       View all check-ins
                     </Link>
-                  </>
-                }
-              />
-            ) : checkInGuests.length === 0 ? (
-              <EmptyState
-                title="No check-ins need action"
-                description="There are no arriving guests with pending opportunities right now. You can still browse the full check-in list."
-                action={
-                  <Link to={listings["check-ins"].path} className="view-all">
-                    View all check-ins
-                  </Link>
-                }
-              />
-            ) : (
-              <ul className="vip-list is-checkins-fit">
-                {checkInGuests.map((guest) => {
-                  const opportunity = opportunityForGuest(guest.id, actions);
-                  return (
-                    <li key={guest.id}>
-                      <button
-                        type="button"
-                        className="vip-row is-checkin is-actionable"
-                        onClick={() => {
-                          if (opportunity) setSelectedOpportunityId(opportunity.id);
-                        }}
-                      >
-                        <span className="vip-copy">
-                          <span className="vip-name">{guest.name}</span>
-                          <span className="vip-meta">{stayLine(guest)}</span>
-                        </span>
-                        {opportunity ? (
-                          opportunity.status === "done" ? (
-                            <OutcomeMark rejected={false} />
-                          ) : opportunity.status === "rejected" ? (
-                            <OutcomeMark rejected />
+                  }
+                />
+              ) : (
+                <ul className="vip-list is-checkins-fit">
+                  {checkInGuests.map((guest) => {
+                    const opportunity = opportunityForGuest(guest.id, actions);
+                    return (
+                      <li key={guest.id}>
+                        <button
+                          type="button"
+                          className="vip-row is-checkin is-actionable"
+                          onClick={() => {
+                            if (opportunity) setSelectedOpportunityId(opportunity.id);
+                          }}
+                        >
+                          <span className="vip-copy">
+                            <span className="vip-name">{guest.name}</span>
+                            <span className="vip-meta">{stayLine(guest)}</span>
+                          </span>
+                          {opportunity ? (
+                            opportunity.status === "done" ? (
+                              <OutcomeMark rejected={false} />
+                            ) : opportunity.status === "rejected" ? (
+                              <OutcomeMark rejected />
+                            ) : (
+                              <CategoryPill category={opportunity.category} />
+                            )
                           ) : (
-                            <CategoryPill category={opportunity.category} />
-                          )
-                        ) : (
-                          <span className="guest-none">–</span>
-                        )}
+                            <span className="guest-none">–</span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="board-foot">
+                <p className="board-foot-count">
+                  <span className="board-foot-count-value">{checkInGuests.length}</span>
+                  <span className="board-foot-count-label">
+                    {checkInGuests.length === 1 ? "check-in" : "check-ins"}
+                  </span>
+                </p>
+                <Link to={listings["check-ins"].path} className="view-all">
+                  View all
+                </Link>
+              </div>
+            </section>
+
+            <section className="table-card is-inhouse" aria-labelledby="inhouse-heading" data-testid="today-in-house">
+              <header className="table-card-head">
+                <h2 id="inhouse-heading">Today in-house with actions</h2>
+              </header>
+              {status === "loading" ? (
+                <LoadingState
+                  title="Loading in-house"
+                  description="We’re gathering in-house guests that still need an action."
+                />
+              ) : status === "error" ? (
+                <ErrorState
+                  title="Couldn’t load in-house"
+                  description="Something went wrong while loading in-house guests. Try again, or open the full in-house list."
+                  action={
+                    <>
+                      <button type="button" className="add-incident" onClick={retry}>
+                        Try again
                       </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <div className="board-foot">
-              <p className="board-foot-count">
-                <span className="board-foot-count-value">{checkInGuests.length}</span>
-                <span className="board-foot-count-label">
-                  {checkInGuests.length === 1 ? "check-in" : "check-ins"}
-                </span>
-              </p>
-              <Link to={listings["check-ins"].path} className="view-all">
-                View all
-              </Link>
-            </div>
-          </section>
+                      <Link to={listings["in-house"].path} className="view-all">
+                        View all in-house
+                      </Link>
+                    </>
+                  }
+                />
+              ) : inHouseActionGuests.length === 0 ? (
+                <EmptyState
+                  title="No in-house guests need action"
+                  description="There are no in-house guests with pending opportunities right now. You can still browse the full in-house list."
+                  action={
+                    <Link to={listings["in-house"].path} className="view-all">
+                      View all in-house
+                    </Link>
+                  }
+                />
+              ) : (
+                <ul className="vip-list is-checkins-fit">
+                  {inHouseActionGuests.map((guest) => {
+                    const opportunity = opportunityForGuest(guest.id, actions, "in-house");
+                    return (
+                      <li key={guest.id}>
+                        <button
+                          type="button"
+                          className="vip-row is-checkin is-actionable"
+                          onClick={() => {
+                            if (opportunity) setSelectedOpportunityId(opportunity.id);
+                          }}
+                        >
+                          <span className="vip-copy">
+                            <span className="vip-name">{guest.name}</span>
+                            <span className="vip-meta">{stayLine(guest, "in-house")}</span>
+                          </span>
+                          {opportunity ? (
+                            opportunity.status === "done" ? (
+                              <OutcomeMark rejected={false} />
+                            ) : opportunity.status === "rejected" ? (
+                              <OutcomeMark rejected />
+                            ) : (
+                              <CategoryPill category={opportunity.category} />
+                            )
+                          ) : (
+                            <span className="guest-none">–</span>
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <div className="board-foot">
+                <p className="board-foot-count">
+                  <span className="board-foot-count-value">{inHouseActionGuests.length}</span>
+                  <span className="board-foot-count-label">
+                    {inHouseActionGuests.length === 1 ? "guest" : "guests"}
+                  </span>
+                </p>
+                <Link to={listings["in-house"].path} className="view-all">
+                  View all
+                </Link>
+              </div>
+            </section>
+          </div>
 
           <div className="board-side">
+            <section
+              className="earnings-today"
+              aria-labelledby="earnings-today-heading"
+              data-testid="earnings-today"
+            >
+              <div className="earnings-today-head">
+                <h2 id="earnings-today-heading">Earnings potential for today</h2>
+                <p className="earnings-today-value">{`${earningsPotential.toLocaleString("en-GB")}€`}</p>
+              </div>
+              <div className="earnings-today-spacer" aria-hidden="true" />
+              <div className="earnings-today-foot">
+                <span>Achieved so far</span>
+                <span>{`${earningsAchieved.toLocaleString("en-GB")}€`}</span>
+              </div>
+            </section>
             <section className="panel is-upsell-potential" aria-labelledby="upsell-potential-heading">
               <div className="panel-head">
-                <h2 id="upsell-potential-heading">Upselling potential by offer</h2>
+                <h2 id="upsell-potential-heading">Upselling potential for today</h2>
               </div>
               <div className="board-scroll">
                 <UpsellingPotentialChart rows={upsellPotential} />

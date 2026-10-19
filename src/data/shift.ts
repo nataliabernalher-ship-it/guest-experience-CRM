@@ -313,41 +313,110 @@ export function incidentHistoryNote(status: ActionStatus): string {
   return "Incident opened";
 }
 
-export const last7Days = {
-  upsellingRevenue: { value: 840, direction: "up" as const },
-  /** Daily upselling revenue for the last 7 days ending on shiftDay. */
-  upsellingByDay: [
-    { label: "24", value: 90 },
-    { label: "25", value: 110 },
-    { label: "26", value: 95 },
-    { label: "27", value: 140 },
-    { label: "28", value: 120 },
-    { label: "29", value: 155 },
-    { label: "30", value: 130 },
-  ],
-  loyaltySignUps: { value: 6, direction: "down" as const },
-  /** Daily loyalty sign-ups for the last 7 days. */
-  loyaltyByDay: [
-    { label: "24", value: 0 },
-    { label: "25", value: 1 },
-    { label: "26", value: 1 },
-    { label: "27", value: 0 },
-    { label: "28", value: 2 },
-    { label: "29", value: 1 },
-    { label: "30", value: 1 },
-  ],
-  guestsPampered: { value: 11, direction: "up" as const },
-  /** Daily guests pampered for the last 7 days. */
-  guestsPamperedByDay: [
-    { label: "24", value: 1 },
-    { label: "25", value: 2 },
-    { label: "26", value: 1 },
-    { label: "27", value: 2 },
-    { label: "28", value: 1 },
-    { label: "29", value: 2 },
-    { label: "30", value: 2 },
-  ],
+export type MilestonePeriod = "7days" | "week" | "month";
+
+export const milestonePeriodOptions: Array<{ id: MilestonePeriod; label: string }> = [
+  { id: "7days", label: "Last 7 days" },
+  { id: "week", label: "Last week" },
+  { id: "month", label: "Last month" },
+];
+
+const milestoneSeries = {
+  "7days": {
+    upsellingRevenue: { value: 840, direction: "up" as const },
+    upsellingByDay: [
+      { label: "24", value: 90 },
+      { label: "25", value: 110 },
+      { label: "26", value: 95 },
+      { label: "27", value: 140 },
+      { label: "28", value: 120 },
+      { label: "29", value: 155 },
+      { label: "30", value: 130 },
+    ],
+    loyaltySignUps: { value: 6, direction: "down" as const },
+    loyaltyByDay: [
+      { label: "24", value: 0 },
+      { label: "25", value: 1 },
+      { label: "26", value: 1 },
+      { label: "27", value: 0 },
+      { label: "28", value: 2 },
+      { label: "29", value: 1 },
+      { label: "30", value: 1 },
+    ],
+    guestsPampered: { value: 11, direction: "up" as const },
+    guestsPamperedByDay: [
+      { label: "24", value: 1 },
+      { label: "25", value: 2 },
+      { label: "26", value: 1 },
+      { label: "27", value: 2 },
+      { label: "28", value: 1 },
+      { label: "29", value: 2 },
+      { label: "30", value: 2 },
+    ],
+  },
+  week: {
+    upsellingRevenue: { value: 780, direction: "up" as const },
+    upsellingByDay: [
+      { label: "Mon", value: 95 },
+      { label: "Tue", value: 120 },
+      { label: "Wed", value: 110 },
+      { label: "Thu", value: 145 },
+      { label: "Fri", value: 130 },
+      { label: "Sat", value: 90 },
+      { label: "Sun", value: 90 },
+    ],
+    loyaltySignUps: { value: 5, direction: "down" as const },
+    loyaltyByDay: [
+      { label: "Mon", value: 1 },
+      { label: "Tue", value: 0 },
+      { label: "Wed", value: 1 },
+      { label: "Thu", value: 1 },
+      { label: "Fri", value: 1 },
+      { label: "Sat", value: 0 },
+      { label: "Sun", value: 1 },
+    ],
+    guestsPampered: { value: 10, direction: "up" as const },
+    guestsPamperedByDay: [
+      { label: "Mon", value: 1 },
+      { label: "Tue", value: 2 },
+      { label: "Wed", value: 1 },
+      { label: "Thu", value: 2 },
+      { label: "Fri", value: 2 },
+      { label: "Sat", value: 1 },
+      { label: "Sun", value: 1 },
+    ],
+  },
+  month: {
+    upsellingRevenue: { value: 3240, direction: "up" as const },
+    upsellingByDay: [
+      { label: "W1", value: 620 },
+      { label: "W2", value: 780 },
+      { label: "W3", value: 710 },
+      { label: "W4", value: 840 },
+    ],
+    loyaltySignUps: { value: 22, direction: "up" as const },
+    loyaltyByDay: [
+      { label: "W1", value: 4 },
+      { label: "W2", value: 6 },
+      { label: "W3", value: 5 },
+      { label: "W4", value: 7 },
+    ],
+    guestsPampered: { value: 48, direction: "up" as const },
+    guestsPamperedByDay: [
+      { label: "W1", value: 9 },
+      { label: "W2", value: 12 },
+      { label: "W3", value: 14 },
+      { label: "W4", value: 13 },
+    ],
+  },
 } as const;
+
+export function milestonesForPeriod(period: MilestonePeriod) {
+  return milestoneSeries[period];
+}
+
+/** @deprecated Prefer milestonesForPeriod("7days") */
+export const last7Days = milestoneSeries["7days"];
 
 export const listings: Record<ListingId, Listing> = {
   "check-ins": {
