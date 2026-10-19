@@ -1,12 +1,11 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
-import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
+import { NavLink, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
   compareActions,
   formatIncidentWhen,
   guestById,
   guests,
-  listingForMoment,
   listings,
   money,
   opportunityMomentTabs,
@@ -30,7 +29,6 @@ import {
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
-import { OpportunityDrawer } from "../components/OpportunityDrawer";
 import { useViewLoad } from "../hooks/useViewLoad";
 import { useShift } from "../state/ShiftState";
 
@@ -742,14 +740,12 @@ function IncidentDrawer({
 }
 
 export function ListingPage({ listingId }: { listingId: ListingId }) {
-  const navigate = useNavigate();
-  const { actions, setActionStatus, addIncident, addOpportunity } = useShift();
+  const { actions, setActionStatus, addIncident } = useShift();
   const [params, setParams] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
   const [statusFilter, setStatusFilter] = useState<OpportunityStatusFilter>("all");
   const category = selectedCategory(params.get("category"));
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const focus = params.get("action");
@@ -763,21 +759,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
     setParams(nextParams, { replace: true });
   }
 
-  function handleAddOpportunity(opportunity: {
-    guestId: string;
-    category: Exclude<Category, "recovery">;
-    label: string;
-    value?: number;
-    description?: string;
-  }) {
-    addOpportunity(opportunity);
-    setOpportunityDrawerOpen(false);
-    setCategory("all");
-    const target = listingForMoment(guestById(opportunity.guestId).moment);
-    if (target !== listingId) {
-      navigate(`${listings[target].path}${categoryQuery("all")}`);
-    }
-  }
   const pending = isRecovery
     ? recoveryRows(actions, severity)
     : opportunityRows(listingId, actions)
@@ -807,18 +788,10 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
 
   return (
     <div className="page" data-testid={`listing-${listingId}`}>
-      <header className="page-header is-split">
+      <header className={isOpportunityListing ? "page-header" : "page-header is-split"}>
         <div className="page-header-bar">
           <h1>{isOpportunityListing ? "Opportunities" : listing.title}</h1>
-          {isOpportunityListing ? (
-            <button
-              type="button"
-              className="add-incident page-header-action"
-              onClick={() => setOpportunityDrawerOpen(true)}
-            >
-              Open opportunities
-            </button>
-          ) : (
+          {isRecovery ? (
             <button
               type="button"
               className="add-incident page-header-action"
@@ -826,7 +799,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
             >
               Open incident
             </button>
-          )}
+          ) : null}
         </div>
       </header>
       {isOpportunityListing ? (
@@ -913,9 +886,6 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
       />
       {isRecovery && drawerOpen ? (
         <IncidentDrawer onClose={() => setDrawerOpen(false)} onAdd={addIncident} />
-      ) : null}
-      {isOpportunityListing && opportunityDrawerOpen ? (
-        <OpportunityDrawer onClose={() => setOpportunityDrawerOpen(false)} onAdd={handleAddOpportunity} />
       ) : null}
       {selectedIncident ? (
         <IncidentDetailModal action={selectedIncident} onClose={() => setSelectedIncidentId(null)} />

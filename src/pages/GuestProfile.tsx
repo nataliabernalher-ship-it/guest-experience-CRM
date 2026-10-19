@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { GuestIncidentDrawer } from "../components/GuestIncidentDrawer";
 import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import { GuestPreferenceDrawer } from "../components/GuestPreferenceDrawer";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { formatGuestRegion } from "../data/regions";
 import {
@@ -181,19 +182,29 @@ export function GuestProfile() {
   if (filter !== "all") backQuery.set("stay", filter);
   if (query) backQuery.set("q", query);
   const backTo = backQuery.size ? `/guests?${backQuery}` : "/guests";
-  const { actions, notesByGuest, addGuestNote, addIncident, addOpportunity } = useShift();
+  const {
+    actions,
+    notesByGuest,
+    preferencesByGuest,
+    addGuestNote,
+    addGuestPreference,
+    addIncident,
+    addOpportunity,
+  } = useShift();
   const guest = guests.find((item) => item.id === guestId);
   const { status, retry } = useViewLoad(`guest-${guestId ?? "missing"}`);
 
   const [draft, setDraft] = useState("");
   const [incidentOpen, setIncidentOpen] = useState(false);
   const [opportunityOpen, setOpportunityOpen] = useState(false);
+  const [preferenceOpen, setPreferenceOpen] = useState(false);
 
   useEffect(() => {
     document.title = guest ? `${guest.name} · Guest Experience` : "Guest · Guest Experience";
     setDraft("");
     setIncidentOpen(false);
     setOpportunityOpen(false);
+    setPreferenceOpen(false);
   }, [guest]);
 
   if (status === "loading") {
@@ -375,25 +386,41 @@ export function GuestProfile() {
             <section className="profile-quadrant is-preferences" aria-label="Preferences">
               <header className="profile-quadrant-head">
                 <h2>Preferences</h2>
+                <button
+                  type="button"
+                  className="profile-add"
+                  aria-label="Add preference"
+                  onClick={() => setPreferenceOpen(true)}
+                >
+                  <PlusIcon />
+                </button>
               </header>
-              <dl className="profile-facts-list is-stacked">
-                <div>
-                  <dt>Room type</dt>
-                  <dd>{guest.preferences.roomType}</dd>
-                </div>
-                <div>
-                  <dt>Bed type</dt>
-                  <dd>{guest.preferences.bedType}</dd>
-                </div>
-                <div>
-                  <dt>Pillow type</dt>
-                  <dd>{guest.preferences.pillowType}</dd>
-                </div>
-                <div>
-                  <dt>Dining</dt>
-                  <dd>{guest.preferences.dining}</dd>
-                </div>
-              </dl>
+              <div className="profile-scroll">
+                <dl className="profile-facts-list is-stacked">
+                  <div>
+                    <dt>Room type</dt>
+                    <dd>{guest.preferences.roomType}</dd>
+                  </div>
+                  <div>
+                    <dt>Bed type</dt>
+                    <dd>{guest.preferences.bedType}</dd>
+                  </div>
+                  <div>
+                    <dt>Pillow type</dt>
+                    <dd>{guest.preferences.pillowType}</dd>
+                  </div>
+                  <div>
+                    <dt>Dining</dt>
+                    <dd>{guest.preferences.dining}</dd>
+                  </div>
+                  {(preferencesByGuest[guest.id] ?? []).map((preference) => (
+                    <div key={preference.id}>
+                      <dt>{preference.type}</dt>
+                      <dd>{preference.description}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </section>
 
             <section className="profile-quadrant is-incidents" aria-label="Incidents">
@@ -516,6 +543,13 @@ export function GuestProfile() {
       ) : null}
       {opportunityOpen ? (
         <GuestOpportunityDrawer guest={guest} onClose={() => setOpportunityOpen(false)} onAdd={addOpportunity} />
+      ) : null}
+      {preferenceOpen ? (
+        <GuestPreferenceDrawer
+          guest={guest}
+          onClose={() => setPreferenceOpen(false)}
+          onAdd={addGuestPreference}
+        />
       ) : null}
     </GuestProfileShell>
   );

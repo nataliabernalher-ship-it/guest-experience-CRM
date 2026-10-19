@@ -100,7 +100,7 @@ type MilestoneMetric = "upselling" | "loyalty" | "pampered";
 
 /** Solid hue matching category tag colors (text / tag fill base). */
 const TREND_COLORS: Record<MilestoneMetric, string> = {
-  upselling: "#A264FF",
+  upselling: "#FF6544",
   loyalty: "#2f5f8a",
   pampered: "#2f6b4f",
 };
@@ -407,7 +407,7 @@ export function Dashboard() {
                         ? "Upselling"
                         : milestoneMetric === "loyalty"
                           ? "Loyalty sign-ups"
-                          : "Guests pampered"
+                          : "Special amenities"
                     }
                     values={
                       milestoneMetric === "upselling"

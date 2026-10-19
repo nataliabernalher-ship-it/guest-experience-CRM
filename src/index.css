@@ -7,11 +7,19 @@
   --page: #EBEBEB;
   --surface: #EBEBEB;
   --surface-raised: #f7f7f7;
+  --hover: #f7f7f7;
+  --hover-strong: #3a3a3a;
   --ink: #151515;
   --muted: #8a8a8a;
   --line: #E0E0E0;
   --gray: #EBEBEB;
   --accent: #FF6544;
+  --upselling: #FF6544;
+  --upselling-tint: rgba(255, 101, 68, 0.12);
+  --upselling-bar: var(--upselling);
+  --upselling-bar-track: var(--upselling-tint);
+  /* VIP star + Returning tag */
+  --guest-mark: #E6B800;
   --sidebar: #EBEBEB;
   --shadow: none;
   --shadow-lift: none;
@@ -90,6 +98,10 @@ h2 {
 
 .app:has([data-testid="dashboard"])::before {
   height: 280px;
+}
+
+.app:has([data-testid="guest-profile"])::before {
+  height: 180px;
 }
 
 .app > .topbar,
@@ -397,6 +409,14 @@ h2 {
   overflow: hidden;
 }
 
+.main:has([data-testid="guest-profile"]) {
+  --hero-fill: calc(180px - 96px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 24px;
+}
+
 .main > * {
   position: relative;
   z-index: 1;
@@ -554,12 +574,15 @@ h2 {
 }
 
 .insight-metric[data-category="upselling"] {
-  background: rgba(162, 100, 255, 0.12);
-  color: #A264FF;
+  background: var(--upselling-tint);
+  color: var(--upselling);
 }
 
-.insight-metric[data-category="upselling"]:hover {
-  background: rgba(162, 100, 255, 0.18);
+.insight-metric[data-category="upselling"]:hover,
+.insight-metric[data-category="loyalty"]:hover,
+.insight-metric[data-category="guest-experience"]:hover {
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .insight-metric[data-category="loyalty"] {
@@ -567,17 +590,9 @@ h2 {
   color: #2f5f8a;
 }
 
-.insight-metric[data-category="loyalty"]:hover {
-  background: rgba(47, 95, 138, 0.18);
-}
-
 .insight-metric[data-category="guest-experience"] {
   background: rgba(47, 107, 79, 0.12);
   color: #2f6b4f;
-}
-
-.insight-metric[data-category="guest-experience"]:hover {
-  background: rgba(47, 107, 79, 0.18);
 }
 
 .insight-metric-icon {
@@ -834,8 +849,12 @@ h2 {
   cursor: pointer;
 }
 
-.dashboard-left .results.is-aside .result:hover {
-  background: #fff5ed;
+.dashboard-left .results.is-aside .result:hover,
+.dashboard-left .results.is-aside .result.is-upselling.is-selected:hover,
+.dashboard-left .results.is-aside .result.is-loyalty.is-selected:hover,
+.dashboard-left .results.is-aside .result.is-pampered.is-selected:hover {
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .dashboard-left .results.is-aside .result.is-selected {
@@ -844,12 +863,8 @@ h2 {
 }
 
 .dashboard-left .results.is-aside .result.is-upselling.is-selected {
-  background: rgba(162, 100, 255, 0.12);
-  color: #A264FF;
-}
-
-.dashboard-left .results.is-aside .result.is-upselling.is-selected:hover {
-  background: rgba(162, 100, 255, 0.18);
+  background: var(--upselling-tint);
+  color: var(--upselling);
 }
 
 .dashboard-left .results.is-aside .result.is-loyalty.is-selected {
@@ -857,17 +872,9 @@ h2 {
   color: #2f5f8a;
 }
 
-.dashboard-left .results.is-aside .result.is-loyalty.is-selected:hover {
-  background: rgba(47, 95, 138, 0.18);
-}
-
 .dashboard-left .results.is-aside .result.is-pampered.is-selected {
   background: rgba(47, 107, 79, 0.12);
   color: #2f6b4f;
-}
-
-.dashboard-left .results.is-aside .result.is-pampered.is-selected:hover {
-  background: rgba(47, 107, 79, 0.18);
 }
 
 .dashboard-left .results.is-aside .result-figure {
@@ -1105,14 +1112,14 @@ h2 {
   height: 18px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(162, 100, 255, 0.12);
+  background: var(--upselling-bar-track);
 }
 
 .upsell-potential-fill {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #A264FF;
+  background: var(--upselling-bar);
 }
 
 .upsell-potential-empty {
@@ -1591,7 +1598,7 @@ h2 {
 }
 
 .vip-row:hover {
-  background: #f7f7f7;
+  background: var(--hover);
   box-shadow: none;
 }
 
@@ -1647,7 +1654,7 @@ h2 {
 }
 
 .view-all:hover {
-  background: #f7f7f7;
+  background: var(--hover);
   box-shadow: none;
 }
 
@@ -1664,8 +1671,8 @@ h2 {
 }
 
 .board .view-all:hover {
-  background: #e85738;
-  border-color: #e85738;
+  background: var(--hover-strong);
+  border-color: var(--hover-strong);
   box-shadow: none;
   color: #fff;
 }
@@ -1703,14 +1710,14 @@ h2 {
 }
 
 .guest-badge.is-vip {
-  background: var(--accent);
+  background: var(--guest-mark);
   color: #fff;
 }
 
 .guest-vip-star {
   flex: none;
   display: block;
-  color: var(--accent);
+  color: var(--guest-mark);
 }
 
 .guest-loyalty-mark {
@@ -1721,8 +1728,8 @@ h2 {
 
 .guest-badge.is-returning {
   border-radius: 999px;
-  background: rgba(255, 101, 68, 0.14);
-  color: var(--accent);
+  background: rgba(230, 184, 0, 0.16);
+  color: var(--guest-mark);
 }
 
 .board .listing-table {
@@ -2032,7 +2039,7 @@ h2 {
 }
 
 .shift-card:hover {
-  background: #FFF1EE;
+  background: var(--hover);
 }
 
 .shift-card-count {
@@ -2177,7 +2184,7 @@ h2 {
 }
 
 .shift-band:hover .shift-band-bar {
-  background: rgba(255, 101, 68, 0.22);
+  background: rgba(21, 21, 21, 0.16);
 }
 
 .shift-band.is-check-out,
@@ -2266,7 +2273,7 @@ h2 {
 
 a.context-metric:hover {
   border-color: rgba(21, 21, 21, 0.16);
-  background: #e8e9ee;
+  background: var(--hover);
 }
 
 .context-metric.is-recovery {
@@ -2280,8 +2287,9 @@ a.context-metric:hover {
 }
 
 a.context-metric.is-recovery:hover {
-  border-color: #C43F28;
-  background: linear-gradient(180deg, #FF8A70 0%, #FF6544 52%, #E0452E 100%);
+  border-color: var(--hover-strong);
+  background: var(--hover-strong);
+  color: #fff;
 }
 
 .panel,
@@ -2385,7 +2393,7 @@ a.context-metric.is-recovery:hover {
 }
 
 .priority-row:hover {
-  background: #f7f7f7;
+  background: var(--hover);
   box-shadow: none;
 }
 
@@ -2418,7 +2426,7 @@ a.context-metric.is-recovery:hover {
 
 .guest-accordion-toggle:hover {
   border-color: rgba(21, 21, 21, 0.2);
-  background: #f7f7f7;
+  background: var(--hover);
 }
 
 .guest-chevron {
@@ -2467,7 +2475,7 @@ a.context-metric.is-recovery:hover {
 
 .opportunity-reject:hover {
   border-color: rgba(21, 21, 21, 0.22);
-  background: #f7f7f7;
+  background: var(--hover);
 }
 
 .vip-row.is-checkin.is-actionable {
@@ -2535,7 +2543,7 @@ a.context-metric.is-recovery:hover {
 
 .modal-close:hover {
   border-color: rgba(21, 21, 21, 0.2);
-  background: #f7f7f7;
+  background: var(--hover);
 }
 
 .incident-facts {
@@ -2679,8 +2687,9 @@ a.context-metric.is-recovery:hover {
 }
 
 .incident-undo:hover {
-  border-color: var(--accent);
-  background: rgba(255, 101, 68, 0.08);
+  border-color: rgba(21, 21, 21, 0.22);
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .incident-mark {
@@ -2696,7 +2705,7 @@ a.context-metric.is-recovery:hover {
 
 .incident-mark:hover {
   border-color: rgba(21, 21, 21, 0.22);
-  background: #fff;
+  background: var(--hover);
 }
 
 .drawer-field .incident-input.is-area {
@@ -2946,6 +2955,10 @@ a.context-metric.is-recovery:hover {
   cursor: pointer;
 }
 
+.suggest button:hover {
+  background: var(--hover);
+}
+
 .suggest li:first-child button {
   border-top: 0;
 }
@@ -2964,16 +2977,40 @@ a.context-metric.is-recovery:hover {
   width: 100%;
 }
 
-.listing-table.is-guests col.col-guest,
-.listing-table.is-guests col.col-stay,
-.listing-table.is-guests col.col-room,
-.listing-table.is-guests col.col-people,
-.listing-table.is-guests col.col-origin,
-.listing-table.is-guests col.col-age,
-.listing-table.is-guests col.col-vip,
-.listing-table.is-guests col.col-loyalty,
+.listing-table.is-guests col.col-guest {
+  width: 16%;
+}
+
+.listing-table.is-guests col.col-room {
+  width: 7%;
+}
+
+.listing-table.is-guests col.col-country {
+  width: 10%;
+}
+
+.listing-table.is-guests col.col-age {
+  width: 6%;
+}
+
+.listing-table.is-guests col.col-profession {
+  width: 13%;
+}
+
+.listing-table.is-guests col.col-companions {
+  width: 16%;
+}
+
+.listing-table.is-guests col.col-vip {
+  width: 12%;
+}
+
+.listing-table.is-guests col.col-loyalty {
+  width: 8%;
+}
+
 .listing-table.is-guests col.col-actions {
-  width: calc(100% / 9);
+  width: 6%;
 }
 
 .listing-table.is-guests th {
@@ -3060,7 +3097,7 @@ a.context-metric.is-recovery:hover {
 
 .listing-table tbody tr:hover td,
 .listing-table tbody tr:focus-within td {
-  background: #f7f7f7;
+  background: var(--hover);
 }
 
 .listing-table tbody tr.guest-row {
@@ -3085,6 +3122,34 @@ a.context-metric.is-recovery:hover {
 
 .guest-view-link:hover {
   text-decoration: underline;
+}
+
+.guest-companions {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-add {
+  text-align: right;
+}
+
+.guest-add-opportunity {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.guest-add-opportunity:hover {
+  background: rgba(255, 101, 68, 0.1);
 }
 
 .listing-table tbody tr.is-focused td {
@@ -3155,8 +3220,8 @@ a.vip-name.guest-link:hover,
 }
 
 .category-pill[data-category="upselling"] {
-  color: #A264FF;
-  background: rgba(162, 100, 255, 0.12);
+  color: var(--upselling);
+  background: var(--upselling-tint);
 }
 
 .category-pill[data-category="loyalty"] {
@@ -3214,7 +3279,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .category-pill[data-category="upselling"] {
-  color: #A264FF;
+  color: var(--upselling);
 }
 
 .listing-table:not(.is-guests) .category-pill[data-category="loyalty"] {
@@ -3281,7 +3346,7 @@ a.vip-name.guest-link:hover,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 16px 0 12px;
+  padding: 12px 0 22px;
 }
 
 .guest-tags {
@@ -3363,7 +3428,7 @@ a.vip-name.guest-link:hover,
 }
 
 .guest-tag:hover {
-  background: #f7f7f7;
+  background: var(--hover);
   box-shadow: none;
 }
 
@@ -3380,12 +3445,19 @@ a.vip-name.guest-link:hover,
 }
 
 .guest-profile-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   max-width: none;
 }
 
 .guest-profile-page-head {
+  flex: none;
   justify-content: flex-end;
   gap: 16px;
+  min-height: var(--hero-fill);
+  padding-bottom: calc(18px + var(--surface-overlap, 28px));
 }
 
 .guest-profile-page-head .listing-back {
@@ -3398,12 +3470,16 @@ a.vip-name.guest-link:hover,
 
 .guest-profile-page-body {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  min-height: 0;
 }
 
 .guest-file {
   display: flex;
+  flex: 1;
   flex-direction: column;
+  min-height: 0;
   max-width: none;
 }
 
@@ -3413,6 +3489,9 @@ a.vip-name.guest-link:hover,
 
 .profile-board {
   display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   margin-top: 0;
   padding: 0;
   background: transparent;
@@ -3423,10 +3502,13 @@ a.vip-name.guest-link:hover,
 
 .profile-grid {
   display: grid;
+  flex: 1;
   width: 100%;
+  min-height: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: auto auto auto;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
+  align-content: stretch;
 }
 
 .profile-quadrant.is-notes {
@@ -3435,20 +3517,27 @@ a.vip-name.guest-link:hover,
 
 .notes-body {
   display: grid;
+  flex: 1;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 14px;
+  min-height: 0;
   margin-top: 8px;
 }
 
 .notes-list-pane {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 0;
 }
 
 .profile-quadrant {
   display: flex;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
   padding: var(--box-pad);
   background: #ffffff;
   border: 0;
@@ -3457,7 +3546,7 @@ a.vip-name.guest-link:hover,
 }
 
 .profile-quadrant.is-demographics {
-  overflow: visible;
+  overflow: hidden;
   grid-row: 1;
   grid-column: 1;
 }
@@ -3473,7 +3562,7 @@ a.vip-name.guest-link:hover,
 }
 
 .profile-quadrant.is-preferences {
-  overflow: visible;
+  overflow: hidden;
   grid-row: 2;
   grid-column: 3;
 }
@@ -3483,6 +3572,7 @@ a.vip-name.guest-link:hover,
   flex: 1;
   flex-direction: row;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   min-height: 0;
   margin-top: 8px;
@@ -3607,16 +3697,17 @@ a.vip-name.guest-link:hover,
   flex: none;
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(21, 21, 21, 0.12);
-  border-radius: 4px;
-  background: #fff;
-  color: var(--ink);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
   cursor: pointer;
 }
 
 .profile-add:hover {
-  border-color: rgba(21, 21, 21, 0.22);
-  background: #f7f8f7;
+  background: rgba(255, 101, 68, 0.1);
 }
 
 .profile-person {
@@ -3638,10 +3729,13 @@ a.vip-name.guest-link:hover,
 
 .profile-facts-list {
   display: grid;
+  flex: 1;
+  align-content: start;
   grid-template-columns: 1fr 1fr;
   gap: 8px 14px;
+  min-height: 0;
   margin: 0;
-  flex: none;
+  overflow: auto;
 }
 
 .profile-facts-list .is-wide {
@@ -3686,6 +3780,7 @@ a.vip-name.guest-link:hover,
   gap: 8px;
   min-width: 0;
   min-height: 0;
+  height: 100%;
   margin: 0;
   padding: 0;
   border-left: 1px solid var(--line);
@@ -3732,7 +3827,9 @@ a.vip-name.guest-link:hover,
 }
 
 .profile-scroll {
-  overflow: visible;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .profile-quadrant > .profile-person {
@@ -3823,9 +3920,36 @@ a.vip-name.guest-link:hover,
 }
 
 @media (max-width: 1100px) {
+  .main:has([data-testid="guest-profile"]) {
+    overflow: visible;
+    padding-bottom: 40px;
+  }
+
+  .guest-profile-page,
+  .guest-profile-page-body,
+  .guest-file,
+  .profile-board,
+  .profile-grid {
+    flex: none;
+    min-height: 0;
+    height: auto;
+  }
+
   .profile-grid {
     grid-template-columns: 1fr;
     grid-template-rows: none;
+  }
+
+  .profile-quadrant {
+    height: auto;
+    overflow: visible;
+  }
+
+  .profile-facts-list,
+  .profile-scroll,
+  .notes-body {
+    flex: none;
+    overflow: visible;
   }
 
   .profile-quadrant.is-demographics,
@@ -3954,6 +4078,10 @@ a.vip-name.guest-link:hover,
 
 .page-header + .table-card {
   margin-top: 22px;
+}
+
+[data-testid="guests-list"] .page-header + .table-card {
+  margin-top: 0;
 }
 
 .page-header .listing-date {
@@ -4151,7 +4279,7 @@ a.vip-name.guest-link:hover,
   .app.is-menu-open .top-nav-link.is-active,
   .app.is-menu-open .top-nav-link.is-active:hover {
     color: #fff;
-    background: var(--accent);
+    background: rgba(255, 255, 255, 0.14);
   }
 
   .app.is-menu-open .top-nav-label {
@@ -4456,7 +4584,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-tools .add-incident:hover {
-  background: #0f0f0f;
+  background: var(--hover-strong);
 }
 
 .listing-moment-tabs {
@@ -4465,7 +4593,7 @@ a.vip-name.guest-link:hover,
   justify-content: center;
   width: 100%;
   max-width: 100%;
-  margin: 22px 0 14px;
+  margin: 0 0 14px;
   gap: 4px;
   padding: 0;
   box-sizing: border-box;
@@ -4483,10 +4611,12 @@ a.vip-name.guest-link:hover,
   box-sizing: border-box;
   min-width: 0;
   height: 30px;
-  border: 1px solid rgba(21, 21, 21, 0.18);
+  border: 1px solid transparent;
   border-radius: 8px;
   padding: 0 18px;
-  background: #ffffff;
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(90deg, #e0e0e0 0%, #ffffff 50%, #e0e0e0 100%) border-box;
   box-shadow: none;
   color: rgba(21, 21, 21, 0.72);
   font: inherit;
@@ -4501,8 +4631,9 @@ a.vip-name.guest-link:hover,
 
 .listing-moment-tab:hover {
   color: var(--ink);
-  background: #f7f7f7;
-  border-color: rgba(21, 21, 21, 0.28);
+  background:
+    linear-gradient(var(--hover), var(--hover)) padding-box,
+    linear-gradient(90deg, #e0e0e0 0%, #ffffff 50%, #e0e0e0 100%) border-box;
   box-shadow: none;
 }
 
@@ -4514,7 +4645,8 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-moment-tab.is-active:hover {
-  background: var(--accent);
+  background: var(--hover-strong);
+  border-color: var(--hover-strong);
   box-shadow: none;
   color: #fff;
 }
@@ -4588,13 +4720,13 @@ a.vip-name.guest-link:hover,
     padding-top: 2px;
   }
 
-  .listing-table.is-guests tbody tr td:nth-child(1)::before { content: "Guest"; }
-  .listing-table.is-guests tbody tr td:nth-child(2)::before { content: "Stay"; }
-  .listing-table.is-guests tbody tr td:nth-child(3)::before { content: "Room"; }
-  .listing-table.is-guests tbody tr td:nth-child(4)::before { content: "People"; }
-  .listing-table.is-guests tbody tr td:nth-child(5)::before { content: "Origin"; }
-  .listing-table.is-guests tbody tr td:nth-child(6)::before { content: "Age"; }
-  .listing-table.is-guests tbody tr td:nth-child(7)::before { content: "VIP"; }
+  .listing-table.is-guests tbody tr td:nth-child(1)::before { content: "Name"; }
+  .listing-table.is-guests tbody tr td:nth-child(2)::before { content: "Room"; }
+  .listing-table.is-guests tbody tr td:nth-child(3)::before { content: "Country"; }
+  .listing-table.is-guests tbody tr td:nth-child(4)::before { content: "Age"; }
+  .listing-table.is-guests tbody tr td:nth-child(5)::before { content: "Profession"; }
+  .listing-table.is-guests tbody tr td:nth-child(6)::before { content: "Companions"; }
+  .listing-table.is-guests tbody tr td:nth-child(7)::before { content: "VIP and returning"; }
   .listing-table.is-guests tbody tr td:nth-child(8)::before { content: "Loyalty"; }
 
   .listing-table.is-opportunities tbody tr td:nth-child(1)::before { content: "Guest"; }
@@ -4622,6 +4754,7 @@ a.vip-name.guest-link:hover,
   .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(6)::before { content: "Status"; }
 
   .listing-table tbody tr td.cell-view,
+  .listing-table tbody tr td.cell-add,
   .listing-table tbody tr td.cell-mark,
   .listing-table.is-guests tbody tr td:nth-child(9),
   .listing-table.is-opportunities tbody tr td:nth-child(9),
@@ -4631,6 +4764,7 @@ a.vip-name.guest-link:hover,
   }
 
   .listing-table tbody tr td.cell-view::before,
+  .listing-table tbody tr td.cell-add::before,
   .listing-table tbody tr td.cell-mark::before,
   .listing-table.is-guests tbody tr td:nth-child(9)::before,
   .listing-table.is-opportunities tbody tr td:nth-child(9)::before,
@@ -4739,6 +4873,11 @@ a.vip-name.guest-link:hover,
   color: #fff;
 }
 
+.add-incident:hover {
+  background: var(--hover-strong);
+  color: #fff;
+}
+
 .add-incident::before {
   content: "";
   width: 12px;
@@ -4781,7 +4920,7 @@ a.vip-name.guest-link:hover,
 }
 
 .outcome-btn:hover {
-  background: #f7f7f7;
+  background: var(--hover);
   border-color: rgba(21, 21, 21, 0.28);
   box-shadow: none;
 }
@@ -4880,7 +5019,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-undo:hover {
-  background: rgba(21, 21, 21, 0.06);
+  background: var(--hover);
   color: var(--ink);
 }
 
@@ -5373,7 +5512,7 @@ a.vip-name.guest-link:hover,
 
 .action-combobox-list button:hover,
 .action-combobox-list li[aria-selected="true"] button {
-  background: #f5f5f5;
+  background: var(--hover);
 }
 
 .automation-builder .condition-controls {
@@ -5417,9 +5556,9 @@ a.vip-name.guest-link:hover,
 }
 
 .condition-remove:hover {
-  border-color: rgba(180, 35, 24, 0.35);
-  background: rgba(180, 35, 24, 0.06);
-  color: #b42318;
+  border-color: rgba(21, 21, 21, 0.22);
+  background: var(--hover);
+  color: var(--ink);
 }
 
 .automation-builder .then-grid {

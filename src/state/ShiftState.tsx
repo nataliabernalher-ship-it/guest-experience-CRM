@@ -6,6 +6,7 @@ import {
   listingForMoment,
   type ActionStatus,
   type Category,
+  type GuestCustomPreference,
   type GuestNote,
   type Severity,
   type ShiftAction,
@@ -26,18 +27,26 @@ interface NewOpportunity {
   description?: string;
 }
 
+interface NewPreference {
+  guestId: string;
+  type: string;
+  description: string;
+}
+
 interface ShiftStateValue {
   actions: ShiftAction[];
   setActionStatus: (id: string, status: ActionStatus) => void;
   addIncident: (incident: NewIncident) => void;
   addOpportunity: (opportunity: NewOpportunity) => void;
   addGuestNote: (guestId: string, text: string) => void;
+  addGuestPreference: (preference: NewPreference) => void;
   notesByGuest: Record<string, GuestNote[]>;
+  preferencesByGuest: Record<string, GuestCustomPreference[]>;
 }
 
 const ShiftContext = createContext<ShiftStateValue | null>(null);
 
-function createActionId(prefix: "incident" | "opportunity"): string {
+function createActionId(prefix: "incident" | "opportunity" | "preference"): string {
   const random =
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -48,10 +57,12 @@ function createActionId(prefix: "incident" | "opportunity"): string {
 export function ShiftProvider({ children }: { children: ReactNode }) {
   const [actions, setActions] = useState<ShiftAction[]>(seed);
   const [notesByGuest, setNotesByGuest] = useState<Record<string, GuestNote[]>>({});
+  const [preferencesByGuest, setPreferencesByGuest] = useState<Record<string, GuestCustomPreference[]>>({});
   const value = useMemo(
     () => ({
       actions,
       notesByGuest,
+      preferencesByGuest,
       setActionStatus: (id: string, status: ActionStatus) => {
         setActions((current) =>
           current.map((action) => {
@@ -147,8 +158,24 @@ export function ShiftProvider({ children }: { children: ReactNode }) {
           ],
         }));
       },
+      addGuestPreference: ({ guestId, type, description }: NewPreference) => {
+        const preferenceType = type.trim();
+        const preferenceDescription = description.trim();
+        if (!guestId || !preferenceType || !preferenceDescription) return;
+        setPreferencesByGuest((current) => ({
+          ...current,
+          [guestId]: [
+            ...(current[guestId] ?? []),
+            {
+              id: createActionId("preference"),
+              type: preferenceType,
+              description: preferenceDescription,
+            },
+          ],
+        }));
+      },
     }),
-    [actions, notesByGuest],
+    [actions, notesByGuest, preferencesByGuest],
   );
 
   return <ShiftContext.Provider value={value}>{children}</ShiftContext.Provider>;

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { GuestOpportunityDrawer } from "../components/GuestOpportunityDrawer";
+import { OpportunityDrawer } from "../components/OpportunityDrawer";
 import {
   SortableTh,
   compareByGuestOrRoom,
@@ -11,8 +13,8 @@ import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import {
   guestsForFilter,
   isLoyaltyMember,
-  peopleCount,
   shiftDay,
+  travelCompanionshipLabels,
   type Guest,
   type GuestStayFilter,
 } from "../data/shift";
@@ -22,8 +24,8 @@ import { useShift } from "../state/ShiftState";
 const filters: { id: GuestStayFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "arriving", label: "Arriving today" },
-  { id: "leaving", label: "Leaving today" },
   { id: "in-house", label: "In house" },
+  { id: "leaving", label: "Leaving today" },
 ];
 
 function selectedFilter(value: string | null): GuestStayFilter {
@@ -64,14 +66,6 @@ function age(birthDate: string): number {
   return years;
 }
 
-function shortStayDate(value: string): string {
-  return value.replace(/\b(\d{2})(\d{2})\b/, "$2");
-}
-
-function stayRange(arrival: string, departure: string): string {
-  return `${shortStayDate(arrival)} – ${shortStayDate(departure)}`;
-}
-
 function VipStar() {
   return (
     <svg className="guest-vip-star" width="18" height="18" viewBox="0 0 18 18" aria-label="VIP" role="img">
@@ -97,9 +91,23 @@ function LoyaltyMark() {
   );
 }
 
+function PlusIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M7 2.5v9M2.5 7h9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function GuestsPage() {
   const navigate = useNavigate();
-  const { actions } = useShift();
+  const { actions, addOpportunity } = useShift();
   const [params, setParams] = useSearchParams();
   const filter = selectedFilter(params.get("stay"));
   const query = params.get("q") ?? "";
@@ -107,10 +115,17 @@ export function GuestsPage() {
   const { status, retry } = useViewLoad(`guests-${filter}-${needle}`);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [opportunityGuest, setOpportunityGuest] = useState<Guest | null>(null);
+  const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);
   const rows = useMemo(() => {
     const filtered = guestsForFilter(filter).filter((guest) => {
       if (!needle) return true;
-      return guest.name.toLowerCase().includes(needle) || guest.room.includes(needle);
+      return (
+        guest.name.toLowerCase().includes(needle) ||
+        guest.room.includes(needle) ||
+        guest.country.toLowerCase().includes(needle) ||
+        guest.profession.toLowerCase().includes(needle)
+      );
     });
     if (!sortKey || sortKey === "category") return filtered;
     return [...filtered].sort((a, b) =>
@@ -139,10 +154,16 @@ export function GuestsPage() {
 
   return (
     <div className="page" data-testid="guests-list">
-      <header className="page-header">
+      <header className="page-header is-split">
         <div className="page-header-bar">
           <h1>Guest Profiles</h1>
-          <p className="people-total">{peopleCount()} guests</p>
+          <button
+            type="button"
+            className="add-incident page-header-action"
+            onClick={() => setOpportunityDrawerOpen(true)}
+          >
+            Open opportunities
+          </button>
         </div>
       </header>
       <section className="table-card">
@@ -224,84 +245,106 @@ export function GuestsPage() {
             }
           />
         ) : (
-        <table className="listing-table is-guests">
-          <colgroup>
-            <col className="col-guest" />
-            <col className="col-stay" />
-            <col className="col-room" />
-            <col className="col-people" />
-            <col className="col-origin" />
-            <col className="col-age" />
-            <col className="col-vip" />
-            <col className="col-loyalty" />
-            <col className="col-actions" />
-          </colgroup>
-          <thead>
-            <tr>
-              <SortableTh label="Guest" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
-              <th>Stay</th>
-              <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
-              <th>People</th>
-              <th>Origin</th>
-              <th>Age</th>
-              <th>VIP and returning</th>
-              <th>Loyalty</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((guest) => {
-              const href = `/guests/${guest.id}${profileSuffix}`;
-              const member = isLoyaltyMember(guest, actions);
-              return (
-                <tr
-                  key={guest.id}
-                  className="guest-row"
-                  tabIndex={0}
-                  aria-label={guest.name}
-                  onClick={() => navigate(href)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      navigate(href);
-                    }
-                  }}
-                >
-                  <td>
-                    <Link to={href} className="guest-cell guest-link" onClick={(event) => event.stopPropagation()}>
-                      <span className="avatar" aria-hidden="true">
-                        {initials(guest.name)}
-                      </span>
-                      <span className="cell-strong">{guest.name}</span>
-                    </Link>
-                  </td>
-                  <td className="guest-dates">{stayRange(guest.arrival, guest.departure)}</td>
-                  <td>{guest.room}</td>
-                  <td>{guest.partySize}</td>
-                  <td>{guest.origin}</td>
-                  <td>{age(guest.birthDate)}</td>
-                  <td>
-                    <GuestMarks guest={guest} />
-                  </td>
-                  <td className={member ? "loyalty-member" : "loyalty-out"}>
-                    {member ? <LoyaltyMark /> : null}
-                  </td>
-                  <td className="cell-view">
-                    <Link
-                      to={href}
-                      className="guest-view-link"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      Ver
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          <table className="listing-table is-guests">
+            <colgroup>
+              <col className="col-guest" />
+              <col className="col-room" />
+              <col className="col-country" />
+              <col className="col-age" />
+              <col className="col-profession" />
+              <col className="col-companions" />
+              <col className="col-vip" />
+              <col className="col-loyalty" />
+              <col className="col-actions" />
+            </colgroup>
+            <thead>
+              <tr>
+                <SortableTh label="Name" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+                <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+                <th>Country</th>
+                <th>Age</th>
+                <th>Profession</th>
+                <th>Companions</th>
+                <th>VIP and returning</th>
+                <th>Loyalty</th>
+                <th>
+                  <span className="visually-hidden">Add opportunity</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((guest) => {
+                const href = `/guests/${guest.id}${profileSuffix}`;
+                const member = isLoyaltyMember(guest, actions);
+                return (
+                  <tr
+                    key={guest.id}
+                    className="guest-row"
+                    tabIndex={0}
+                    aria-label={guest.name}
+                    onClick={() => navigate(href)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(href);
+                      }
+                    }}
+                  >
+                    <td>
+                      <Link to={href} className="guest-cell guest-link" onClick={(event) => event.stopPropagation()}>
+                        <span className="avatar" aria-hidden="true">
+                          {initials(guest.name)}
+                        </span>
+                        <span className="cell-strong">{guest.name}</span>
+                      </Link>
+                    </td>
+                    <td>{guest.room}</td>
+                    <td>{guest.country}</td>
+                    <td>{age(guest.birthDate)}</td>
+                    <td>{guest.profession}</td>
+                    <td className="guest-companions">{travelCompanionshipLabels[guest.companionship]}</td>
+                    <td>
+                      <GuestMarks guest={guest} />
+                    </td>
+                    <td className={member ? "loyalty-member" : "loyalty-out"}>
+                      {member ? <LoyaltyMark /> : null}
+                    </td>
+                    <td className="cell-add">
+                      <button
+                        type="button"
+                        className="guest-add-opportunity"
+                        aria-label={`Add opportunity for ${guest.name}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpportunityGuest(guest);
+                        }}
+                      >
+                        <PlusIcon />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </section>
+      {opportunityGuest ? (
+        <GuestOpportunityDrawer
+          guest={opportunityGuest}
+          onClose={() => setOpportunityGuest(null)}
+          onAdd={addOpportunity}
+        />
+      ) : null}
+      {opportunityDrawerOpen ? (
+        <OpportunityDrawer
+          onClose={() => setOpportunityDrawerOpen(false)}
+          onAdd={(opportunity) => {
+            addOpportunity(opportunity);
+            setOpportunityDrawerOpen(false);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

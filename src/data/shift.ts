@@ -16,13 +16,12 @@ export interface Companion {
   guestId?: string;
 }
 
-export type TravelCompanionship = "couple" | "friends" | "family" | "alone";
+export type TravelCompanionship = "solo" | "friends" | "family";
 
 export const travelCompanionshipLabels: Record<TravelCompanionship, string> = {
-  couple: "Travels as a couple",
-  friends: "Travels with friends",
-  family: "Travels with family",
-  alone: "Travels alone",
+  solo: "Solo traveler",
+  friends: "Friends",
+  family: "Family",
 };
 
 export type BookingSource = "direct" | "ota";
@@ -161,6 +160,13 @@ export interface GuestPreferences {
   bedType: string;
   pillowType: string;
   dining: string;
+}
+
+/** Extra preference added from the guest profile drawer. */
+export interface GuestCustomPreference {
+  id: string;
+  type: string;
+  description: string;
 }
 
 const bedTypeCycle = ["King", "Twin", "Queen"] as const;
@@ -556,7 +562,7 @@ export const guests: Guest[] = (
     birthDate: "22 January 1988",
     profession: "Journalist",
     hobbies: "Jazz, long walks",
-    companions: [{ name: "David Adeyemi" }],
+    companions: [{ name: "David Adeyemi", guestId: "david" }],
     stays: [{ roomType: "Superior twin", from: "30 Sep 2026", to: "5 Oct 2026", bookingSource: "direct", boardType: "half-board" }],
     notes: [
       {
@@ -565,6 +571,26 @@ export const guests: Guest[] = (
         date: "30 Sep 2026",
       },
     ],
+    past: [],
+  },
+  {
+    id: "david",
+    name: "David Adeyemi",
+    room: "108",
+    moment: "check-in",
+    previousStays: 0,
+    vip: false,
+    loyaltyMember: false,
+    arrival: "30 Sep 2026",
+    departure: "5 Oct 2026",
+    partySize: 2,
+    origin: "London",
+    birthDate: "4 April 1990",
+    profession: "Sound engineer",
+    hobbies: "Vinyl collecting",
+    companions: [{ name: "Paul Adeyemi", guestId: "paul" }],
+    stays: [{ roomType: "Superior twin", from: "30 Sep 2026", to: "5 Oct 2026", bookingSource: "direct", boardType: "half-board" }],
+    notes: [{ text: "Sharing with Paul Adeyemi; twin beds confirmed.", author: "Reception", date: "30 Sep 2026" }],
     past: [],
   },
   {
@@ -786,6 +812,15 @@ export const guests: Guest[] = (
       { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025", bookingSource: "ota", boardType: "half-board" },
     ],
     notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
+    profession: "Landscape architect",
+    hobbies: "Ceramics, sailing",
+    companionship: "friends",
+    companions: [{ name: "Laura Martín", guestId: "laura" }],
+    stays: [
+      { roomType: "Deluxe king", from: "29 Sep 2026", to: "4 Oct 2026", bookingSource: "direct", boardType: "all-inclusive" },
+      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025", bookingSource: "ota", boardType: "half-board" },
+    ],
+    notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
     past: [
       {
         id: "marta-past-room",
@@ -842,15 +877,7 @@ function seedGuest(
     loyaltyMember: false,
     partySize: 1,
     birthDate: "1 January 1990",
-    profession: "Guest",
-    hobbies: "Travel",
-    companions: [],
-    notes: [],
-    past: [],
-    stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }] as StaySeed[],
-    ...guest,
-  };
-  const stays = merged.stays.map((stay, index) =>
+    profession: "Consultant",
     withStayDefaults(
       {
         ...stay,
@@ -895,8 +922,19 @@ guests.push(
     moment: "check-in",
     arrival: "30 Sep 2026",
     departure: "2 Oct 2026",
+    profession: "Pastry chef",
+    companionship: "solo",
+  }),
+  seedGuest({
+    id: "hugo",
+    name: "Hugo Berg",
+    room: "402",
+    moment: "check-in",
+    arrival: "30 Sep 2026",
+    departure: "2 Oct 2026",
     origin: "Oslo",
     partySize: 3,
+    profession: "Ski instructor",
     companionship: "friends",
     companions: [{ name: "Lars Berg" }, { name: "Nora Vik" }],
   }),
@@ -909,6 +947,8 @@ guests.push(
     departure: "4 Oct 2026",
     origin: "Valencia",
     partySize: 2,
+    profession: "Ceramicist",
+    companionship: "family",
     companions: [{ name: "Marco Navarro" }],
   }),
   seedGuest({
@@ -919,6 +959,8 @@ guests.push(
     arrival: "30 Sep 2026",
     departure: "1 Oct 2026",
     origin: "Dubai",
+    profession: "Airline pilot",
+    companionship: "solo",
   }),
   seedGuest({
     id: "priya",
@@ -930,6 +972,8 @@ guests.push(
     origin: "Mumbai",
     previousStays: 2,
     loyaltyMember: true,
+    profession: "Data scientist",
+    companionship: "solo",
   }),
   seedGuest({
     id: "lucas",
@@ -939,6 +983,8 @@ guests.push(
     arrival: "30 Sep 2026",
     departure: "3 Oct 2026",
     origin: "Zurich",
+    profession: "Watchmaker",
+    companionship: "solo",
   }),
   seedGuest({
     id: "aisha",
@@ -948,6 +994,8 @@ guests.push(
     arrival: "30 Sep 2026",
     departure: "2 Oct 2026",
     origin: "Casablanca",
+    profession: "Documentary filmmaker",
+    companionship: "solo",
   }),
   seedGuest({
     id: "erik",
@@ -958,6 +1006,8 @@ guests.push(
     departure: "4 Oct 2026",
     origin: "Gothenburg",
     partySize: 2,
+    profession: "Naval architect",
+    companionship: "family",
     companions: [{ name: "Eva Johansson" }],
   }),
   seedGuest({
@@ -971,6 +1021,8 @@ guests.push(
     vip: true,
     previousStays: 3,
     loyaltyMember: true,
+    profession: "Venture partner",
+    companionship: "solo",
   }),
   seedGuest({
     id: "jonas",
@@ -980,6 +1032,8 @@ guests.push(
     arrival: "28 Sep 2026",
     departure: "2 Oct 2026",
     origin: "Vienna",
+    profession: "Orchestra conductor",
+    companionship: "solo",
   }),
   seedGuest({
     id: "rosa",
@@ -990,6 +1044,8 @@ guests.push(
     departure: "1 Oct 2026",
     origin: "Lisbon",
     previousStays: 1,
+    profession: "Sommelier",
+    companionship: "solo",
   }),
   seedGuest({
     id: "felix",
@@ -999,6 +1055,8 @@ guests.push(
     arrival: "29 Sep 2026",
     departure: "3 Oct 2026",
     origin: "Munich",
+    profession: "Industrial designer",
+    companionship: "solo",
   }),
   seedGuest({
     id: "yara",
@@ -1009,6 +1067,8 @@ guests.push(
     departure: "4 Oct 2026",
     origin: "Beirut",
     partySize: 2,
+    profession: "Jewellery designer",
+    companionship: "family",
     companions: [{ name: "Samir Haddad" }],
   }),
   seedGuest({
@@ -1019,6 +1079,8 @@ guests.push(
     arrival: "29 Sep 2026",
     departure: "2 Oct 2026",
     origin: "Toronto",
+    profession: "Climate analyst",
+    companionship: "solo",
   }),
   seedGuest({
     id: "giulia",
@@ -1030,6 +1092,8 @@ guests.push(
     origin: "Rome",
     previousStays: 2,
     loyaltyMember: true,
+    profession: "Set designer",
+    companionship: "solo",
   }),
   seedGuest({
     id: "samuel",
@@ -1039,6 +1103,8 @@ guests.push(
     arrival: "28 Sep 2026",
     departure: "1 Oct 2026",
     origin: "Accra",
+    profession: "Football coach",
+    companionship: "solo",
   }),
   seedGuest({
     id: "helena",
@@ -1048,6 +1114,8 @@ guests.push(
     arrival: "29 Sep 2026",
     departure: "4 Oct 2026",
     origin: "Prague",
+    profession: "Bookstore owner",
+    companionship: "solo",
   }),
   seedGuest({
     id: "diego",
@@ -1058,6 +1126,8 @@ guests.push(
     departure: "2 Oct 2026",
     origin: "Santiago",
     previousStays: 1,
+    profession: "Winemaker",
+    companionship: "solo",
   }),
   seedGuest({
     id: "freya",
@@ -1067,6 +1137,8 @@ guests.push(
     arrival: "28 Sep 2026",
     departure: "3 Oct 2026",
     origin: "Copenhagen",
+    profession: "Furniture maker",
+    companionship: "solo",
   }),
   seedGuest({
     id: "arthur",
@@ -1076,6 +1148,8 @@ guests.push(
     arrival: "29 Sep 2026",
     departure: "1 Oct 2026",
     origin: "Dublin",
+    profession: "Playwright",
+    companionship: "solo",
   }),
   seedGuest({
     id: "camille",
@@ -1086,6 +1160,8 @@ guests.push(
     departure: "30 Sep 2026",
     origin: "Paris",
     previousStays: 1,
+    profession: "Perfume creator",
+    companionship: "solo",
   }),
   seedGuest({
     id: "ivan",
@@ -1095,6 +1171,8 @@ guests.push(
     arrival: "26 Sep 2026",
     departure: "30 Sep 2026",
     origin: "Sofia",
+    profession: "Chess coach",
+    companionship: "solo",
   }),
   seedGuest({
     id: "leila",
@@ -1105,6 +1183,8 @@ guests.push(
     departure: "30 Sep 2026",
     origin: "Tunis",
     partySize: 2,
+    profession: "Textile designer",
+    companionship: "family",
     companions: [{ name: "Karim Mansour" }],
   }),
   seedGuest({
@@ -1117,15 +1197,130 @@ guests.push(
     origin: "Manchester",
     previousStays: 2,
     loyaltyMember: true,
+    profession: "Sports physiotherapist",
+    companionship: "solo",
+
+  seedGuest({
+    id: "sofia-costa",
+    name: "Sofía Costa",
+    room: "350",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "5 Oct 2026",
+    origin: "Barcelona",
+    previousStays: 1,
+    partySize: 4,
+    birthDate: "8 April 1985",
+    profession: "Paediatric nurse",
+    hobbies: "Beach walks, cooking",
+    companionship: "family",
+    companions: [
+      { name: "Miguel Costa", guestId: "miguel-costa" },
+      { name: "Lucía Costa", guestId: "lucia-costa" },
+      { name: "Leo Costa", guestId: "leo-costa" },
+    ],
+    stays: [
+      {
+        roomType: "Family suite",
+        from: "29 Sep 2026",
+        to: "5 Oct 2026",
+        bookingSource: "direct",
+        boardType: "half-board",
+      },
+    ],
+    notes: [
+      {
+        text: "Family of four in room 350. Two children (8 and 5); cot already in room for Leo.",
+        author: "Reception",
+        date: "29 Sep 2026",
+      },
+    ],
   }),
-);
-
-export function stayMomentLabel(moment: StayMoment): string {
-  if (moment === "check-in") return "Check-in";
-  if (moment === "check-out") return "Check-out";
-  return "In-house";
-}
-
+  seedGuest({
+    id: "miguel-costa",
+    name: "Miguel Costa",
+    room: "350",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "5 Oct 2026",
+    origin: "Barcelona",
+    previousStays: 1,
+    partySize: 4,
+    birthDate: "21 November 1983",
+    profession: "Secondary school teacher",
+    hobbies: "Football, hiking",
+    companionship: "family",
+    companions: [
+      { name: "Sofía Costa", guestId: "sofia-costa" },
+      { name: "Lucía Costa", guestId: "lucia-costa" },
+      { name: "Leo Costa", guestId: "leo-costa" },
+    ],
+    stays: [
+      {
+        roomType: "Family suite",
+        from: "29 Sep 2026",
+        to: "5 Oct 2026",
+        bookingSource: "direct",
+        boardType: "half-board",
+      },
+    ],
+  }),
+  seedGuest({
+    id: "lucia-costa",
+    name: "Lucía Costa",
+    room: "350",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "5 Oct 2026",
+    origin: "Barcelona",
+    partySize: 4,
+    birthDate: "12 May 2018",
+    profession: "Student",
+    hobbies: "Drawing, swimming",
+    companionship: "family",
+    companions: [
+      { name: "Sofía Costa", guestId: "sofia-costa" },
+      { name: "Miguel Costa", guestId: "miguel-costa" },
+      { name: "Leo Costa", guestId: "leo-costa" },
+    ],
+    stays: [
+      {
+        roomType: "Family suite",
+        from: "29 Sep 2026",
+        to: "5 Oct 2026",
+        bookingSource: "direct",
+        boardType: "half-board",
+      },
+    ],
+  }),
+  seedGuest({
+    id: "leo-costa",
+    name: "Leo Costa",
+    room: "350",
+    moment: "in-house",
+    arrival: "29 Sep 2026",
+    departure: "5 Oct 2026",
+    origin: "Barcelona",
+    partySize: 4,
+    birthDate: "3 August 2021",
+    profession: "Student",
+    hobbies: "Dinosaurs, playgrounds",
+    companionship: "family",
+    companions: [
+      { name: "Sofía Costa", guestId: "sofia-costa" },
+      { name: "Miguel Costa", guestId: "miguel-costa" },
+      { name: "Lucía Costa", guestId: "lucia-costa" },
+    ],
+    stays: [
+      {
+        roomType: "Family suite",
+        from: "29 Sep 2026",
+        to: "5 Oct 2026",
+        bookingSource: "direct",
+        boardType: "half-board",
+      },
+    ],
+  }),
 export function listingForMoment(moment: StayMoment): ListingId {
   if (moment === "check-in") return "check-ins";
   if (moment === "check-out") return "check-outs";
