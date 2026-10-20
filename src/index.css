@@ -3460,10 +3460,19 @@ a.vip-name.guest-link:hover,
 .listing-table:not(.is-guests) .cell-value,
 .listing-table:not(.is-guests) .cell-created,
 .listing-table:not(.is-guests) .status-select,
-.listing-table:not(.is-guests) .outcome-btn,
 .listing-table:not(.is-guests) .incident-status-when {
   color: var(--text);
   font-size: 14px;
+}
+
+.listing-table:not(.is-guests) .outcome-btn {
+  font-size: 14px;
+}
+
+.listing-table:not(.is-guests) .outcome-btn.is-positive,
+.listing-table:not(.is-guests) .outcome-btn.is-positive:hover,
+.listing-table:not(.is-guests) .outcome-btn.is-positive.is-selected {
+  color: #fff;
 }
 
 .listing-table:not(.is-guests) .category-pill {
@@ -3487,9 +3496,12 @@ a.vip-name.guest-link:hover,
   color: #8a3d3d;
 }
 
-.listing-table:not(.is-guests) .status-select,
-.listing-table:not(.is-guests) .outcome-btn {
+.listing-table:not(.is-guests) .status-select {
   color: var(--text);
+}
+
+.listing-table:not(.is-guests) .outcome-btn.is-positive {
+  color: #fff;
 }
 
 .cell-created {
@@ -5121,11 +5133,25 @@ a.vip-name.guest-link:hover,
   box-shadow: none;
 }
 
-.outcome-btn.is-positive.is-selected {
-  background: rgba(31, 138, 76, 0.12);
-  border-color: #1f8a4c;
+.outcome-btn.is-positive {
+  border: 0;
+  background: var(--accent);
   box-shadow: none;
-  color: #1f8a4c;
+  color: #fff;
+}
+
+.outcome-btn.is-positive:hover {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  filter: brightness(0.96);
+}
+
+.outcome-btn.is-positive.is-selected {
+  border: 0;
+  background: var(--accent);
+  box-shadow: none;
+  color: #fff;
 }
 
 .outcome-btn.is-negative.is-selected {
