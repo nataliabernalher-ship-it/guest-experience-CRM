@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   guestById,
@@ -137,17 +137,39 @@ function seriesPath(
   return { line, dots };
 }
 
+const UPSELL_BARS_ANIMATED_KEY = "dashboard-upsell-bars-animated";
+
 function UpsellingPotentialChart({ rows }: { rows: UpsellPotentialRow[] }) {
   const max = Math.max(...rows.map((row) => row.amount), 1);
+  const shouldAnimate = useRef(
+    typeof sessionStorage === "undefined" || sessionStorage.getItem(UPSELL_BARS_ANIMATED_KEY) !== "1",
+  ).current;
+  const [play, setPlay] = useState(!shouldAnimate);
+
+  useEffect(() => {
+    if (!shouldAnimate) return;
+    const frame = requestAnimationFrame(() => {
+      setPlay(true);
+      try {
+        sessionStorage.setItem(UPSELL_BARS_ANIMATED_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [shouldAnimate]);
 
   if (rows.length === 0) {
     return <p className="upsell-potential-empty">No pending upselling potential right now.</p>;
   }
 
   return (
-    <div className="upsell-potential" data-testid="upselling-potential-chart">
+    <div
+      className={play ? "upsell-potential is-animated" : "upsell-potential"}
+      data-testid="upselling-potential-chart"
+    >
       <ul className="upsell-potential-bars" aria-label="Upselling potential for today">
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <li key={row.offer} className="upsell-potential-row">
             <div className="upsell-potential-meta">
               <span className="upsell-potential-offer">{row.offer}</span>
@@ -155,8 +177,11 @@ function UpsellingPotentialChart({ rows }: { rows: UpsellPotentialRow[] }) {
             </div>
             <div className="upsell-potential-track" aria-hidden="true">
               <span
-                className="upsell-potential-fill"
-                style={{ width: `${Math.max((row.amount / max) * 100, 4)}%` }}
+                className={shouldAnimate ? "upsell-potential-fill is-entrance" : "upsell-potential-fill"}
+                style={{
+                  width: `${Math.max((row.amount / max) * 100, 4)}%`,
+                  transitionDelay: shouldAnimate ? `${index * 90}ms` : undefined,
+                }}
               />
             </div>
           </li>
