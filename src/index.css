@@ -3397,9 +3397,9 @@ a.vip-name.guest-link:hover,
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  border-radius: 4px;
+  border-radius: 999px;
   padding: 7px 12px 7px 10px;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 400;
   line-height: 1.2;
   white-space: nowrap;
@@ -3467,7 +3467,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .category-pill {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
 }
 
