@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { BestPerformanceCard } from "../components/insights/BestPerformanceCard";
 import { GuestInsightsPanel } from "../components/insights/GuestInsightsPanel";
 import { InsightsKpiCards } from "../components/insights/InsightsKpiCards";
 import { InsightsPeriodFilter } from "../components/insights/InsightsPeriodFilter";
@@ -6,6 +7,7 @@ import { RevenueByCategoryChart } from "../components/insights/RevenueByCategory
 import { TeamPerformanceTable } from "../components/insights/TeamPerformanceTable";
 import { TopAutomationsTable } from "../components/insights/TopAutomationsTable";
 import { UpsellingRevenueChart } from "../components/insights/UpsellingRevenueChart";
+import { WhoConvertsCard } from "../components/insights/WhoConvertsCard";
 import {
   getInsightsData,
   type GuestInsightTab,
@@ -34,6 +36,17 @@ export function InsightPage() {
     () => getInsightsData(period, period === "custom" ? customRange : null),
     [period, customRange],
   );
+
+  const topConverter = useMemo(() => {
+    const rows = data.guestTabs[guestTab];
+    if (rows.length === 0) return null;
+    return rows.reduce((best, row) => (row.conversion > best.conversion ? row : best));
+  }, [data.guestTabs, guestTab]);
+
+  const bestPerformer = useMemo(() => {
+    if (data.team.length === 0) return null;
+    return data.team.reduce((best, row) => (row.revenue > best.revenue ? row : best));
+  }, [data.team]);
 
   return (
     <div className="page insights-page" data-testid="insight">
@@ -92,23 +105,29 @@ export function InsightPage() {
           <h2 id="guest-insights-heading" className="insights-section-title">
             Guest insights
           </h2>
-          <section className="table-card insights-panel-card">
-            <GuestInsightsPanel
-              activeTab={guestTab}
-              onTabChange={setGuestTab}
-              rows={data.guestTabs[guestTab]}
-              note={data.guestNotes[guestTab]}
-            />
-          </section>
+          <div className="insights-guest-layout">
+            <section className="table-card insights-panel-card">
+              <GuestInsightsPanel
+                activeTab={guestTab}
+                onTabChange={setGuestTab}
+                rows={data.guestTabs[guestTab]}
+                note={data.guestNotes[guestTab]}
+              />
+            </section>
+            {topConverter ? <WhoConvertsCard row={topConverter} /> : null}
+          </div>
         </section>
 
         <section className="insights-section" aria-labelledby="team-performance-heading">
           <h2 id="team-performance-heading" className="insights-section-title">
             Team performance
           </h2>
-          <section className="table-card insights-panel-card">
-            <TeamPerformanceTable rows={data.team} />
-          </section>
+          <div className="insights-guest-layout">
+            <section className="table-card insights-panel-card">
+              <TeamPerformanceTable rows={data.team} />
+            </section>
+            {bestPerformer ? <BestPerformanceCard row={bestPerformer} /> : null}
+          </div>
         </section>
       </div>
     </div>

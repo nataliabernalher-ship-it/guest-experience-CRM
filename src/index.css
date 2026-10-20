@@ -1260,54 +1260,65 @@ h2 {
   align-items: stretch;
 }
 
-.insights-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  align-content: stretch;
-  min-width: 0;
+.insights-kpi-panel {
+  align-items: stretch;
+  justify-content: flex-start;
   height: 100%;
+  gap: 16px;
+  padding: 12px 14px;
+  text-align: left;
 }
 
-.insights-kpi-card {
+.insights-kpi-panel .who-converts-title {
+  font-size: 16px;
+}
+
+.insights-kpi-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.insights-kpi-metric {
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 0;
-  padding: 26px 18px;
+  gap: 6px;
   min-width: 0;
-  min-height: 120px;
+  padding: 18px 12px;
+  border-radius: 14px;
+  background: rgba(255, 101, 68, 0.1);
+  text-align: center;
 }
 
-.insights-kpi-label {
-  margin: 0;
-  color: var(--muted);
+.insights-kpi-metric-label {
+  color: var(--text);
   font-size: 12px;
   font-weight: 400;
   line-height: 1.2;
 }
 
-.insights-kpi-value {
-  margin: 0;
+.insights-kpi-metric-value {
   color: var(--ink);
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.1;
 }
 
-.insights-kpi-delta {
-  margin: 0;
-  font-size: 12px;
+.insights-kpi-metric-delta {
+  font-size: 11px;
   line-height: 1.2;
 }
 
-.insights-kpi-delta.is-up {
+.insights-kpi-metric-delta.is-up {
   color: #2f6b4f;
 }
 
-.insights-kpi-delta.is-down {
+.insights-kpi-metric-delta.is-down {
   color: #8a3d3d;
 }
 
@@ -1492,7 +1503,7 @@ h2 {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #3a3a3a;
+  background: var(--accent-gradient);
 }
 
 .insights-table-wrap {
@@ -1513,6 +1524,17 @@ h2 {
   font-weight: 500;
 }
 
+.insights-guest-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.7fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.insights-guest-layout > .table-card {
+  min-width: 0;
+}
+
 .insights-guest-panel {
   display: flex;
   flex-direction: column;
@@ -1524,6 +1546,111 @@ h2 {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.who-converts-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-width: 0;
+  padding: 28px 24px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--box-surface);
+  box-shadow: none;
+  text-align: center;
+}
+
+.who-converts-eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.who-converts-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.who-converts-highlight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 220px;
+  padding: 22px 18px;
+  border-radius: 14px;
+  background: rgba(255, 101, 68, 0.1);
+}
+
+.who-converts-segment {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.who-converts-rate {
+  color: var(--ink);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.who-converts-rate-label {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.who-converts-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  width: 100%;
+  max-width: 260px;
+}
+
+.who-converts-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 16px;
+}
+
+.who-converts-stat + .who-converts-stat {
+  border-left: 1px solid var(--line);
+}
+
+.who-converts-stat-label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.who-converts-stat-value {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
 }
 
 .insights-sort-btn {
@@ -1551,7 +1678,8 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .insights-split {
+  .insights-split,
+  .insights-guest-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1575,11 +1703,11 @@ h2 {
 }
 
 @media (max-width: 720px) {
-  .insights-kpi-grid {
+  .insights-kpi-metrics {
     grid-template-columns: 1fr;
   }
 
-  .insights-kpi-value {
+  .insights-kpi-metric-value {
     font-size: 22px;
   }
 
