@@ -8,11 +8,8 @@ import {
   emptyAutomationDraft,
   emptyCondition,
   fieldNeedsValue,
-  formatThenSummary,
   formatTimingCell,
-  formatTimingSummary,
   formatTriggerCell,
-  formatWhenSummary,
   loyaltyStatusValues,
   operatorsForField,
   roomCategoryValues,
@@ -313,13 +310,6 @@ export function AutomationBuilderPage() {
       : "Automation · Guest Experience";
   }, [editing, hydratedId, isCreate]);
 
-  const whenLines = formatWhenSummary(draft.conditions);
-  const parsedDraftValue = Number(draft.valuePerPerson);
-  const thenLine = formatThenSummary(
-    draft.actionLabel || "an opportunity",
-    draft.category === "upselling" && Number.isFinite(parsedDraftValue) ? parsedDraftValue : undefined,
-  );
-  const atLine = formatTimingSummary(draft.timing);
   const actions = actionsByCategory[draft.category];
   const upsellValueOk =
     draft.category !== "upselling" ||
@@ -658,37 +648,6 @@ export function AutomationBuilderPage() {
             <p className="rule-note">
               This creates an opportunity for reception to act on — it does not contact the guest.
             </p>
-          </section>
-
-          <section className="rule-summary automation-builder-summary" aria-label="Rule summary">
-            <h3>5. RULE SUMMARY</h3>
-            <div className="rule-summary-body is-horizontal">
-              <div className="rule-summary-block">
-                <span className="rule-summary-label">WHEN</span>
-                <p className="rule-summary-line">
-                  {whenLines.map((line, index) => (
-                    <span key={`${line}-${index}`}>
-                      {index > 0 ? <span className="condition-and"> AND </span> : null}
-                      {line}
-                    </span>
-                  ))}
-                </p>
-              </div>
-              <div className="rule-summary-block">
-                <span className="rule-summary-label">THEN</span>
-                <p className="rule-summary-line">{thenLine}</p>
-              </div>
-              <div className="rule-summary-block">
-                <span className="rule-summary-label">AT</span>
-                <p className="rule-summary-line">{atLine}</p>
-              </div>
-              {draft.description.trim() ? (
-                <div className="rule-summary-block">
-                  <span className="rule-summary-label">DETAILS</span>
-                  <p className="rule-summary-line is-soft">{draft.description.trim()}</p>
-                </div>
-              ) : null}
-            </div>
           </section>
         </div>
 
