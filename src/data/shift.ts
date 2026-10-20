@@ -253,9 +253,8 @@ export interface Guest {
 }
 
 export function companionshipFromParty(partySize: number, companions: Companion[]): TravelCompanionship {
-  if (partySize <= 1 && companions.length === 0) return "alone";
-  if (partySize === 2 || companions.length === 1) return "couple";
-  if (partySize >= 4 || companions.length >= 3) return "family";
+  if (partySize <= 1 && companions.length === 0) return "solo";
+  if (partySize >= 3 || companions.length >= 2) return "family";
   return "friends";
 }
 
@@ -804,14 +803,6 @@ export const guests: Guest[] = (
     partySize: 1,
     origin: "Stockholm",
     birthDate: "11 August 1987",
-    profession: "Interior designer",
-    hobbies: "Ceramics, sailing",
-    companions: [{ name: "Laura Martín", guestId: "laura" }],
-    stays: [
-      { roomType: "Deluxe king", from: "29 Sep 2026", to: "4 Oct 2026", bookingSource: "direct", boardType: "all-inclusive" },
-      { roomType: "Garden room", from: "9 Aug 2025", to: "14 Aug 2025", bookingSource: "ota", boardType: "half-board" },
-    ],
-    notes: [{ text: "Travelling with Laura Martín. Separate room.", author: "Reception", date: "29 Sep 2026" }],
     profession: "Landscape architect",
     hobbies: "Ceramics, sailing",
     companionship: "friends",
@@ -878,6 +869,14 @@ function seedGuest(
     partySize: 1,
     birthDate: "1 January 1990",
     profession: "Consultant",
+    hobbies: "Travel",
+    companions: [],
+    notes: [],
+    past: [],
+    stays: [{ roomType: "Superior double", from: guest.arrival, to: guest.departure }] as StaySeed[],
+    ...guest,
+  };
+  const stays = merged.stays.map((stay, index) =>
     withStayDefaults(
       {
         ...stay,
@@ -914,14 +913,6 @@ guests.push(
     departure: "3 Oct 2026",
     origin: "Lyon",
     previousStays: 1,
-  }),
-  seedGuest({
-    id: "hugo",
-    name: "Hugo Berg",
-    room: "402",
-    moment: "check-in",
-    arrival: "30 Sep 2026",
-    departure: "2 Oct 2026",
     profession: "Pastry chef",
     companionship: "solo",
   }),
@@ -1199,7 +1190,7 @@ guests.push(
     loyaltyMember: true,
     profession: "Sports physiotherapist",
     companionship: "solo",
-
+  }),
   seedGuest({
     id: "sofia-costa",
     name: "Sofía Costa",
@@ -1321,6 +1312,14 @@ guests.push(
       },
     ],
   }),
+);
+
+export function stayMomentLabel(moment: StayMoment): string {
+  if (moment === "check-in") return "Check-in";
+  if (moment === "check-out") return "Check-out";
+  return "In-house";
+}
+
 export function listingForMoment(moment: StayMoment): ListingId {
   if (moment === "check-in") return "check-ins";
   if (moment === "check-out") return "check-outs";
