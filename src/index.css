@@ -1,5 +1,5 @@
 :root {
-  color: #151515;
+  color: #6F6F6F;
   background: #EBEBEB;
   font-family: Manrope, "Avenir Next", "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -9,8 +9,9 @@
   --surface-raised: #f7f7f7;
   --hover: #f7f7f7;
   --hover-strong: #3a3a3a;
-  --ink: #151515;
-  --muted: #8a8a8a;
+  --ink: #101010;
+  --text: #6F6F6F;
+  --muted: #B4B8BB;
   --line: #E0E0E0;
   --gray: #EBEBEB;
   --accent: #FF6544;
@@ -66,7 +67,7 @@ body {
     radial-gradient(ellipse 45% 40% at 48% 42%, rgba(235, 235, 235, 0.85), transparent 68%),
     linear-gradient(165deg, #EBEBEB 0%, #e4e4e4 48%, #EBEBEB 100%);
   background-attachment: fixed;
-  color: var(--ink);
+  color: var(--text);
   font-size: 15px;
   font-weight: 400;
 }
@@ -78,6 +79,7 @@ a {
 
 h1,
 h2 {
+  color: var(--ink);
   font-weight: 600;
 }
 
@@ -200,7 +202,6 @@ h2 {
 
 .brand-note,
 .eyebrow,
-.lede,
 .category-label,
 .priority-meta,
 .result-label,
@@ -208,6 +209,12 @@ h2 {
 .guest-quiet,
 .action-tags {
   color: var(--muted);
+}
+
+.lede,
+.panel-head p,
+.table-card-head p {
+  color: var(--text);
 }
 
 .brand-note {
@@ -578,7 +585,7 @@ h2 {
   border-radius: 12px;
   background: #ffffff;
   box-shadow: none;
-  color: var(--ink);
+  color: var(--text);
   text-align: center;
   text-decoration: none;
   cursor: pointer;
@@ -602,7 +609,7 @@ h2 {
 .insight-metric[data-category="loyalty"]:hover,
 .insight-metric[data-category="guest-experience"]:hover {
   background: var(--hover);
-  color: var(--ink);
+  color: var(--text);
 }
 
 .insight-metric-icon {
@@ -649,7 +656,7 @@ h2 {
   gap: 4px;
   min-width: 0;
   width: 100%;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .insight-metric-value {
@@ -661,12 +668,11 @@ h2 {
 }
 
 .insight-metric-label {
-  color: var(--ink);
+  color: var(--text);
   font-size: clamp(11px, 1.5vw, 13px);
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
-  opacity: 0.85;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
@@ -927,9 +933,13 @@ h2 {
 }
 
 .dashboard-left .results.is-aside .result-label {
-  color: inherit;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.2;
+}
+
+.dashboard-left .results.is-aside .result.is-selected .result-label {
+  color: inherit;
   opacity: 0.85;
 }
 
@@ -2370,6 +2380,7 @@ a.context-metric.is-recovery:hover {
 
 .priority-label,
 .guest-name {
+  color: var(--ink);
   font-weight: 400;
 }
 
@@ -2397,6 +2408,7 @@ a.context-metric.is-recovery:hover {
 .panel-head h2,
 .results h2 {
   margin: 0;
+  color: var(--ink);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -2404,7 +2416,7 @@ a.context-metric.is-recovery:hover {
 
 .panel-head p {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -2865,6 +2877,7 @@ a.context-metric.is-recovery:hover {
 .table-card-head h1,
 .table-card-head h2 {
   margin: 0;
+  color: var(--ink);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.03em;
@@ -2879,7 +2892,7 @@ a.context-metric.is-recovery:hover {
 
 .table-card-head p {
   margin: 4px 0 0;
-  color: var(--muted);
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -3093,7 +3106,7 @@ a.context-metric.is-recovery:hover {
 
 .listing-table th {
   padding: 12px 4px 10px;
-  color: #9a9a9a;
+  color: var(--muted);
   font-size: 14px;
   font-weight: 400;
   text-align: left;
@@ -3135,6 +3148,7 @@ a.context-metric.is-recovery:hover {
   border: 0;
   border-bottom: 1px solid var(--box-border);
   background: transparent;
+  color: var(--text);
   font-size: 14px;
   vertical-align: middle;
   box-shadow: none;
@@ -3291,17 +3305,18 @@ a.vip-name.guest-link:hover,
 
 .cell-strong,
 .cell-value {
+  color: var(--ink);
   font-weight: 400;
 }
 
 .listing-table:not(.is-guests) tbody td {
-  color: #8a8a8a;
+  color: var(--text);
   font-size: 14px;
   font-weight: 400;
 }
 
 .listing-table:not(.is-guests) .cell-action {
-  color: #151515;
+  color: var(--ink);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.02em;
@@ -3309,7 +3324,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .guest-cell .cell-strong {
-  color: #8a8a8a;
+  color: var(--ink);
   font-size: 14px;
   font-weight: 500;
 }
@@ -3319,7 +3334,7 @@ a.vip-name.guest-link:hover,
 .listing-table:not(.is-guests) .status-select,
 .listing-table:not(.is-guests) .outcome-btn,
 .listing-table:not(.is-guests) .incident-status-when {
-  color: #8a8a8a;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -3346,11 +3361,11 @@ a.vip-name.guest-link:hover,
 
 .listing-table:not(.is-guests) .status-select,
 .listing-table:not(.is-guests) .outcome-btn {
-  color: #8a8a8a;
+  color: var(--text);
 }
 
 .cell-created {
-  color: #8a8a8a;
+  color: var(--text);
   white-space: nowrap;
 }
 
@@ -3719,6 +3734,7 @@ a.vip-name.guest-link:hover,
 .profile-quadrant h1,
 .profile-quadrant h2 {
   margin: 0;
+  color: var(--ink);
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -4154,7 +4170,7 @@ a.vip-name.guest-link:hover,
   color: var(--muted);
 }
 
-@media (max-width: 1280px) {
+@media (max-width: 1500px) {
   .dashboard-left .results.is-aside .milestones-body {
     grid-template-columns: 1fr;
   }
@@ -4162,6 +4178,10 @@ a.vip-name.guest-link:hover,
   .dashboard-left .results-metrics {
     grid-template-rows: auto;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .insight-metric-icon {
+    display: none;
   }
 }
 
@@ -5816,7 +5836,7 @@ a.vip-name.guest-link:hover,
 
 .profile-quadrant .view-state.is-empty .view-state-title,
 .notes-list-pane .view-state.is-empty .view-state-title {
-  color: #8a8a8a;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 400;
   letter-spacing: 0;
@@ -5876,7 +5896,7 @@ a.vip-name.guest-link:hover,
 
 .view-state-description {
   margin: 0;
-  color: var(--muted);
+  color: var(--text);
   font-size: 14px;
   line-height: 1.45;
   max-width: 42ch;
