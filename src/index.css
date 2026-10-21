@@ -188,7 +188,7 @@ h2 {
   display: block;
   flex: none;
   width: auto;
-  height: 48px;
+  height: 36px;
   object-fit: contain;
 }
 
@@ -4387,7 +4387,7 @@ a.vip-name.guest-link:hover,
   }
 
   .brand-logo {
-    height: 40px;
+    height: 30px;
   }
 
   .topbar-menu-toggle {

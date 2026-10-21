@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import logoDark from "../assets/guest-experience-logo-dark.png";
-import logoLight from "../assets/guest-experience-logo.png";
+import logo from "../assets/guestsell-logo.png";
 import { ShiftCorner } from "./ShiftCorner";
 
 const navItems: { to: string; label: string; end: boolean; icon: ReactNode }[] = [
@@ -203,20 +202,20 @@ export function Shell() {
     <div className={menuOpen ? "app is-menu-open" : "app"}>
       <header className="topbar">
         <div className="topbar-lead">
-          <div className="brand" role="img" aria-label="Guest Experience">
+          <div className="brand" role="img" aria-label="GuestSell">
             <img
               className="brand-logo brand-logo-light"
-              src={logoLight}
+              src={logo}
               alt=""
               width={204}
-              height={63}
+              height={51}
             />
             <img
               className="brand-logo brand-logo-dark"
-              src={logoDark}
+              src={logo}
               alt=""
               width={204}
-              height={63}
+              height={51}
             />
           </div>
           <button
