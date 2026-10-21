@@ -12,7 +12,6 @@ import {
   money,
   peopleCount,
   reservationCount,
-  roomOpportunityActions,
   type ShiftAction,
   upsellingPotentialByOffer,
   type UpsellPotentialRow,
