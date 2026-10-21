@@ -28,10 +28,7 @@ function CloseIcon() {
   );
 }
 
-function positiveLabel(category: Category): string {
-  if (category === "upselling") return "Sold";
-  if (category === "loyalty") return "Signed up";
-  if (category === "guest-experience") return "Notified";
+function positiveLabel(_category: Category): string {
   return "Done";
 }
 

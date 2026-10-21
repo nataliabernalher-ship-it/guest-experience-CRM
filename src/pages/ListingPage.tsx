@@ -2,13 +2,14 @@ import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { NavLink, useSearchParams } from "react-router-dom";
 import {
   actionsForListing,
-  compareActions,
   formatIncidentWhen,
   guestById,
   guests,
+  guestsForListing,
   listings,
   money,
   opportunityMomentTabs,
+  roomOpportunityActions,
   type ActionStatus,
   type Category,
   type Guest,
@@ -16,7 +17,7 @@ import {
   type Severity,
   type ShiftAction,
 } from "../data/shift";
-import { CategoryPill } from "../components/CategoryPill";
+import { CategoryIcon, CategoryPill } from "../components/CategoryPill";
 import { OutcomeMark } from "../components/OutcomeMark";
 import {
   SortableTh,
@@ -52,6 +53,28 @@ const statusFilters: { id: "all" | "pending" | "done"; label: string }[] = [
   { id: "done", label: "Done" },
 ];
 
+type OpportunityViewMode = "guest" | "room";
+
+const viewModeFilters: { id: OpportunityViewMode; label: string }[] = [
+  { id: "guest", label: "Guest" },
+  { id: "room", label: "Room" },
+];
+
+function groupRowsByRoom(rows: Row[]): { title: string; rows: Row[] }[] {
+  const byRoom = new Map<string, Row[]>();
+  for (const row of rows) {
+    const list = byRoom.get(row.guest.room) ?? [];
+    list.push(row);
+    byRoom.set(row.guest.room, list);
+  }
+  return [...byRoom.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+    .map(([room, roomRows]) => ({
+      title: `Room ${room}`,
+      rows: roomRows,
+    }));
+}
+
 type OpportunityCategoryFilter = (typeof categoryFilters)[number]["id"];
 type OpportunityStatusFilter = (typeof statusFilters)[number]["id"];
 
@@ -68,11 +91,8 @@ function label(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-function positiveLabel(category: Category): string {
-  if (category === "upselling") return "Sold";
-  if (category === "loyalty") return "Signed up";
-  if (category === "guest-experience") return "Notified";
-  return "Solved";
+function positiveLabel(_category: Category): string {
+  return "Done";
 }
 
 function initials(name: string): string {
@@ -103,13 +123,22 @@ function GuestMark({ guest }: { guest: Guest }) {
 
 interface Row {
   guest: Guest;
-  action: ShiftAction;
+  action: ShiftAction | null;
 }
 
 function sortRows(rows: Row[], key: SortKey | null, dir: SortDir): Row[] {
-  if (!key) return rows;
+  if (!key) {
+    return [...rows].sort((a, b) =>
+      compareByGuestOrRoom(a.guest.name, a.guest.room, b.guest.name, b.guest.room, "room", "asc"),
+    );
+  }
   return [...rows].sort((a, b) => {
-    if (key === "category") return compareByCategory(a.action.category, b.action.category, dir);
+    if (key === "category") {
+      if (!a.action && !b.action) return 0;
+      if (!a.action) return 1;
+      if (!b.action) return -1;
+      return compareByCategory(a.action.category, b.action.category, dir);
+    }
     return compareByGuestOrRoom(a.guest.name, a.guest.room, b.guest.name, b.guest.room, key, dir);
   });
 }
@@ -121,7 +150,7 @@ function matchesStatus(action: ShiftAction, status: OpportunityStatusFilter): bo
 }
 
 type ListingItem =
-  | { kind: "single"; guest: Guest; action: ShiftAction }
+  | { kind: "single"; guest: Guest; action: ShiftAction | null }
   | { kind: "group"; guest: Guest; actions: ShiftAction[] };
 
 function groupListingRows(rows: Row[]): ListingItem[] {
@@ -129,17 +158,20 @@ function groupListingRows(rows: Row[]): ListingItem[] {
   const seen = new Set<string>();
 
   for (const row of rows) {
-    if (row.action.category === "recovery") {
+    if (row.action?.category === "recovery") {
       items.push({ kind: "single", guest: row.guest, action: row.action });
       continue;
     }
     if (seen.has(row.guest.id)) continue;
     seen.add(row.guest.id);
     const grouped = rows
-      .filter((item) => item.guest.id === row.guest.id && item.action.category !== "recovery")
-      .map((item) => item.action);
+      .filter(
+        (item) =>
+          item.guest.id === row.guest.id && item.action != null && item.action.category !== "recovery",
+      )
+      .map((item) => item.action!);
     if (grouped.length === 0) {
-      items.push({ kind: "single", guest: row.guest, action: row.action });
+      items.push({ kind: "single", guest: row.guest, action: null });
     } else if (grouped.length === 1) {
       items.push({ kind: "single", guest: row.guest, action: grouped[0] });
     } else {
@@ -172,9 +204,28 @@ function ChevronIcon({ open }: { open: boolean }) {
 }
 
 function opportunityRows(listingId: ListingId, actions: ShiftAction[]): Row[] {
-  return actionsForListing(listingId, actions)
-    .filter((action) => action.category !== "recovery")
-    .map((action) => ({ guest: guestById(action.guestId), action }));
+  const people = guestsForListing(listingId, actions);
+  const rows: Row[] = [];
+  const amenityRoomKeys = new Set<string>();
+
+  for (const guest of people) {
+    const shared = roomOpportunityActions(guest, listingId, actions);
+    const forGuest: ShiftAction[] = [];
+
+    for (const action of shared) {
+      if (action.category === "guest-experience") {
+        const roomKey = `${guest.room}:${guest.moment}`;
+        if (amenityRoomKeys.has(roomKey)) continue;
+        amenityRoomKeys.add(roomKey);
+      }
+      forGuest.push(action);
+    }
+
+    // Opportunities lists only people who have at least one opportunity.
+    if (forGuest.length === 0) continue;
+    for (const action of forGuest) rows.push({ guest, action });
+  }
+  return rows;
 }
 
 function matchesSeverity(action: ShiftAction, severity: "all" | Severity): boolean {
@@ -274,10 +325,10 @@ function OpportunityActionCells({
 }) {
   return (
     <>
-      <td className="cell-action">{action.label}</td>
       <td>
         <CategoryPill category={action.category} />
       </td>
+      <td className="cell-action">{action.label}</td>
       {isRecovery ? (
         <td className="cell-created">{formatIncidentWhen(action.createdAt)}</td>
       ) : (
@@ -338,9 +389,31 @@ function ListingRows({
   return items.map((item) => {
     if (item.kind === "single") {
       const { guest, action } = item;
+      if (!action) {
+        return (
+          <tr key={`guest-${guest.id}`} className="is-opportunity-row">
+            <td>
+              <span className="guest-cell">
+                <span className="avatar" aria-hidden="true">
+                  {initials(guest.name)}
+                </span>
+                <span className="cell-strong">{guest.name}</span>
+                {showGuestMarks ? <GuestMark guest={guest} /> : null}
+              </span>
+            </td>
+            <td>{guest.room}</td>
+            <td className="guest-empty">—</td>
+            <td className="cell-action guest-empty">—</td>
+            {isRecovery ? <td className="guest-empty">—</td> : <td className="cell-value guest-empty">—</td>}
+            {isRecovery ? <td className="guest-empty">—</td> : null}
+            <td className="guest-empty">—</td>
+            <td className="cell-mark guest-empty">—</td>
+          </tr>
+        );
+      }
       return (
         <tr
-          key={action.id}
+          key={`${guest.id}-${action.id}`}
           id={`action-${action.id}`}
           className={[
             settled ? "is-settled" : null,
@@ -378,7 +451,7 @@ function ListingRows({
     return (
       <Fragment key={`${sectionKey}-group-${guest.id}`}>
         <tr
-          id={`action-${first.id}`}
+          id={`action-${guest.id}-${first.id}`}
           className={[
             "is-opportunity-group",
             "is-opportunity-row",
@@ -464,7 +537,7 @@ function ListingCard({
   const [params] = useSearchParams();
   const { status, retry } = useViewLoad(`${isRecovery ? "recovery" : "opportunities"}-${params.toString()}`);
   const [expandedGuests, setExpandedGuests] = useState<Set<string>>(() => new Set());
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>("room");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const columnCount = isRecovery ? 8 : 7;
   const hasRows = pending.length + groups.reduce((total, group) => total + group.rows.length, 0) > 0;
@@ -483,16 +556,18 @@ function ListingCard({
   useEffect(() => {
     if (!focus) return;
     const allRows = [...pending, ...groups.flatMap((group) => group.rows)];
-    const focused = allRows.find((row) => row.action.id === focus && row.action.category !== "recovery");
+    const focused = allRows.find(
+      (row) => row.action?.id === focus && row.action.category !== "recovery",
+    );
     if (!focused) return;
     const siblings = allRows.filter(
-      (row) => row.guest.id === focused.guest.id && row.action.category !== "recovery",
+      (row) => row.guest.id === focused.guest.id && row.action != null && row.action.category !== "recovery",
     );
     if (siblings.length < 2) return;
-    const pendingHas = pending.some((row) => row.action.id === focus);
+    const pendingHas = pending.some((row) => row.action?.id === focus);
     const section = pendingHas
       ? "pending"
-      : (groups.find((group) => group.rows.some((row) => row.action.id === focus))?.title ?? "pending");
+      : (groups.find((group) => group.rows.some((row) => row.action?.id === focus))?.title ?? "pending");
     const key = `${section}:${focused.guest.id}`;
     setExpandedGuests((current) => {
       if (current.has(key)) return current;
@@ -538,8 +613,8 @@ function ListingCard({
           <colgroup>
             <col className="col-guest" />
             <col className="col-room" />
-            <col className="col-action" />
             <col className="col-category" />
+            <col className="col-action" />
             {isRecovery ? <col className="col-created" /> : <col className="col-value" />}
             {isRecovery ? <col className="col-severity" /> : null}
             <col className="col-status" />
@@ -549,7 +624,6 @@ function ListingCard({
             <tr>
               <SortableTh label="Guest" sortKey="guest" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
               <SortableTh label="Room" sortKey="room" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
-              <th>Action</th>
               {isRecovery ? (
                 <th>Category</th>
               ) : (
@@ -561,6 +635,7 @@ function ListingCard({
                   onSort={handleSort}
                 />
               )}
+              <th>Action</th>
               {isRecovery ? <th>Created</th> : <th>Value</th>}
               {isRecovery ? <th>Severity</th> : null}
               <th>Mark the status</th>
@@ -584,14 +659,15 @@ function ListingCard({
               group.rows.length > 0 ? (
                 <Fragment key={group.title}>
                   <tr className="listing-group">
-                    <th colSpan={columnCount}>{group.title}</th>
+                    <th colSpan={columnCount}>
+                      <span className="listing-group-label">{group.title}</span>
+                    </th>
                   </tr>
                   <ListingRows
                     rows={group.rows}
                     isRecovery={isRecovery}
                     showGuestMarks={showGuestMarks}
                     focus={focus}
-                    settled
                     sectionKey={group.title}
                     expandedGuests={expandedGuests}
                     onToggleGuest={toggleGuest}
@@ -744,6 +820,7 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
   const [params, setParams] = useSearchParams();
   const [severity, setSeverity] = useState<(typeof severityFilters)[number]["id"]>("all");
   const [statusFilter, setStatusFilter] = useState<OpportunityStatusFilter>("all");
+  const [viewMode, setViewMode] = useState<OpportunityViewMode>("guest");
   const category = selectedCategory(params.get("category"));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null);
@@ -759,12 +836,15 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
     setParams(nextParams, { replace: true });
   }
 
-  const pending = isRecovery
+  const filteredRows = isRecovery
     ? recoveryRows(actions, severity)
-    : opportunityRows(listingId, actions)
-        .filter(({ action }) => matchesCategory(action, category) && matchesStatus(action, statusFilter))
-        .sort((a, b) => compareActions(a.action, b.action));
-  const groups: { title: string; rows: Row[] }[] = [];
+    : opportunityRows(listingId, actions).filter(
+        ({ action }) =>
+          action != null && matchesCategory(action, category) && matchesStatus(action, statusFilter),
+      );
+  const pending = isRecovery || viewMode === "guest" ? filteredRows : [];
+  const groups =
+    !isRecovery && viewMode === "room" ? groupRowsByRoom(filteredRows) : [];
   const selectedIncident =
     selectedIncidentId == null
       ? null
@@ -856,11 +936,33 @@ export function ListingPage({ listingId }: { listingId: ListingId }) {
                     className={category === item.id ? "guest-tag is-active" : "guest-tag"}
                     onClick={() => setCategory(item.id)}
                   >
+                    {item.id !== "all" ? (
+                      <span className="guest-tag-icon" aria-hidden="true">
+                        <CategoryIcon category={item.id} />
+                      </span>
+                    ) : null}
                     {item.label}
                   </button>
                 ))}
               </div>
               <div className="listing-tools-actions">
+                <div className="listing-view-filter">
+                  <span className="listing-view-filter-label">View by:</span>
+                  <div className="guest-tags" role="tablist" aria-label="View by">
+                    {viewModeFilters.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={viewMode === item.id}
+                        className={viewMode === item.id ? "guest-tag is-active" : "guest-tag"}
+                        onClick={() => setViewMode(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label className="listing-status-filter">
                   <span className="visually-hidden">Status</span>
                   <select

@@ -113,7 +113,7 @@ export function GuestsPage() {
   const query = params.get("q") ?? "";
   const needle = query.trim().toLowerCase();
   const { status, retry } = useViewLoad(`guests-${filter}-${needle}`);
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>("room");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [opportunityGuest, setOpportunityGuest] = useState<Guest | null>(null);
   const [opportunityDrawerOpen, setOpportunityDrawerOpen] = useState(false);

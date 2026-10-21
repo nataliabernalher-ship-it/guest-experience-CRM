@@ -3032,21 +3032,21 @@ a.context-metric.is-recovery:hover {
   border-spacing: 0;
 }
 
-.listing-table col.col-guest { width: 21%; }
-.listing-table col.col-room { width: 8%; }
+.listing-table col.col-guest { width: 24%; }
+.listing-table col.col-room { width: 10%; }
 .listing-table col.col-action { width: 24%; }
 .listing-table col.col-category { width: 19%; }
 .listing-table col.col-value { width: 7%; }
-.listing-table col.col-status { width: 18%; }
+.listing-table col.col-status { width: 13%; }
 .listing-table col.col-mark { width: 6%; }
 
-.listing-table.is-recovery col.col-guest { width: 16%; }
-.listing-table.is-recovery col.col-room { width: 7%; }
+.listing-table.is-recovery col.col-guest { width: 18%; }
+.listing-table.is-recovery col.col-room { width: 9%; }
 .listing-table.is-recovery col.col-action { width: 20%; }
 .listing-table.is-recovery col.col-category { width: 13%; }
 .listing-table.is-recovery col.col-created { width: 14%; }
 .listing-table.is-recovery col.col-severity { width: 8%; }
-.listing-table.is-recovery col.col-status { width: 16%; }
+.listing-table.is-recovery col.col-status { width: 12%; }
 .listing-table.is-recovery col.col-mark { width: 6%; }
 
 .listing-table.is-opportunities col.col-guest { width: 15%; }
@@ -3466,7 +3466,7 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-table:not(.is-guests) .outcome-btn {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .listing-table:not(.is-guests) .outcome-btn.is-positive,
@@ -4760,6 +4760,20 @@ a.vip-name.guest-link:hover,
   gap: 10px;
 }
 
+.listing-view-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.listing-view-filter-label {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
 .listing-status-filter {
   display: inline-flex;
   align-items: center;
@@ -4767,10 +4781,30 @@ a.vip-name.guest-link:hover,
 
 .listing-status-filter .status-select {
   box-sizing: border-box;
-  height: 42px;
+  height: 40px;
   min-width: 180px;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+.listing-tools .guest-tag {
+  height: 40px;
+  gap: 8px;
+}
+
+.listing-tools .guest-tag-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: inherit;
+}
+
+.listing-tools .guest-tag-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .visually-hidden {
@@ -4787,7 +4821,7 @@ a.vip-name.guest-link:hover,
 
 .listing-tools .add-incident {
   box-sizing: border-box;
-  height: 42px;
+  height: 40px;
   padding: 0 18px;
   background: #151515;
   color: #fff;
@@ -4820,7 +4854,7 @@ a.vip-name.guest-link:hover,
   justify-content: center;
   box-sizing: border-box;
   min-width: 0;
-  height: 30px;
+  height: 34px;
   border: 2px solid transparent;
   border-radius: 8px;
   padding: 0 18px;
@@ -4948,16 +4982,16 @@ a.vip-name.guest-link:hover,
 
   .listing-table.is-recovery tbody tr td:nth-child(1)::before { content: "Guest"; }
   .listing-table.is-recovery tbody tr td:nth-child(2)::before { content: "Room"; }
-  .listing-table.is-recovery tbody tr td:nth-child(3)::before { content: "Action"; }
-  .listing-table.is-recovery tbody tr td:nth-child(4)::before { content: "Category"; }
+  .listing-table.is-recovery tbody tr td:nth-child(3)::before { content: "Category"; }
+  .listing-table.is-recovery tbody tr td:nth-child(4)::before { content: "Action"; }
   .listing-table.is-recovery tbody tr td:nth-child(5)::before { content: "Created"; }
   .listing-table.is-recovery tbody tr td:nth-child(6)::before { content: "Severity"; }
   .listing-table.is-recovery tbody tr td:nth-child(7)::before { content: "Status"; }
 
   .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(1)::before { content: "Guest"; }
   .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(2)::before { content: "Room"; }
-  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(3)::before { content: "Action"; }
-  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(4)::before { content: "Category"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(3)::before { content: "Category"; }
+  .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(4)::before { content: "Action"; }
   .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(5)::before { content: "Value"; }
   .listing-table:not(.is-guests):not(.is-opportunities):not(.is-recovery) tbody tr td:nth-child(6)::before { content: "Status"; }
 
@@ -4999,7 +5033,7 @@ a.vip-name.guest-link:hover,
 
   .listing-table tbody tr.listing-group th {
     display: block;
-    padding: 10px 4px 2px;
+    padding: 10px 4px 6px;
     border: 0;
     background: transparent;
   }
@@ -5116,7 +5150,7 @@ a.vip-name.guest-link:hover,
   box-shadow: none;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
@@ -5135,21 +5169,21 @@ a.vip-name.guest-link:hover,
 
 .outcome-btn.is-positive {
   border: 0;
-  background: var(--accent);
+  background: var(--accent-gradient);
   box-shadow: none;
   color: #fff;
 }
 
 .outcome-btn.is-positive:hover {
   border: 0;
-  background: var(--accent);
+  background: var(--accent-gradient);
   color: #fff;
   filter: brightness(0.96);
 }
 
 .outcome-btn.is-positive.is-selected {
   border: 0;
-  background: var(--accent);
+  background: var(--accent-gradient);
   box-shadow: none;
   color: #fff;
 }
@@ -5199,15 +5233,27 @@ a.vip-name.guest-link:hover,
 }
 
 .listing-group th {
-  padding: 22px 16px 8px;
-  border-top: 1px solid #f7f7f7;
+  padding: 10px 0 6px;
+  border-top: 0;
+  border-bottom: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.listing-group-label {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 26px;
+  padding: 3px 14px;
+  border-radius: 0;
   background: var(--surface);
   color: var(--ink);
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: -0.03em;
-  text-align: left;
-  text-transform: none;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .listing-table tbody tr.is-settled {

@@ -478,16 +478,13 @@ export const guests: Guest[] = (
     loyaltyMember: false,
     arrival: "30 Sep 2026",
     departure: "4 Oct 2026",
-    partySize: 3,
+    partySize: 2,
     origin: "Madrid",
     birthDate: "14 March 1984",
     profession: "Architect",
     hobbies: "Contemporary art, cycling",
     companionship: "family",
-    companions: [
-      { name: "Marta Lind", guestId: "marta" },
-      { name: "Anna Martín" },
-    ],
+    companions: [{ name: "Anna Martín", guestId: "anna-martin" }],
     preferences: {
       roomType: "Deluxe king",
       bedType: "King",
@@ -1314,6 +1311,61 @@ guests.push(
   }),
 );
 
+function companionGuestId(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/** Ensure every named companion has a guest profile in the same room/moment. */
+function materializeCompanionGuests(source: Guest[]): void {
+  const byId = new Map(source.map((guest) => [guest.id, guest]));
+  const byName = new Map(source.map((guest) => [guest.name, guest]));
+  const created: Guest[] = [];
+
+  for (const guest of source) {
+    guest.companions = guest.companions.map((companion) => {
+      if (companion.guestId && byId.has(companion.guestId)) return companion;
+      const existing = byName.get(companion.name);
+      if (existing) return { name: companion.name, guestId: existing.id };
+
+      const id = companionGuestId(companion.name);
+      if (byId.has(id)) return { name: companion.name, guestId: id };
+
+      const profile = seedGuest({
+        id,
+        name: companion.name,
+        room: guest.room,
+        moment: guest.moment,
+        arrival: guest.arrival,
+        departure: guest.departure,
+        origin: guest.origin,
+        partySize: guest.partySize,
+        companionship: guest.companionship,
+        companions: [{ name: guest.name, guestId: guest.id }],
+        stays: guest.stays.map((stay) => ({
+          roomType: stay.roomType,
+          from: stay.from,
+          to: stay.to,
+          bookingSource: stay.bookingSource,
+          boardType: stay.boardType,
+        })),
+      });
+      created.push(profile);
+      byId.set(profile.id, profile);
+      byName.set(profile.name, profile);
+      return { name: companion.name, guestId: profile.id };
+    });
+  }
+
+  source.push(...created);
+}
+
+materializeCompanionGuests(guests);
+
 export function stayMomentLabel(moment: StayMoment): string {
   if (moment === "check-in") return "Check-in";
   if (moment === "check-out") return "Check-out";
@@ -1379,7 +1431,11 @@ export function guestsForFilter(filter: GuestStayFilter, source: Guest[] = guest
   const moment =
     filter === "arriving" ? "check-in" : filter === "leaving" ? "check-out" : filter === "in-house" ? "in-house" : null;
   const list = moment ? source.filter((guest) => guest.moment === moment) : source;
-  return [...list].sort((a, b) => a.name.localeCompare(b.name));
+  return [...list].sort(
+    (a, b) =>
+      a.room.localeCompare(b.room, undefined, { numeric: true, sensitivity: "base" }) ||
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
 }
 
 export function returningGuests(source: Guest[] = guests): Guest[] {
@@ -1699,10 +1755,44 @@ export function actionsForListing(listing: ListingId, source: ShiftAction[] = ac
   return source.filter((action) => action.listing === listing).sort(compareActions);
 }
 
+/** Guests sharing the same room and stay moment. */
+export function roommatesForGuest(guest: Guest, source: Guest[] = guests): Guest[] {
+  return source.filter((item) => item.room === guest.room && item.moment === guest.moment);
+}
+
+/**
+ * Opportunities for a room:
+ * - Upselling and loyalty are shared by everyone in the room.
+ * - Special amenities stay on the owning guest only (one per room when building rows).
+ */
+export function roomOpportunityActions(
+  guest: Guest,
+  listing: ListingId,
+  source: ShiftAction[] = actions,
+): ShiftAction[] {
+  const roommateIds = new Set(roommatesForGuest(guest).map((item) => item.id));
+  const roomActions = actionsForListing(listing, source).filter(
+    (action) => action.category !== "recovery" && roommateIds.has(action.guestId),
+  );
+  const seen = new Set<string>();
+  const unique: ShiftAction[] = [];
+  for (const action of roomActions) {
+    if (action.category === "guest-experience" && action.guestId !== guest.id) continue;
+    const key =
+      action.category === "guest-experience" ? "guest-experience" : `${action.category}:${action.label}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(action);
+  }
+  return unique.sort(compareActions);
+}
+
 export function guestsForListing(listing: ListingId, source: ShiftAction[] = actions): Guest[] {
   const definition = listings[listing];
   if (definition.moment) {
-    return guests.filter((guest) => guest.moment === definition.moment);
+    return guestsForFilter(
+      definition.moment === "check-in" ? "arriving" : definition.moment === "check-out" ? "leaving" : "in-house",
+    );
   }
   const seen = new Set<string>();
   const ordered: Guest[] = [];
