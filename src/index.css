@@ -397,7 +397,7 @@ h2 {
   position: relative;
   flex: 1;
   min-height: 0;
-  padding: 0 32px 40px;
+  padding: 0 32px 16px;
 }
 
 .main::before {
@@ -417,7 +417,7 @@ h2 {
   --hero-fill: calc(280px - 96px);
   display: flex;
   flex-direction: column;
-  padding: 0 24px 32px;
+  padding: 0 24px 16px;
   overflow: hidden;
 }
 
@@ -470,10 +470,11 @@ h2 {
 }
 
 [data-testid="dashboard"] .insight-of-day {
-  padding: 16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
-[data-testid="dashboard"] .insight-of-day-head,
 [data-testid="dashboard"] .table-card-head,
 [data-testid="dashboard"] .panel-head {
   padding-bottom: 4px;
@@ -507,7 +508,7 @@ h2 {
 .dashboard-left {
   order: 2;
   display: grid;
-  grid-template-rows: minmax(0, calc((100% - 14px) / 3 - 50px)) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 2.2fr);
   gap: 14px;
   min-width: 0;
   min-height: 0;
@@ -519,7 +520,7 @@ h2 {
 .dashboard-left .insight-of-day {
   min-height: 0;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .dashboard-left .results.is-aside {
@@ -537,13 +538,13 @@ h2 {
 
 .insight-of-day {
   display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 8px;
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
   margin: 0;
-  padding: 12px;
+  padding: 0;
   border: 2px solid transparent;
   border-radius: 12px;
-  background: var(--box-surface);
+  background: transparent;
   box-shadow: none;
 }
 
@@ -554,20 +555,12 @@ h2 {
   min-height: 0;
 }
 
-.insight-of-day-head h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-  color: var(--ink);
-}
-
 .insight-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   min-width: 0;
+  min-height: 0;
 }
 
 .insight-metric {
@@ -575,12 +568,12 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(4px, 1.2vw, 8px);
+  gap: clamp(4px, 1.2vh, 8px);
   min-width: 0;
   min-height: 0;
   height: 100%;
   align-self: stretch;
-  padding: clamp(8px, 1.4vw, 12px) clamp(6px, 1vw, 10px);
+  padding: clamp(10px, 1.6vh, 16px) clamp(6px, 1vw, 10px);
   border: 1px solid var(--box-border);
   border-radius: 12px;
   background: #ffffff;
@@ -594,21 +587,31 @@ h2 {
 
 .insight-metric[data-category="upselling"] {
   border-color: rgba(255, 101, 68, 0.35);
+  background: #ffece9;
 }
 
 .insight-metric[data-category="loyalty"] {
   border-color: rgba(47, 95, 138, 0.35);
+  background: #e6ecf1;
 }
 
 .insight-metric[data-category="guest-experience"] {
   border-color: rgba(47, 107, 79, 0.35);
+  background: #e6edea;
 }
 
-.insight-metric:hover,
-.insight-metric[data-category="upselling"]:hover,
-.insight-metric[data-category="loyalty"]:hover,
+.insight-metric[data-category="upselling"]:hover {
+  background: #ffe3dd;
+  color: var(--text);
+}
+
+.insight-metric[data-category="loyalty"]:hover {
+  background: #dae2ea;
+  color: var(--text);
+}
+
 .insight-metric[data-category="guest-experience"]:hover {
-  background: var(--hover);
+  background: #dae4df;
   color: var(--text);
 }
 
@@ -659,8 +662,16 @@ h2 {
   color: var(--text);
 }
 
+.insight-metric-when {
+  color: var(--muted);
+  font-size: clamp(10px, 1.2vh, 12px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
 .insight-metric-value {
-  font-size: clamp(15px, 2.2vw, 18px);
+  font-size: clamp(15px, 2.2vh, 18px);
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -4335,12 +4346,12 @@ a.vip-name.guest-link:hover,
   .main {
     --hero-fill: calc(240px - 88px);
     --surface-overlap: 24px;
-    padding: 0 20px 28px;
+    padding: 0 20px 16px;
   }
 
   .main:has([data-testid="dashboard"]) {
     --hero-fill: calc(280px - 88px);
-    padding: 0 16px 32px;
+    padding: 0 16px 16px;
     overflow: visible;
   }
 
@@ -4617,7 +4628,7 @@ a.vip-name.guest-link:hover,
 
 @media (max-width: 720px) {
   .main {
-    padding: 0 14px 24px;
+    padding: 0 14px 16px;
   }
 
   .topbar {
@@ -4636,7 +4647,7 @@ a.vip-name.guest-link:hover,
 
   .main:has([data-testid="dashboard"]) {
     --hero-fill: calc(280px - 80px);
-    padding: 0 16px 32px;
+    padding: 0 16px 16px;
   }
 
   .page-header {

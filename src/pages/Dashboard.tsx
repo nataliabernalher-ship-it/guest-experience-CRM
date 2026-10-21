@@ -351,10 +351,7 @@ export function Dashboard() {
 
       <div className="dashboard-body">
         <div className="dashboard-left">
-          <section className="insight-of-day" aria-labelledby="insight-heading" data-testid="insight-of-day">
-            <header className="insight-of-day-head">
-              <h2 id="insight-heading">Insight of the day</h2>
-            </header>
+          <section className="insight-of-day" aria-label="Today insights" data-testid="insight-of-day">
             <div className="insight-metrics">
               <Link
                 to={`${listings["check-ins"].path}?category=upselling`}
@@ -366,6 +363,7 @@ export function Dashboard() {
                   <CategoryIcon category="upselling" />
                 </span>
                 <span className="insight-metric-copy">
+                  <span className="insight-metric-when">Today</span>
                   <span className="insight-metric-label">Upselling opportunities</span>
                   <span className="insight-metric-value">{insightCounts.upselling}</span>
                 </span>
@@ -380,6 +378,7 @@ export function Dashboard() {
                   <CategoryIcon category="guest-experience" />
                 </span>
                 <span className="insight-metric-copy">
+                  <span className="insight-metric-when">Today</span>
                   <span className="insight-metric-label">Special amenities</span>
                   <span className="insight-metric-value">{insightCounts.guestExperience}</span>
                 </span>
@@ -394,6 +393,7 @@ export function Dashboard() {
                   <CategoryIcon category="loyalty" />
                 </span>
                 <span className="insight-metric-copy">
+                  <span className="insight-metric-when">Today</span>
                   <span className="insight-metric-label">Loyalty sign-ups</span>
                   <span className="insight-metric-value">{insightCounts.loyalty}</span>
                 </span>
