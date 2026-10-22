@@ -151,6 +151,7 @@ function emptyDraft(): Draft {
   return {
     ...base,
     valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
+    hotelCommission: base.hotelCommission != null ? String(base.hotelCommission) : "",
     description: base.description ?? "",
   };
 }
@@ -244,13 +245,13 @@ export function AutomationsPage() {
                     <dd>{money.format(automation.valuePerPerson)}</dd>
                   </div>
                 ) : null}
-              </dl>
                 {automation.category === "upselling" && automation.hotelCommission != null ? (
                   <div>
                     <dt>Hotel commission</dt>
                     <dd>{automation.hotelCommission}%</dd>
                   </div>
                 ) : null}
+              </dl>
               <div className="automation-card-foot">
                 <select
                   className="status-select"
@@ -365,6 +366,7 @@ export function AutomationBuilderPage() {
       category,
       actionLabel,
       valuePerPerson: category === "upselling" ? String(defaultValuePerPerson(actionLabel)) : "",
+      hotelCommission: category === "upselling" ? current.hotelCommission : "",
     }));
   }
 
@@ -379,12 +381,23 @@ export function AutomationBuilderPage() {
         : undefined;
     if (draft.category === "upselling" && valuePerPerson == null) return;
 
+    const commissionRaw = draft.hotelCommission.trim();
+    const parsedCommission = Number(commissionRaw);
+    const hotelCommission =
+      draft.category === "upselling" &&
+      commissionRaw !== "" &&
+      Number.isFinite(parsedCommission) &&
+      parsedCommission >= 0
+        ? parsedCommission
+        : undefined;
+
     const description = draft.description.trim();
     const payload = {
       name,
       category: draft.category,
       actionLabel,
       valuePerPerson,
+      hotelCommission,
       conditions: draft.conditions,
       timing: draft.timing,
       description: description || undefined,
@@ -638,20 +651,38 @@ export function AutomationBuilderPage() {
                 />
               </label>
               {draft.category === "upselling" ? (
-                <label className="drawer-field">
-                  Value per person (€)
-                  <input
-                    className="incident-input"
-                    type="number"
-                    min="0"
-                    step="1"
-                    inputMode="decimal"
-                    aria-label="Value per person"
-                    placeholder="e.g. 80"
-                    value={draft.valuePerPerson}
-                    onChange={(event) => setDraft({ ...draft, valuePerPerson: event.target.value })}
-                  />
-                </label>
+                <>
+                  <label className="drawer-field">
+                    Value per person (€)
+                    <input
+                      className="incident-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      aria-label="Value per person"
+                      placeholder="e.g. 80"
+                      value={draft.valuePerPerson}
+                      onChange={(event) => setDraft({ ...draft, valuePerPerson: event.target.value })}
+                    />
+                  </label>
+                  <label className="drawer-field">
+                    Hotel commission (if applied)
+                    <input
+                      className="incident-input"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="decimal"
+                      aria-label="Hotel commission (if applied)"
+                      placeholder="e.g. 10"
+                      value={draft.hotelCommission}
+                      onChange={(event) =>
+                        setDraft({ ...draft, hotelCommission: event.target.value })
+                      }
+                    />
+                  </label>
+                </>
               ) : null}
             </div>
             <p className="rule-note">
