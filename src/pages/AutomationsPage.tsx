@@ -37,6 +37,7 @@ type Draft = {
   category: AutomationCategory;
   actionLabel: string;
   valuePerPerson: string;
+  hotelCommission: string;
   conditions: AutomationCondition[];
   timing: AutomationTiming;
   description: string;
@@ -53,6 +54,8 @@ function toDraft(automation: Automation): Draft {
         : automation.category === "upselling"
           ? String(defaultValuePerPerson(automation.actionLabel))
           : "",
+    hotelCommission:
+      automation.hotelCommission != null ? String(automation.hotelCommission) : "",
     conditions: automation.conditions.map((condition) => ({ ...condition })),
     timing: automation.timing,
     description: automation.description ?? "",
@@ -242,6 +245,12 @@ export function AutomationsPage() {
                   </div>
                 ) : null}
               </dl>
+                {automation.category === "upselling" && automation.hotelCommission != null ? (
+                  <div>
+                    <dt>Hotel commission</dt>
+                    <dd>{automation.hotelCommission}%</dd>
+                  </div>
+                ) : null}
               <div className="automation-card-foot">
                 <select
                   className="status-select"

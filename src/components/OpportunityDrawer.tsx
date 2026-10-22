@@ -3,29 +3,32 @@ import {
   experienceTypes,
   guests,
   housekeepingOptions,
-  stayMomentLabel,
+  roommatesForGuest,
   upsellServices,
   type Category,
 } from "../data/shift";
 import { AutomationPreview } from "./GuestOpportunityDrawer";
 import { useAutomations } from "../state/AutomationsState";
 
+type OpportunityPayload = {
+  guestId: string;
+  category: Exclude<Category, "recovery">;
+  label: string;
+  value?: number;
+  description?: string;
+};
+
 export function OpportunityDrawer({
   onClose,
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (opportunity: {
-    guestId: string;
-    category: Exclude<Category, "recovery">;
-    label: string;
-    value?: number;
-    description?: string;
-  }) => void;
+  onAdd: (opportunity: OpportunityPayload) => void;
 }) {
   const { activeAutomations } = useAutomations();
   const [query, setQuery] = useState("");
   const [guestId, setGuestId] = useState("");
+  const [applyToRoom, setApplyToRoom] = useState(false);
   const [automationId, setAutomationId] = useState("");
   const [category, setCategory] = useState<Exclude<Category, "recovery"> | "">("");
   const [serviceId, setServiceId] = useState("");
@@ -48,6 +51,7 @@ export function OpportunityDrawer({
   function pick(id: string, name: string) {
     setGuestId(id);
     setQuery(name);
+    setApplyToRoom(false);
   }
 
   function applyAutomation(id: string) {
@@ -63,33 +67,46 @@ export function OpportunityDrawer({
     setHousekeepingId("");
   }
 
+  function targetGuestIds(): string[] {
+    if (!guest) return [];
+    if (!applyToRoom) return [guest.id];
+    return roommatesForGuest(guest).map((item) => item.id);
+  }
+
   function save() {
     if (!guest) return;
+    const guestIds = targetGuestIds();
     if (selectedAutomation) {
-      onAdd({
-        guestId: guest.id,
-        category: selectedAutomation.category,
-        label: selectedAutomation.actionLabel,
-        value:
-          selectedAutomation.category === "upselling" ? selectedAutomation.valuePerPerson : undefined,
-        description: selectedAutomation.description,
-      });
+      for (const id of guestIds) {
+        onAdd({
+          guestId: id,
+          category: selectedAutomation.category,
+          label: selectedAutomation.actionLabel,
+          value:
+            selectedAutomation.category === "upselling"
+              ? selectedAutomation.valuePerPerson
+              : undefined,
+          description: selectedAutomation.description,
+        });
+      }
       onClose();
       return;
     }
     if (!category) return;
+    let base: Omit<OpportunityPayload, "guestId"> | null = null;
     if (category === "upselling") {
       const service = upsellServices.find((item) => item.id === serviceId);
       if (!service) return;
-      onAdd({ guestId: guest.id, category, label: service.offer, value: service.value });
+      base = { category, label: service.offer, value: service.value };
     } else if (category === "guest-experience") {
       const experience = experienceTypes.find((item) => item.id === experienceId);
       const housekeeping = housekeepingOptions.find((item) => item.id === housekeepingId);
       if (!experience || !housekeeping) return;
-      onAdd({ guestId: guest.id, category, label: `${experience.label}. ${housekeeping.label}` });
+      base = { category, label: `${experience.label}. ${housekeeping.label}` };
     } else {
-      onAdd({ guestId: guest.id, category, label: "Invite to the loyalty programme" });
+      base = { category, label: "Invite to the loyalty programme" };
     }
+    for (const id of guestIds) onAdd({ guestId: id, ...base });
     onClose();
   }
 
@@ -139,14 +156,14 @@ export function OpportunityDrawer({
           Room
           <input className="incident-input" readOnly value={guest?.room ?? ""} placeholder="Room" />
         </label>
-        <label className="drawer-field">
-          Stay
+        <label className="drawer-check">
           <input
-            className="incident-input"
-            readOnly
-            value={guest ? stayMomentLabel(guest.moment) : ""}
-            placeholder="Check-in, check-out or in-house"
+            type="checkbox"
+            checked={applyToRoom}
+            disabled={!guest}
+            onChange={(event) => setApplyToRoom(event.target.checked)}
           />
+          <span>Add to all people in the room</span>
         </label>
         {activeAutomations.length > 0 ? (
           <label className="drawer-field">

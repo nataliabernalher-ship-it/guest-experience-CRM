@@ -1384,6 +1384,9 @@ export const upsellServices = [
   { id: "late", label: "Late check-out", offer: "Offer late check-out", value: 45 },
   { id: "flamenco", label: "Flamenco show", offer: "Offer Flamenco show", value: 55 },
   { id: "upgrade", label: "Room upgrade", offer: "Offer Room upgrade", value: 60 },
+  { id: "theme-park", label: "Theme Park Tickets", offer: "Offer Theme Park Tickets", value: 75 },
+  { id: "city-tours", label: "City Tours", offer: "Offer City Tours", value: 45 },
+  { id: "special-dinner", label: "Special dinner", offer: "Offer Special dinner", value: 70 },
 ] as const;
 
 export const experienceTypes = [
@@ -1710,6 +1713,39 @@ const actionSeed: Array<Omit<ShiftAction, "status"> & { status?: ActionStatus }>
     listing: "in-house",
     proximity: 4,
     timingLabel: "Today",
+  },
+  {
+    id: "jonas-theme-park",
+    guestId: "jonas",
+    category: "upselling",
+    label: "Offer Theme Park Tickets",
+    description: "Offer theme park tickets for leisure time during the stay.",
+    listing: "in-house",
+    proximity: 5,
+    timingLabel: "Today",
+    value: 75,
+  },
+  {
+    id: "rosa-city-tours",
+    guestId: "rosa",
+    category: "upselling",
+    label: "Offer City Tours",
+    description: "Suggest a guided city tour while the guest is in-house.",
+    listing: "in-house",
+    proximity: 6,
+    timingLabel: "Today",
+    value: 45,
+  },
+  {
+    id: "felix-special-dinner",
+    guestId: "felix",
+    category: "upselling",
+    label: "Offer Special dinner",
+    description: "Offer a special dinner experience at the hotel restaurant.",
+    listing: "in-house",
+    proximity: 7,
+    timingLabel: "Today",
+    value: 70,
   },
 ];
 

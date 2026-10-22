@@ -3,12 +3,20 @@ import { automationCategoryLabel, type Automation } from "../data/automations";
 import {
   experienceTypes,
   housekeepingOptions,
-  stayMomentLabel,
+  roommatesForGuest,
   upsellServices,
   type Category,
   type Guest,
 } from "../data/shift";
 import { useAutomations } from "../state/AutomationsState";
+
+type OpportunityPayload = {
+  guestId: string;
+  category: Exclude<Category, "recovery">;
+  label: string;
+  value?: number;
+  description?: string;
+};
 
 export function GuestOpportunityDrawer({
   guest,
@@ -17,15 +25,10 @@ export function GuestOpportunityDrawer({
 }: {
   guest: Guest;
   onClose: () => void;
-  onAdd: (opportunity: {
-    guestId: string;
-    category: Exclude<Category, "recovery">;
-    label: string;
-    value?: number;
-    description?: string;
-  }) => void;
+  onAdd: (opportunity: OpportunityPayload) => void;
 }) {
   const { activeAutomations } = useAutomations();
+  const [applyToRoom, setApplyToRoom] = useState(false);
   const [automationId, setAutomationId] = useState("");
   const [category, setCategory] = useState<Exclude<Category, "recovery"> | "">("");
   const [serviceId, setServiceId] = useState("");
@@ -55,33 +58,45 @@ export function GuestOpportunityDrawer({
     setAutomationId("");
   }
 
+  function targetGuestIds(): string[] {
+    if (!applyToRoom) return [guest.id];
+    return roommatesForGuest(guest).map((item) => item.id);
+  }
+
   function save() {
+    const guestIds = targetGuestIds();
     if (selectedAutomation) {
-      onAdd({
-        guestId: guest.id,
-        category: selectedAutomation.category,
-        label: selectedAutomation.actionLabel,
-        value:
-          selectedAutomation.category === "upselling" ? selectedAutomation.valuePerPerson : undefined,
-        description: selectedAutomation.description,
-      });
+      for (const id of guestIds) {
+        onAdd({
+          guestId: id,
+          category: selectedAutomation.category,
+          label: selectedAutomation.actionLabel,
+          value:
+            selectedAutomation.category === "upselling"
+              ? selectedAutomation.valuePerPerson
+              : undefined,
+          description: selectedAutomation.description,
+        });
+      }
       onClose();
       return;
     }
 
     if (!category) return;
+    let base: Omit<OpportunityPayload, "guestId"> | null = null;
     if (category === "upselling") {
       const service = upsellServices.find((item) => item.id === serviceId);
       if (!service) return;
-      onAdd({ guestId: guest.id, category, label: service.offer, value: service.value });
+      base = { category, label: service.offer, value: service.value };
     } else if (category === "guest-experience") {
       const experience = experienceTypes.find((item) => item.id === experienceId);
       const housekeeping = housekeepingOptions.find((item) => item.id === housekeepingId);
       if (!experience || !housekeeping) return;
-      onAdd({ guestId: guest.id, category, label: `${experience.label}. ${housekeeping.label}` });
+      base = { category, label: `${experience.label}. ${housekeeping.label}` };
     } else {
-      onAdd({ guestId: guest.id, category, label: "Invite to the loyalty programme" });
+      base = { category, label: "Invite to the loyalty programme" };
     }
+    for (const id of guestIds) onAdd({ guestId: id, ...base });
     onClose();
   }
 
@@ -109,9 +124,13 @@ export function GuestOpportunityDrawer({
           Room
           <input className="incident-input" readOnly value={guest.room} />
         </label>
-        <label className="drawer-field">
-          Stay
-          <input className="incident-input" readOnly value={stayMomentLabel(guest.moment)} />
+        <label className="drawer-check">
+          <input
+            type="checkbox"
+            checked={applyToRoom}
+            onChange={(event) => setApplyToRoom(event.target.checked)}
+          />
+          <span>Add to all people in the room</span>
         </label>
 
         {activeAutomations.length > 0 ? (
@@ -236,6 +255,12 @@ export function AutomationPreview({ automation }: { automation: Automation }) {
           <div>
             <dt>Value per person</dt>
             <dd>{automation.valuePerPerson}€</dd>
+          </div>
+        ) : null}
+        {automation.category === "upselling" && automation.hotelCommission != null ? (
+          <div>
+            <dt>Hotel commission</dt>
+            <dd>{automation.hotelCommission}%</dd>
           </div>
         ) : null}
         {automation.description?.trim() ? (

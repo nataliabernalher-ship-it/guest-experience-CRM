@@ -677,7 +677,7 @@ export function Dashboard() {
               data-testid="earnings-today"
             >
               <div className="earnings-today-head">
-                <h2 id="earnings-today-heading">Earnings potential for today</h2>
+                <h2 id="earnings-today-heading">Earnings potential in opportunities for today</h2>
                 <p className="earnings-today-value">{`${earningsPotential.toLocaleString("en-GB")}€`}</p>
               </div>
               <div className="earnings-today-spacer" aria-hidden="true" />

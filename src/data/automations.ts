@@ -53,6 +53,8 @@ export interface Automation {
   actionLabel: string;
   /** Valor económico por persona. Solo upselling. */
   valuePerPerson?: number;
+  /** Comisión del hotel (%). Solo upselling, opcional. */
+  hotelCommission?: number;
   conditions: AutomationCondition[];
   timing: AutomationTiming;
   /** Optional details or description for reception. */
@@ -167,6 +169,9 @@ export const actionsByCategory: Record<AutomationCategory, string[]> = {
     "Offer Airport transfer",
     "Offer Flamenco show",
     "Offer Restaurant",
+    "Offer Theme Park Tickets",
+    "Offer City Tours",
+    "Offer Special dinner",
   ],
   loyalty: ["Invite to Loyalty program"],
   "guest-experience": [
@@ -233,6 +238,9 @@ export function defaultValuePerPerson(actionLabel: string): number {
   if (actionLabel.includes("Late")) return 45;
   if (actionLabel.includes("Transfer") || actionLabel.includes("transfer")) return 65;
   if (actionLabel.includes("Flamenco")) return 55;
+  if (actionLabel.includes("Theme Park")) return 75;
+  if (actionLabel.includes("City Tour")) return 45;
+  if (actionLabel.includes("Special dinner")) return 70;
   if (actionLabel.includes("Restaurant")) return 40;
   return 50;
 }
@@ -438,6 +446,60 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Offer a paid room upgrade when a higher category is available.",
+    status: "active",
+  },
+  {
+    id: "auto-theme-park",
+    name: "Theme Park Tickets",
+    category: "upselling",
+    actionLabel: "Offer Theme Park Tickets",
+    valuePerPerson: 75,
+    conditions: [
+      {
+        id: "auto-theme-park-c1",
+        field: "previous-stays",
+        operator: "gte",
+        value: "0",
+      },
+    ],
+    timing: "at-check-in",
+    description: "Offer theme park tickets for families and leisure guests during the stay.",
+    status: "active",
+  },
+  {
+    id: "auto-city-tours",
+    name: "City Tours",
+    category: "upselling",
+    actionLabel: "Offer City Tours",
+    valuePerPerson: 45,
+    conditions: [
+      {
+        id: "auto-city-tours-c1",
+        field: "previous-stays",
+        operator: "gte",
+        value: "0",
+      },
+    ],
+    timing: "during-stay",
+    description: "Suggest a guided city tour for guests exploring the destination.",
+    status: "active",
+  },
+  {
+    id: "auto-special-dinner",
+    name: "Special dinner",
+    category: "upselling",
+    actionLabel: "Offer Special dinner",
+    valuePerPerson: 70,
+    conditions: [
+      {
+        id: "auto-special-dinner-c1",
+        field: "previous-stays",
+        operator: "gte",
+        value: "1",
+      },
+    ],
+    timing: "during-stay",
+    description: "Offer a special dinner experience at the hotel restaurant.",
     status: "active",
   },
 ];
