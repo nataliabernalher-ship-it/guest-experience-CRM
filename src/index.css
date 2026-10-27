@@ -585,18 +585,10 @@ h2 {
   overflow: hidden;
 }
 
-.insight-metric[data-category="upselling"] {
-  border-color: rgba(255, 101, 68, 0.35);
-  background: #fff;
-}
-
-.insight-metric[data-category="loyalty"] {
-  border-color: rgba(47, 95, 138, 0.35);
-  background: #fff;
-}
-
+.insight-metric[data-category="upselling"],
+.insight-metric[data-category="loyalty"],
 .insight-metric[data-category="guest-experience"] {
-  border-color: rgba(47, 107, 79, 0.35);
+  border-color: var(--box-border);
   background: #fff;
 }
 
