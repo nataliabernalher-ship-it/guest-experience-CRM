@@ -587,31 +587,31 @@ h2 {
 
 .insight-metric[data-category="upselling"] {
   border-color: rgba(255, 101, 68, 0.35);
-  background: #ffdcd4;
+  background: #fff;
 }
 
 .insight-metric[data-category="loyalty"] {
   border-color: rgba(47, 95, 138, 0.35);
-  background: #d4dde8;
+  background: #fff;
 }
 
 .insight-metric[data-category="guest-experience"] {
   border-color: rgba(47, 107, 79, 0.35);
-  background: #d4e0d9;
+  background: #fff;
 }
 
 .insight-metric[data-category="upselling"]:hover {
-  background: #ffd0c4;
+  background: #fff;
   color: var(--text);
 }
 
 .insight-metric[data-category="loyalty"]:hover {
-  background: #c8d4e2;
+  background: #fff;
   color: var(--text);
 }
 
 .insight-metric[data-category="guest-experience"]:hover {
-  background: #c8d8cf;
+  background: #fff;
   color: var(--text);
 }
 
