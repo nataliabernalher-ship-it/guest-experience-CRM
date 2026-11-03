@@ -31,6 +31,8 @@ import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { IncidentDetailModal } from "../components/IncidentDetailModal";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { useViewLoad } from "../hooks/useViewLoad";
+import { resolveAutomationImage } from "../data/automationImages";
+import { useAutomations } from "../state/AutomationsState";
 import { useShift } from "../state/ShiftState";
 
 const severityFilters: { id: "all" | Severity; label: string }[] = [
@@ -323,12 +325,25 @@ function OpportunityActionCells({
   isRecovery: boolean;
   onStatus: (id: string, status: ActionStatus) => void;
 }) {
+  const { automations } = useAutomations();
+  const imageUrl =
+    action.category === "recovery" ? undefined : resolveAutomationImage(automations, action.label);
+
   return (
     <>
       <td>
         <CategoryPill category={action.category} />
       </td>
-      <td className="cell-action">{action.label}</td>
+      <td className="cell-action">
+        {imageUrl ? (
+          <span className="cell-action-with-thumb">
+            <img className="automation-action-thumb" src={imageUrl} alt="" />
+            <span>{action.label}</span>
+          </span>
+        ) : (
+          action.label
+        )}
+      </td>
       {isRecovery ? (
         <td className="cell-created">{formatIncidentWhen(action.createdAt)}</td>
       ) : (

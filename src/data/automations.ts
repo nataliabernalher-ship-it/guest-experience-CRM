@@ -1,3 +1,4 @@
+import { automationImages } from "./automationImages";
 import { worldSubregionLabels } from "./regions";
 import type { Category } from "./shift";
 
@@ -59,6 +60,8 @@ export interface Automation {
   timing: AutomationTiming;
   /** Optional details or description for reception. */
   description?: string;
+  /** Cover / thumbnail image for cards and opportunity listings. */
+  imageUrl?: string;
   status: AutomationStatus;
 }
 
@@ -317,6 +320,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Mention the guest’s previous spa visit and offer a 50-minute treatment.",
+    imageUrl: automationImages.spa,
     status: "active",
   },
   {
@@ -340,6 +344,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Explain member benefits briefly and offer to enrol at the desk.",
+    imageUrl: automationImages.loyalty,
     status: "active",
   },
   {
@@ -357,6 +362,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "on-guest-event",
     description: "Arrange a complimentary amenity and a handwritten birthday note in the room.",
+    imageUrl: automationImages.birthday,
     status: "active",
   },
   {
@@ -374,6 +380,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "before-check-in",
     description: "Prepare a welcome back amenity before arrival for returning guests.",
+    imageUrl: automationImages.returning,
     status: "active",
   },
   {
@@ -392,6 +399,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Offer breakfast for the stay when it is not included in the rate.",
+    imageUrl: automationImages.breakfast,
     status: "active",
   },
   {
@@ -410,6 +418,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "before-check-out",
     description: "Offer a private transfer to the airport for departure day.",
+    imageUrl: automationImages.transfer,
     status: "active",
   },
   {
@@ -428,6 +437,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "during-stay",
     description: "Suggest tickets for a local flamenco show during the stay.",
+    imageUrl: automationImages.flamenco,
     status: "active",
   },
   {
@@ -446,6 +456,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Offer a paid room upgrade when a higher category is available.",
+    imageUrl: automationImages.upgrade,
     status: "active",
   },
   {
@@ -464,6 +475,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "at-check-in",
     description: "Offer theme park tickets for families and leisure guests during the stay.",
+    imageUrl: automationImages.themePark,
     status: "active",
   },
   {
@@ -482,6 +494,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "during-stay",
     description: "Suggest a guided city tour for guests exploring the destination.",
+    imageUrl: automationImages.cityTours,
     status: "active",
   },
   {
@@ -500,6 +513,7 @@ export const automationSeed: Automation[] = [
     ],
     timing: "during-stay",
     description: "Offer a special dinner experience at the hotel restaurant.",
+    imageUrl: automationImages.specialDinner,
     status: "active",
   },
 ];

@@ -21,6 +21,8 @@ import { OutcomeMark } from "../components/OutcomeMark";
 import { EmptyState, ErrorState, LoadingState } from "../components/ViewState";
 import { OpportunityDetailModal } from "../components/OpportunityDetailModal";
 import { useViewLoad } from "../hooks/useViewLoad";
+import { resolveAutomationImage } from "../data/automationImages";
+import { useAutomations } from "../state/AutomationsState";
 import { useShift } from "../state/ShiftState";
 
 function greeting(now: Date): string {
@@ -72,6 +74,12 @@ function opportunityForGuest(
 ): ShiftAction | undefined {
   const forGuest = actionsForGuest(guestId, listing, source);
   return forGuest.find((action) => action.status === "pending") ?? forGuest[0];
+}
+
+function DashboardOpportunityAside({ opportunity }: { opportunity: ShiftAction }) {
+  if (opportunity.status === "done") return <OutcomeMark rejected={false} />;
+  if (opportunity.status === "rejected") return <OutcomeMark rejected />;
+  return <CategoryPill category={opportunity.category} />;
 }
 
 function TrendArrow({ direction }: { direction: "up" | "down" }) {
@@ -265,7 +273,9 @@ export function Dashboard() {
   }, []);
 
   const { actions } = useShift();
+  const { automations } = useAutomations();
   const { status, retry } = useViewLoad("dashboard");
+  const imageForLabel = (label: string) => resolveAutomationImage(automations, label);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const [milestoneMetric, setMilestoneMetric] = useState<MilestoneMetric>("upselling");
   const [milestonePeriod, setMilestonePeriod] = useState<MilestonePeriod>("7days");
@@ -545,6 +555,7 @@ export function Dashboard() {
                 <ul className="vip-list is-checkins-fit">
                   {checkInGuests.map((guest) => {
                     const opportunity = opportunityForGuest(guest.id, actions);
+                    const imageUrl = opportunity ? imageForLabel(opportunity.label) : undefined;
                     return (
                       <li key={guest.id}>
                         <button
@@ -554,18 +565,15 @@ export function Dashboard() {
                             if (opportunity) setSelectedOpportunityId(opportunity.id);
                           }}
                         >
+                          {imageUrl ? (
+                            <img className="vip-action-thumb" src={imageUrl} alt="" />
+                          ) : null}
                           <span className="vip-copy">
                             <span className="vip-name">{guest.name}</span>
                             <span className="vip-meta">{stayLine(guest)}</span>
                           </span>
                           {opportunity ? (
-                            opportunity.status === "done" ? (
-                              <OutcomeMark rejected={false} />
-                            ) : opportunity.status === "rejected" ? (
-                              <OutcomeMark rejected />
-                            ) : (
-                              <CategoryPill category={opportunity.category} />
-                            )
+                            <DashboardOpportunityAside opportunity={opportunity} />
                           ) : (
                             <span className="guest-none">–</span>
                           )}
@@ -626,6 +634,7 @@ export function Dashboard() {
                 <ul className="vip-list is-checkins-fit">
                   {inHouseActionGuests.map((guest) => {
                     const opportunity = opportunityForGuest(guest.id, actions, "in-house");
+                    const imageUrl = opportunity ? imageForLabel(opportunity.label) : undefined;
                     return (
                       <li key={guest.id}>
                         <button
@@ -635,18 +644,15 @@ export function Dashboard() {
                             if (opportunity) setSelectedOpportunityId(opportunity.id);
                           }}
                         >
+                          {imageUrl ? (
+                            <img className="vip-action-thumb" src={imageUrl} alt="" />
+                          ) : null}
                           <span className="vip-copy">
                             <span className="vip-name">{guest.name}</span>
                             <span className="vip-meta">{stayLine(guest, "in-house")}</span>
                           </span>
                           {opportunity ? (
-                            opportunity.status === "done" ? (
-                              <OutcomeMark rejected={false} />
-                            ) : opportunity.status === "rejected" ? (
-                              <OutcomeMark rejected />
-                            ) : (
-                              <CategoryPill category={opportunity.category} />
-                            )
+                            <DashboardOpportunityAside opportunity={opportunity} />
                           ) : (
                             <span className="guest-none">–</span>
                           )}

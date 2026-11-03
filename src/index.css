@@ -1786,6 +1786,14 @@ h2 {
   gap: 10px;
 }
 
+.vip-action-thumb {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
 .vip-row:hover {
   background: var(--hover);
   box-shadow: none;
@@ -3424,7 +3432,7 @@ a.vip-name.guest-link:hover,
   align-items: center;
   gap: 6px;
   border-radius: 999px;
-  padding: 7px 12px 7px 10px;
+  padding: 6px 10px 6px 8px;
   font-size: 11px;
   font-weight: 400;
   line-height: 1.2;
@@ -3475,6 +3483,23 @@ a.vip-name.guest-link:hover,
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.3;
+}
+
+.listing-table:not(.is-guests) .cell-action-with-thumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.listing-table:not(.is-guests) .automation-action-thumb {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .listing-table:not(.is-guests) .guest-cell .cell-strong {
@@ -5379,10 +5404,11 @@ a.vip-name.guest-link:hover,
 .automation-card {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   aspect-ratio: 1;
   min-height: 0;
-  padding: var(--box-pad);
+  padding: 0;
+  overflow: hidden;
   border: 2px solid transparent;
   border-radius: 12px;
   background: var(--box-surface);
@@ -5393,29 +5419,66 @@ a.vip-name.guest-link:hover,
   opacity: 0.72;
 }
 
-.automation-card-head {
-  display: grid;
-  gap: 10px;
+.automation-card-media {
   flex: none;
-  justify-items: start;
+  width: 100%;
+  aspect-ratio: 32 / 9;
+  margin: 0;
+  overflow: hidden;
+  background: var(--box-recess);
+}
+
+.automation-card-media.is-empty {
+  background:
+    linear-gradient(135deg, #f3f3f3 0%, #e6e6e6 100%);
+}
+
+.automation-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.automation-card-head,
+.automation-card-facts,
+.automation-card-foot {
+  padding-left: var(--box-pad);
+  padding-right: var(--box-pad);
+}
+
+.automation-card-head {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  min-width: 0;
+  padding-top: 4px;
 }
 
 .automation-card-head .category-pill {
+  flex: none;
   width: auto;
-  max-width: 100%;
+  max-width: none;
 }
 
 .automation-card-head h2 {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .automation-card-facts {
   display: grid;
-  gap: 10px;
+  gap: 4px;
   flex: 1;
   min-height: 0;
   margin: 0;
@@ -5424,7 +5487,7 @@ a.vip-name.guest-link:hover,
 
 .automation-card-facts div {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .automation-card-facts dt {
@@ -5442,15 +5505,29 @@ a.vip-name.guest-link:hover,
 }
 
 .automation-card-foot {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px 10px;
   flex: none;
   margin-top: auto;
   padding-top: 4px;
+  padding-bottom: var(--box-pad);
 }
 
 .automation-card-foot .status-select {
-  width: 100%;
+  width: auto;
+  min-width: 0;
+  flex: none;
+}
+
+.automation-card-foot .row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  margin-left: auto;
 }
 
 @media (max-width: 1100px) {
@@ -5670,6 +5747,47 @@ a.vip-name.guest-link:hover,
 
 .automation-builder-basics .drawer-field + .drawer-field {
   margin-top: 10px;
+}
+
+.automation-image-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.automation-image-label {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.automation-image-preview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--box-border);
+  border-radius: 10px;
+  background: var(--box-recess);
+}
+
+.automation-image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.automation-image-placeholder {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.automation-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
 }
 
 .automation-builder-basics .drawer-field {

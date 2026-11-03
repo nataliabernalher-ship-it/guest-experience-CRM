@@ -25,6 +25,7 @@ import {
   type ConditionOperator,
   worldSubregionLabels,
 } from "../data/automations";
+import { imageForAutomationText } from "../data/automationImages";
 import { subregionsForContinent, worldContinents } from "../data/regions";
 import { money } from "../data/shift";
 import { CategoryPill } from "../components/CategoryPill";
@@ -41,6 +42,7 @@ type Draft = {
   conditions: AutomationCondition[];
   timing: AutomationTiming;
   description: string;
+  imageUrl: string;
 };
 
 function toDraft(automation: Automation): Draft {
@@ -59,6 +61,7 @@ function toDraft(automation: Automation): Draft {
     conditions: automation.conditions.map((condition) => ({ ...condition })),
     timing: automation.timing,
     description: automation.description ?? "",
+    imageUrl: automation.imageUrl ?? "",
   };
 }
 
@@ -153,6 +156,7 @@ function emptyDraft(): Draft {
     valuePerPerson: base.valuePerPerson != null ? String(base.valuePerPerson) : "",
     hotelCommission: base.hotelCommission != null ? String(base.hotelCommission) : "",
     description: base.description ?? "",
+    imageUrl: base.imageUrl ?? "",
   };
 }
 
@@ -226,6 +230,13 @@ export function AutomationsPage() {
                 automation.status === "inactive" ? "automation-card is-inactive" : "automation-card"
               }
             >
+              {automation.imageUrl ? (
+                <div className="automation-card-media">
+                  <img src={automation.imageUrl} alt="" />
+                </div>
+              ) : (
+                <div className="automation-card-media is-empty" aria-hidden="true" />
+              )}
               <header className="automation-card-head">
                 <h2>{automation.name}</h2>
                 <CategoryPill category={automation.category} />
@@ -303,6 +314,8 @@ export function AutomationBuilderPage() {
     editing ? toDraft(editing) : emptyDraft(),
   );
   const [hydratedId, setHydratedId] = useState<string | null>(editing?.id ?? null);
+  const [imageGenerating, setImageGenerating] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isCreate) {
@@ -392,6 +405,7 @@ export function AutomationBuilderPage() {
         : undefined;
 
     const description = draft.description.trim();
+    const imageUrl = draft.imageUrl.trim() || undefined;
     const payload = {
       name,
       category: draft.category,
@@ -401,6 +415,7 @@ export function AutomationBuilderPage() {
       conditions: draft.conditions,
       timing: draft.timing,
       description: description || undefined,
+      imageUrl,
       status: (editing?.status ?? "active") as AutomationStatus,
     };
 
@@ -482,6 +497,68 @@ export function AutomationBuilderPage() {
                 onChange={(event) => setDraft({ ...draft, description: event.target.value })}
               />
             </label>
+            <div className="automation-image-field">
+              <span className="automation-image-label">Image</span>
+              <div className="automation-image-preview">
+                {draft.imageUrl ? (
+                  <img src={draft.imageUrl} alt="" />
+                ) : (
+                  <span className="automation-image-placeholder">No image yet</span>
+                )}
+              </div>
+              <div className="automation-image-actions">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="visually-hidden"
+                  aria-label="Upload automation image"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    event.target.value = "";
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      if (typeof reader.result === "string") {
+                        setDraft((current) => ({ ...current, imageUrl: reader.result as string }));
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <button
+                  type="button"
+                  className="row-action"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  Upload
+                </button>
+                <button
+                  type="button"
+                  className="row-action"
+                  disabled={imageGenerating}
+                  onClick={() => {
+                    setImageGenerating(true);
+                    window.setTimeout(() => {
+                      const next = imageForAutomationText(draft.name, draft.actionLabel);
+                      setDraft((current) => ({ ...current, imageUrl: next }));
+                      setImageGenerating(false);
+                    }, 1000);
+                  }}
+                >
+                  {imageGenerating ? "Creating…" : "Create with AI"}
+                </button>
+                {draft.imageUrl ? (
+                  <button
+                    type="button"
+                    className="row-action is-danger"
+                    onClick={() => setDraft((current) => ({ ...current, imageUrl: "" }))}
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </section>
 
           <section className="rule-section" aria-labelledby="timing-heading">
